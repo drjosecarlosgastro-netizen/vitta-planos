@@ -1227,7 +1227,7 @@ async function saveContrato(){
   // Sanitize filename: remove special chars and spaces
   const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
   const path=`pat${currentPatientId}_${Date.now()}_${safeName}`;
-  console.log('Uploading to bucket: contratos, path:', path);
+  console.log('Uploading to bucket: documentos, path:', path);
   const{error,data}=await sb.storage.from('documentos').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:true});
   if(error){
     console.error('Upload error full:',JSON.stringify(error));
