@@ -1209,7 +1209,7 @@ async function renderContrato(){
         <div class="attach-date">${i.data_upload||''}</div>
         <div class="attach-date"><span class="user-badge">${i.registrado_por||''}</span></div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="openFile('contratos','${i.file_path}')">Abrir</button>
+      <button class="btn btn-ghost btn-sm" onclick="openFile('documentos','${i.file_path}')">Abrir</button>
       <button class="btn-icon btn-sm" onclick="deleteContrato(${i.id})">🗑</button>
     </div>`).join(''):'<div class="text-muted text-sm">Nenhum contrato</div>'}
   </div>`;
@@ -1228,7 +1228,7 @@ async function saveContrato(){
   const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
   const path=`pat${currentPatientId}_${Date.now()}_${safeName}`;
   console.log('Uploading to bucket: contratos, path:', path);
-  const{error,data}=await sb.storage.from('contratos').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:true});
+  const{error,data}=await sb.storage.from('documentos').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:true});
   if(error){
     console.error('Upload error full:',JSON.stringify(error));
     toast('Erro: '+error.message,'error');
