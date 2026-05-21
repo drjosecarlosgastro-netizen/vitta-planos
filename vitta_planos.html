@@ -1226,10 +1226,11 @@ async function saveContrato(){
   if(!file){toast('Selecione um arquivo','error');return;}
   // Sanitize filename: remove special chars and spaces
   const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
-  const path=`${currentPatientId}/contrato_${Date.now()}_${safeName}`;
-  const{error,data}=await sb.storage.from('contratos').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});
+  const path=`pat${currentPatientId}_${Date.now()}_${safeName}`;
+  console.log('Uploading to bucket: contratos, path:', path);
+  const{error,data}=await sb.storage.from('contratos').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:true});
   if(error){
-    console.error('Upload error:',error);
+    console.error('Upload error full:',JSON.stringify(error));
     toast('Erro: '+error.message,'error');
     return;
   }
