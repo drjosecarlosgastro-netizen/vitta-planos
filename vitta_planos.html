@@ -504,10 +504,7 @@ async function renderPatInfo(){
     </div>
   </div>
   <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div class="card-title" style="margin:0">Plano de Acompanhamento</div>
-      ${p.motivo_encerramento?`<span style="padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;background:${p.motivo_encerramento==='fim'?'#3b82f6':'#f97316'};color:#fff">${p.motivo_encerramento==='fim'?'Fim do Plano':'Desistência'}</span>`:''}
-    </div>
+    <div class="card-title">Plano de Acompanhamento</div>
     <div class="grid-2">
       <div class="field"><label>Tipo de Plano</label>
         <select id="pi-plan">
@@ -532,18 +529,6 @@ async function renderPatInfo(){
     <div class="field"><label>Observações</label><textarea id="pi-obs" rows="3">${p.observacao||''}</textarea></div>
   </div>
   <div class="card">
-    <div class="card-title">Encerramento do Plano</div>
-    <div class="field">
-      <label>Status de Encerramento</label>
-      <select id="pi-encerramento" onchange="updateEncerramentoColor(this)" style="font-weight:700;transition:color .2s;color:${p.motivo_encerramento==='fim'?'#3b82f6':p.motivo_encerramento==='desistencia'?'#f97316':'var(--text)'}">
-        <option value="" ${!p.motivo_encerramento?'selected':''}>— Em andamento —</option>
-        <option value="fim" ${p.motivo_encerramento==='fim'?'selected':''}>Fim do Plano</option>
-        <option value="desistencia" ${p.motivo_encerramento==='desistencia'?'selected':''}>Desistência</option>
-      </select>
-    </div>
-
-  </div>
-  <div class="card">
     <div class="card-title">Etiquetas</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
       ${allTags.map(tag=>{
@@ -552,6 +537,14 @@ async function renderPatInfo(){
       }).join('')}
     </div>
     <input type="hidden" id="pi-tags" value='${JSON.stringify(patTags)}'/>
+    <div style="border-top:1px solid var(--border-light);padding-top:12px;margin-top:4px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Nova Etiqueta</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="new-tag-name" placeholder="Nome da etiqueta" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/>
+        <input type="color" id="new-tag-color" value="#6b7280" style="width:36px;height:34px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer"/>
+        <button class="btn btn-primary btn-sm" onclick="saveNewTagFromInfo()">Criar</button>
+      </div>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">Auditoria</div>
@@ -568,6 +561,22 @@ function toggleTag(el,name,color){
   else{tags.push({name,color});el.style.background=color;el.style.color='#fff';}
   document.getElementById('pi-tags').value=JSON.stringify(tags);
 }
+async function saveNewTagFromInfo(){
+  const name=document.getElementById('new-tag-name').value.trim();
+  const color=document.getElementById('new-tag-color').value;
+  if(!name){return;}
+  // Load existing tags from config
+  const{data}=await sb.from('planos_config').select('value').eq('key','etiquetas').single();
+  let tags=[];try{tags=JSON.parse(data?.value||'[]')}catch(e){}
+  if(tags.some(t=>t.name===name)){toast('Etiqueta já existe','error');return;}
+  tags.push({name,color});
+  await sb.from('planos_config').upsert({key:'etiquetas',value:JSON.stringify(tags)});
+  toast('Etiqueta criada!','success');
+  // Re-render the info tab
+  const p=currentPatientData;
+  await renderPatInfo();
+}
+
 async function savePatInfo(){
   const inicio=displayToISO(document.getElementById('pi-inicio').value.trim());
   const planType=document.getElementById('pi-plan').value;
@@ -585,7 +594,7 @@ async function savePatInfo(){
     updated_by:currentUser.name,updated_at:new Date().toISOString()
   };
   // Handle encerramento separately
-  const motivoSel = document.getElementById('pi-encerramento')?.value;
+  const motivoSel = document.getElementById('pi-encerramento')?.value || null;
   const motivoAtual = currentPatientData.motivo_encerramento;
   if(motivoSel && motivoSel !== motivoAtual){
     const label = motivoSel==='fim'?'Fim do Plano':'Desistência';
