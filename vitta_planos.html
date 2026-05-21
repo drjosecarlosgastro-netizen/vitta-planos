@@ -407,15 +407,26 @@ function patientRowHtml(p){
   const phaseColors=['','phase-1','phase-2','phase-3'];
   const months=p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0;
   const tags=(p.etiquetas||[]);
+  const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
+  const inicioDisplay=p.inicio_programa?fmtDate(p.inicio_programa):'—';
+  const encerramentoHtml=p.motivo_encerramento
+    ?`<span style="font-weight:700;color:${p.motivo_encerramento==='fim'?'#3b82f6':'#f97316'}">Encerrado: ${isoToDisplay(p.data_encerramento||'')} — ${p.motivo_encerramento==='fim'?'Fim do Plano':'Desistência'}</span>`
+    :'';
   return`<div class="patient-row" onclick="openPatient(${p.id})">
     <div class="patient-avatar">${p.name.charAt(0)}</div>
     <div class="patient-info">
-      <div class="patient-name">${p.name}</div>
+      <div class="patient-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        ${p.name}
+        ${tags.map(tag=>`<span class="etiqueta" style="background:${tag.color||'#6b7280'}">${tag.name}</span>`).join('')}
+      </div>
       <div class="patient-meta">
         <span class="phase-badge ${phaseColors[phase]}">F${phase}</span>
+        <span>${p.plan_type||'—'}</span>
         <span>Mês ${months+1}</span>
         <span class="pill pill-${p.modality==='Presencial'?'blue':'purple'}">${p.modality||'—'}</span>
-        ${tags.map(tag=>`<span class="etiqueta" style="background:${tag.color||'#6b7280'}">${tag.name}</span>`).join('')}
+        <span>${inicioDisplay}</span>
+        ${p.inicio_programa?`<span>Fim: ${endDate}</span>`:''}
+        ${encerramentoHtml}
       </div>
     </div>
     <span style="color:var(--text-muted);font-size:18px">›</span>
