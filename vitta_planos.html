@@ -773,81 +773,107 @@ async function renderSoroterapia(){
     else if(restantes===2)alertHtml=`<div class="alert-banner alert-warning">⚠️ Faltam <strong>2 sessões</strong> para acabar o protocolo. Prepare o próximo envio.</div>`;
   }
 
-  // ── Build envios HTML (expandable cards) ──
+  // ── Build envios HTML (expandable + editable cards) ──
   function buildEnvioCard(e, idx, allEnvios){
-    const totalSessoes=(e.sessoes_ev||0)+(e.sessoes_im||0);
-    // count cumulative sessions done across all envios up to and including this one
-    const envioIds=allEnvios.slice(0,idx+1).map(en=>en.id);
-    const sessFeitas=(sessoes||[]).filter(s=>envioIds.includes(s.envio_id)).length;
-    // global counter: session number in entire protocol
-    const sessAnterior=(sessoes||[]).filter(s=>allEnvios.slice(0,idx).map(en=>en.id).includes(s.envio_id)).length;
-    const sessNeste=(sessoes||[]).filter(s=>s.envio_id===e.id).length;
-    const sessGlobal=sessAnterior+sessNeste; // total done so far globally
+    const sessEV=e.sessoes_ev||0;
+    const sessIM=e.sessoes_im||0;
+    const totalNeste=sessEV+sessIM; // sessões deste envio
+    // Total acumulado do protocolo (soma de todos os envios)
     const totalProtocolo=allEnvios.reduce((s,en)=>s+(en.sessoes_ev||0)+(en.sessoes_im||0),0);
-    const restantes=totalSessoes-sessNeste;
-    // flag color
-    let flagColor='var(--success)';
-    let flagLabel='Em dia';
-    if(restantes<=0){flagColor='var(--text-muted)';flagLabel='Concluído';}
-    else if(restantes===1){flagColor='var(--danger)';flagLabel='🚩 Enviar agora!';}
-    else if(restantes===2){flagColor='var(--warning)';flagLabel='⚠️ Preparar envio';}
-    // próxima sessão estimada (7 dias após última sessão deste envio ou data envio)
-    const sessoesDoEnvio=(sessoes||[]).filter(s=>s.envio_id===e.id).sort((a,b)=>parseDateInt(b.data_sessao)-parseDateInt(a.data_sessao));
-    const baseDate=sessoesDoEnvio.length?sessoesDoEnvio[0].data_sessao:e.data_envio;
-    // data término: data envio + 30 dias por sessão restante estimada
-    const dataTermEstimada=baseDate?addDaysToDisplay(baseDate,restantes*7):'—';
-    const proximaSessaoData=baseDate&&restantes>0?addDaysToDisplay(baseDate,7):'—';
+    // Sessões acumuladas ANTES deste envio
+    const totalAntes=allEnvios.slice(0,idx).reduce((s,en)=>s+(en.sessoes_ev||0)+(en.sessoes_im||0),0);
+    // Número do envio (1-based)
+    const numEnvio=idx+1;
+    // Sessões realizadas cadastradas neste envio
+    const sessNeste=(sessoes||[]).filter(s=>s.envio_id===e.id).length;
+    const restantesNeste=totalNeste-sessNeste;
+    // Próximo envio = data deste envio + 28 dias
+    const proximoEnvioData=e.data_envio?addDaysToDisplay(e.data_envio,28):'—';
+    // Término do protocolo = inicio_programa do paciente + duracao_programa
+    const p=currentPatientData;
+    const terminoProtocolo=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
+    const duracaoLabel=p.duracao_programa===6?'6 meses':'3 meses';
+    // Flag status baseado em data do próximo envio vs hoje
+    const diasProximo=proximoEnvioData!=='—'?daysAgo(proximoEnvioData)*-1:99;
+    let flagColor='var(--success)';let flagLabel='Em dia';
+    if(totalNeste>0&&sessNeste>=totalNeste){flagColor='var(--text-muted)';flagLabel='Concluído';}
+    else if(diasProximo<=3&&diasProximo>=0){flagColor='var(--danger)';flagLabel='🚩 Enviar agora!';}
+    else if(diasProximo<=7&&diasProximo>3){flagColor='var(--warning)';flagLabel='⚠️ Preparar envio';}
+    else if(diasProximo<0){flagColor='var(--danger)';flagLabel='🚩 Atrasado!';}
     const cardId=`envio-detail-${e.id}`;
     return`
     <div class="prog-row" style="margin-bottom:8px">
       <div class="prog-header" onclick="toggleEnvioCard('${cardId}',this)" style="padding:12px 14px;cursor:pointer">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-weight:700;font-size:13px">Envio ${e.data_envio||'—'}</span>
-            <span style="font-size:11px;font-weight:700;color:${flagColor}">${flagLabel}</span>
+            <span style="font-weight:700;font-size:13px">Envio ${numEnvio} · ${e.data_envio||'—'}</span>
+            <span style="font-size:11px;font-weight:700;color:${flagColor};background:${flagColor==='var(--success)'?'#dcfce7':flagColor==='var(--warning)'?'#fef3c7':flagColor==='var(--text-muted)'?'#f3f4f6':'#fee2e2'};padding:2px 7px;border-radius:99px">${flagLabel}</span>
           </div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap">
-            <span>📦 ${totalSessoes} sessões no protocolo</span>
-            <span>✅ Sessão ${sessGlobal} de ${totalProtocolo||totalSessoes}</span>
-            ${restantes>0?`<span style="color:${flagColor};font-weight:600">Próxima: enviar até ${proximaSessaoData}</span>`:'<span style="color:var(--text-muted)">Protocolo encerrado</span>'}
+          <div style="font-size:12px;color:var(--text-muted);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <span>EV: <strong>${sessEV}</strong> · IM: <strong>${sessIM}</strong> · Total: <strong>${totalNeste}</strong> sessões</span>
+            <span style="color:var(--navy);font-weight:600">Total enviado: ${totalAntes+totalNeste} de ${totalProtocolo}</span>
+            ${totalNeste>0&&sessNeste<totalNeste?`<span style="color:${flagColor};font-weight:600">Próximo envio: até ${proximoEnvioData}</span>`:''}
           </div>
         </div>
         <span class="envio-arrow" style="color:var(--text-muted);font-size:14px;margin-left:8px;transition:transform .2s">▼</span>
       </div>
-      <div id="${cardId}" class="prog-detail" style="padding:12px 14px;border-top:1px solid var(--border-light);display:none">
-        <div class="grid-2" style="margin-bottom:10px;gap:8px">
+      <div id="${cardId}" style="padding:14px;border-top:1px solid var(--border-light);display:none">
+
+        <!-- INFO GRID -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
           <div style="background:var(--bg);border-radius:8px;padding:10px 12px">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Sessões do Protocolo</div>
-            <div style="font-weight:700;font-size:18px;color:var(--navy)">${totalSessoes}</div>
-            <div style="font-size:11px;color:var(--text-muted)">EV: ${e.sessoes_ev||0} · IM: ${e.sessoes_im||0}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Sessões Neste Envio</div>
+            <div style="font-weight:700;font-size:20px;color:var(--navy)">${totalNeste}</div>
+            <div style="font-size:11px;color:var(--text-muted)">EV: ${sessEV} · IM: ${sessIM}</div>
           </div>
           <div style="background:var(--bg);border-radius:8px;padding:10px 12px">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Sessões Realizadas</div>
-            <div style="font-weight:700;font-size:18px;color:var(--navy)">${sessNeste}/${totalSessoes}</div>
-            <div style="font-size:11px;color:var(--text-muted)">Restantes: ${restantes}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Total Acumulado</div>
+            <div style="font-weight:700;font-size:20px;color:var(--navy)">${totalAntes+totalNeste}<span style="font-size:12px;color:var(--text-muted)"> / ${totalProtocolo}</span></div>
+            <div style="font-size:11px;color:var(--text-muted)">sessões enviadas no protocolo</div>
           </div>
           <div style="background:var(--bg);border-radius:8px;padding:10px 12px">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Data do Envio</div>
-            <div style="font-weight:700;font-size:14px;color:var(--navy)">${e.data_envio||'—'}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Próximo Envio Estimado</div>
+            <div style="font-weight:700;font-size:13px;color:${flagColor}">${proximoEnvioData}</div>
+            <div style="font-size:11px;color:var(--text-muted)">28 dias após este envio</div>
           </div>
-          <div style="background:var(--bg);border-radius:8px;padding:10px 12px;border:1.5px solid ${restantes<=1&&restantes>0?'var(--danger)':restantes<=2&&restantes>0?'var(--warning)':'transparent'}">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Próxima Sessão</div>
-            <div style="font-weight:700;font-size:13px;color:${flagColor}">${restantes>0?`Enviar até ${proximaSessaoData}`:'Concluído'}</div>
+          <div style="background:var(--bg);border-radius:8px;padding:10px 12px">
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Término do Protocolo</div>
+            <div style="font-weight:700;font-size:13px;color:var(--navy)">${terminoProtocolo}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Plano ${duracaoLabel}</div>
           </div>
         </div>
-        ${e.substancias?`<div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:8px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Substâncias Enviadas</div>
-          <div style="font-size:13px">${e.substancias}</div>
-        </div>`:''}
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <div style="background:var(--bg);border-radius:8px;padding:10px 12px;flex:1">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Término Estimado do Protocolo</div>
-            <div style="font-weight:700;font-size:13px;color:var(--navy)">${dataTermEstimada}</div>
+
+        <!-- EDIÇÃO -->
+        <div style="border-top:1px solid var(--border-light);padding-top:12px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">✏️ Editar Envio</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+            <div class="field" style="margin:0">
+              <label>Data do Envio</label>
+              <input id="env-edit-data-${e.id}" value="${e.data_envio||''}" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/>
+            </div>
+            <div class="field" style="margin:0">
+              <label>Sessões EV</label>
+              <input type="number" id="env-edit-ev-${e.id}" value="${sessEV}" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/>
+            </div>
+            <div class="field" style="margin:0">
+              <label>Sessões IM</label>
+              <input type="number" id="env-edit-im-${e.id}" value="${sessIM}" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/>
+            </div>
           </div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${e.receita_path?`<button class="btn btn-ghost btn-sm" onclick="openFile('documents','${e.receita_path}')">📄 Ver Receita</button>`:''}
-          <button class="btn-icon btn-sm" onclick="deleteEnvio(${e.id})">🗑</button>
+          <div class="field">
+            <label>Substâncias Enviadas</label>
+            <textarea id="env-edit-subs-${e.id}" rows="2" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;resize:vertical">${e.substancias||''}</textarea>
+          </div>
+          ${e.receita_path?`<div style="margin-bottom:8px"><button class="btn btn-ghost btn-sm" onclick="openFile('documents','${e.receita_path}')">📄 Ver Receita</button></div>`:''}
+          <div class="field">
+            <label>Substituir Receita (PDF/Imagem)</label>
+            <input type="file" id="env-edit-file-${e.id}" accept=".pdf,.jpg,.jpeg,.png" style="font-size:13px;width:100%"/>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-primary btn-sm" onclick="saveEnvioEdit(${e.id},'${e.receita_path||''}')">💾 Salvar Alterações</button>
+            <button class="btn-icon btn-sm" onclick="deleteEnvio(${e.id})">🗑</button>
+            <span style="font-size:11px;color:var(--text-muted);margin-left:4px"><span class="user-badge">${e.registrado_por||''}</span></span>
+          </div>
         </div>
       </div>
     </div>`;
@@ -1033,7 +1059,34 @@ async function saveEnvio(){
   });
   closeModal('modal-generic');toast('Envio registrado','success');patTab('soroterapia');
 }
-async function deleteEnvio(id){await sb.from('planos_soro_envios').delete().eq('id',id);patTab('soroterapia');}
+async function deleteEnvio(id){
+  if(!confirm('Remover este envio?'))return;
+  await sb.from('planos_soro_envios').delete().eq('id',id);
+  patTab('soroterapia');
+}
+async function saveEnvioEdit(id, oldReceita){
+  let receita_path=oldReceita||null;
+  const file=document.getElementById(`env-edit-file-${id}`)?.files[0];
+  if(file){
+    const path=`${currentPatientId}/envio_${Date.now()}_${file.name}`;
+    const{error}=await sb.storage.from('documents').upload(path,file);
+    if(!error)receita_path=path;
+  }
+  const sessEV=parseInt(document.getElementById(`env-edit-ev-${id}`).value)||0;
+  const sessIM=parseInt(document.getElementById(`env-edit-im-${id}`).value)||0;
+  const{error}=await sb.from('planos_soro_envios').update({
+    data_envio:document.getElementById(`env-edit-data-${id}`).value.trim(),
+    sessoes_ev:sessEV,
+    sessoes_im:sessIM,
+    substancias:document.getElementById(`env-edit-subs-${id}`).value.trim(),
+    receita_path,
+    updated_by:currentUser.name,
+    updated_at:new Date().toISOString()
+  }).eq('id',id);
+  if(error){toast('Erro ao salvar','error');return;}
+  toast('Envio atualizado!','success');
+  patTab('soroterapia');
+}
 
 // ── TAB: IMPLANTE ─────────────────────────────────────────────
 async function renderImplante(){
