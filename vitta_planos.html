@@ -913,6 +913,7 @@ async function renderPatAgenda(){
       <div class="appt-info">
         <div class="appt-name">${fmtDate(a.date_str||'')} · ${a.procedimento||''}</div>
         <div class="appt-sub">${a.tipo||''} ${a.observacao?' · '+a.observacao:''}</div>
+        ${a.profissional_nome?`<div class="appt-sub" style="color:var(--navy);font-weight:600">👤 ${a.profissional_nome}</div>`:''}
         <div style="margin-top:2px"><span class="user-badge">${a.registrado_por||''}</span></div>
       </div>
       <select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="updateApptStatus(${a.id},this.value)">
@@ -951,12 +952,16 @@ function showAddApptPatient(){
         <option>Consulta</option><option>Injetável</option>
         <option>Teste Respiratório</option><option>Bioimpedância</option>
       </select></div>
+    <div class="field"><label>Profissional Responsável</label>
+      <select id="ap-prof"><option value="">— Selecionar —</option></select>
+    </div>
     <div class="field"><label>Observação</label><input type="text" id="ap-obs"/></div>
     <button class="btn btn-primary btn-full" onclick="saveApptPatient()">Salvar</button>
   `,'Novo Agendamento');
+  loadProfsIntoSelect('ap-prof');
 }
 async function saveApptPatient(){
-  await sb.from('planos_appointments').insert({patient_id:currentPatientId,date_str:document.getElementById('ap-date').value,time_str:document.getElementById('ap-time').value,procedimento:document.getElementById('ap-proc').value,tipo:document.getElementById('ap-tipo').value,observacao:document.getElementById('ap-obs').value.trim(),status:'Agendado',registrado_por:currentUser.name});
+  await sb.from('planos_appointments').insert({patient_id:currentPatientId,date_str:document.getElementById('ap-date').value,time_str:document.getElementById('ap-time').value,procedimento:document.getElementById('ap-proc').value,tipo:document.getElementById('ap-tipo').value,observacao:document.getElementById('ap-obs').value.trim(),profissional_nome:document.getElementById('ap-prof')?.value||null,status:'Agendado',registrado_por:currentUser.name});
   closeModal('modal-generic');toast('Agendamento salvo','success');patTab('agenda');
 }
 async function updateApptStatus(id,status){await sb.from('planos_appointments').update({status,updated_by:currentUser.name}).eq('id',id);toast('Status atualizado','success');}
@@ -1058,7 +1063,10 @@ async function renderHistorico(){
     <div class="card-title">Últimos Agendamentos</div>
     ${sorted.slice(0,10).map(a=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px">
-      <div><strong>${fmtDate(a.date_str)}</strong> · ${a.procedimento||''}</div>
+      <div>
+        <strong>${fmtDate(a.date_str)}</strong> · ${a.procedimento||''}
+        ${a.profissional_nome?`<span style="color:var(--navy);font-size:11px;font-weight:600"> · 👤 ${a.profissional_nome}</span>`:''}
+      </div>
       <span class="pill ${a.status==='Compareceu'?'pill-green':a.status==='Faltou'?'pill-red':a.status==='Cancelou'?'pill-amber':'pill-blue'}">${a.status||'—'}</span>
     </div>`).join('')||'<div class="text-muted text-sm">Sem registros</div>'}
   </div>`;
@@ -1100,6 +1108,7 @@ async function renderAgenda(){
           <div class="appt-sub">${a.procedimento||''} · ${a.tipo||''}
           ${isPast&&(!a.status||a.status==='Agendado')?`<span style="color:var(--danger);font-weight:700"> ${daysAgo(a.date_str)}d atrás</span>`:''}
           </div>
+          ${a.profissional_nome?`<div class="appt-sub" style="color:var(--navy);font-weight:600">👤 ${a.profissional_nome}</div>`:''}
           ${a.observacao?`<div class="appt-sub" style="font-style:italic">${a.observacao}</div>`:''}
         </div>
         <select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="updateApptStatus(${a.id},this.value)">
@@ -1123,9 +1132,13 @@ function showAddApptGlobal(){
       </select></div>
     <div class="field"><label>Tipo</label>
       <select id="gag-tipo"><option>Consulta</option><option>Injetável</option><option>Teste Respiratório</option><option>Bioimpedância</option></select></div>
+    <div class="field"><label>Profissional Responsável</label>
+      <select id="gag-prof"><option value="">— Selecionar —</option></select>
+    </div>
     <div class="field"><label>Observação</label><input type="text" id="gag-obs"/></div>
     <button class="btn btn-primary btn-full" onclick="saveApptGlobal()">Salvar</button>
   `,'Novo Agendamento');
+  loadProfsIntoSelect('gag-prof');
 }
 function searchPatForAppt(q){
   const norm=normStr(q);
@@ -1138,7 +1151,7 @@ function selectPatAppt(id,name){document.getElementById('gag-pat-id').value=id;d
 async function saveApptGlobal(){
   const patId=document.getElementById('gag-pat-id').value;
   if(!patId){toast('Selecione um paciente','error');return;}
-  await sb.from('planos_appointments').insert({patient_id:parseInt(patId),date_str:document.getElementById('gag-date').value,time_str:document.getElementById('gag-time').value,procedimento:document.getElementById('gag-proc').value,tipo:document.getElementById('gag-tipo').value,observacao:document.getElementById('gag-obs').value.trim(),status:'Agendado',registrado_por:currentUser.name});
+  await sb.from('planos_appointments').insert({patient_id:parseInt(patId),date_str:document.getElementById('gag-date').value,time_str:document.getElementById('gag-time').value,procedimento:document.getElementById('gag-proc').value,tipo:document.getElementById('gag-tipo').value,observacao:document.getElementById('gag-obs').value.trim(),profissional_nome:document.getElementById('gag-prof')?.value||null,status:'Agendado',registrado_por:currentUser.name});
   closeModal('modal-generic');toast('Agendamento salvo','success');renderAgenda();
 }
 
@@ -1279,8 +1292,36 @@ async function renderConfig(){
     </div>
     <button class="btn btn-ghost btn-sm" onclick="addTag()">+ Nova Etiqueta</button>
     <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="saveTags()">💾 Salvar Etiquetas</button>
+  </div>
+  <div class="card">
+    <div class="card-title">👥 Profissionais</div>
+    <div id="profs-container"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
   </div>`;
   window._tags=[...tags];
+
+  // Load profissionais
+  const{data:profs}=await sb.from('planos_profissionais').select('*').order('categoria,nome');
+  const profsByCat={};
+  (profs||[]).forEach(p=>{if(!profsByCat[p.categoria])profsByCat[p.categoria]=[];profsByCat[p.categoria].push(p);});
+  const cats=['Médico','Nutricionista','Educador Físico','Enfermeira'];
+  const profHtml=cats.map(cat=>`
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${cat}</div>
+      <div id="profs-${cat.replace(/\s/g,'-')}" style="margin-bottom:8px">
+        ${(profsByCat[cat]||[]).map(p=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;background:var(--bg);border-radius:8px;padding:10px 12px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13px">${p.nome}</div>
+            ${p.telefone?`<div style="font-size:11px;color:var(--text-muted)">${p.telefone}</div>`:''}
+            ${p.registro?`<div style="font-size:11px;color:var(--text-muted)">Reg: ${p.registro}</div>`:''}
+          </div>
+          <button class="btn-icon btn-sm" onclick="deleteProfissional(${p.id})">🗑</button>
+        </div>`).join('')||'<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Nenhum cadastrado</div>'}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="showAddProfissional('${cat}')">+ Adicionar ${cat}</button>
+    </div>`).join('<div class="divider"></div>');
+
+  document.getElementById('profs-container').innerHTML=profHtml;
 }
 async function savePass(type){
   const p1=document.getElementById(`cfg-${type==='doctor'?'doc':'sec'}-pass`).value;
@@ -1296,6 +1337,38 @@ function updateTag(i,field,val){window._tags[i][field]=val;if(field==='color'){d
 async function saveTags(){
   await sb.from('planos_config').upsert({key:'etiquetas',value:JSON.stringify(window._tags)});
   toast('Etiquetas salvas!','success');renderConfig();
+}
+
+// ── PROFISSIONAIS ────────────────────────────────────────────
+function showAddProfissional(cat){
+  showGenericModal(`
+    <div class="field"><label>Nome *</label><input id="prof-nome" oninput="this.value=titleCase(this.value)" placeholder="Nome completo"/></div>
+    <div class="field"><label>Telefone</label><input id="prof-tel" placeholder="(00) 00000-0000"/></div>
+    <div class="field"><label>Registro Profissional</label><input id="prof-reg" placeholder="Ex: CRM 12345, CRN 6789..."/></div>
+    <button class="btn btn-primary btn-full" onclick="saveProfissional('${cat}')">Salvar</button>
+  `,'Novo ${cat}');
+}
+async function saveProfissional(cat){
+  const nome=titleCase(document.getElementById('prof-nome').value.trim());
+  if(!nome){toast('Nome obrigatório','error');return;}
+  const{error}=await sb.from('planos_profissionais').insert({
+    categoria:cat,
+    nome,
+    telefone:document.getElementById('prof-tel').value.trim()||null,
+    registro:document.getElementById('prof-reg').value.trim()||null,
+    created_by:currentUser.name,
+    created_at:new Date().toISOString()
+  });
+  if(error){toast('Erro: '+error.message,'error');return;}
+  closeModal('modal-generic');
+  toast(cat+' salvo!','success');
+  renderConfig();
+}
+async function deleteProfissional(id){
+  if(!confirm('Remover este profissional?'))return;
+  await sb.from('planos_profissionais').delete().eq('id',id);
+  toast('Removido','success');
+  renderConfig();
 }
 
 // ── NEW PATIENT MODAL ─────────────────────────────────────────
@@ -1343,6 +1416,19 @@ async function saveNewPatient(){
 }
 
 // ── HELPERS ───────────────────────────────────────────────────
+async function loadProfsIntoSelect(selectId){
+  const{data:profs}=await sb.from('planos_profissionais').select('id,nome,categoria').order('categoria,nome');
+  const sel=document.getElementById(selectId);
+  if(!sel||!profs)return;
+  const byCat={};
+  profs.forEach(p=>{if(!byCat[p.categoria])byCat[p.categoria]=[];byCat[p.categoria].push(p);});
+  sel.innerHTML='<option value="">— Profissional —</option>';
+  Object.keys(byCat).sort().forEach(cat=>{
+    const og=document.createElement('optgroup');og.label=cat;
+    byCat[cat].forEach(p=>{const o=document.createElement('option');o.value=p.nome;o.textContent=p.nome;og.appendChild(o);});
+    sel.appendChild(og);
+  });
+}
 async function openFile(bucket,path){
   const{data}=sb.storage.from(bucket).getPublicUrl(path);
   if(data.publicUrl)window.open(data.publicUrl,'_blank');
