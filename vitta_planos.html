@@ -872,7 +872,7 @@ async function renderImplante(){
       <button class="btn btn-primary btn-sm" onclick="showAddImplante()">+ Add</button></div>
     ${(items||[]).length?(items||[]).slice().reverse().map(i=>`
     <div class="attach-item">
-      <div class="attach-icon" style="font-size:11px;font-weight:700;color:var(--text-muted);width:36px;text-align:center">Impl.</div>
+      <div class="attach-icon">💉</div>
       <div class="attach-info">
         <div class="attach-name">Implante · ${i.data_implante||'—'}</div>
         ${i.observacao?`<div class="attach-date">${i.observacao}</div>`:''}
@@ -1315,10 +1315,11 @@ async function renderConfig(){
             ${p.telefone?`<div style="font-size:11px;color:var(--text-muted)">${p.telefone}</div>`:''}
             ${p.registro?`<div style="font-size:11px;color:var(--text-muted)">Reg: ${p.registro}</div>`:''}
           </div>
+          <button class="btn btn-ghost btn-sm" style="padding:6px 10px;font-size:12px" data-pid="${p.id}" data-nome="${p.nome}" data-tel="${p.telefone||''}" data-reg="${p.registro||''}" onclick="showEditProfissionalEl(this)">✏️</button>
           <button class="btn-icon btn-sm" onclick="deleteProfissional(${p.id})">🗑</button>
         </div>`).join('')||'<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Nenhum cadastrado</div>'}
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="showAddProfissional('${cat}')">+ Adicionar ${cat}</button>
+      <button class="btn btn-ghost btn-sm" onclick="showAddProfissional('${cat}')">+ Novo ${cat}</button>
     </div>`).join('<div class="divider"></div>');
 
   document.getElementById('profs-container').innerHTML=profHtml;
@@ -1362,6 +1363,34 @@ async function saveProfissional(cat){
   if(error){toast('Erro: '+error.message,'error');return;}
   closeModal('modal-generic');
   toast(cat+' salvo!','success');
+  renderConfig();
+}
+function showEditProfissionalEl(btn){
+  const id=btn.dataset.pid;
+  const nome=btn.dataset.nome;
+  const telefone=btn.dataset.tel;
+  const registro=btn.dataset.reg;
+  showEditProfissional(id,nome,telefone,registro);
+}
+function showEditProfissional(id, nome, telefone, registro){
+  showGenericModal(`
+    <div class="field"><label>Nome *</label><input id="prof-edit-nome" oninput="this.value=titleCase(this.value)" value="${nome}"/></div>
+    <div class="field"><label>Telefone</label><input id="prof-edit-tel" value="${telefone}"/></div>
+    <div class="field"><label>Registro Profissional</label><input id="prof-edit-reg" value="${registro}"/></div>
+    <button class="btn btn-primary btn-full" onclick="updateProfissional(${id})">💾 Salvar Alterações</button>
+  `,'Editar Profissional');
+}
+async function updateProfissional(id){
+  const nome=titleCase(document.getElementById('prof-edit-nome').value.trim());
+  if(!nome){toast('Nome obrigatório','error');return;}
+  const{error}=await sb.from('planos_profissionais').update({
+    nome,
+    telefone:document.getElementById('prof-edit-tel').value.trim()||null,
+    registro:document.getElementById('prof-edit-reg').value.trim()||null
+  }).eq('id',id);
+  if(error){toast('Erro: '+error.message,'error');return;}
+  closeModal('modal-generic');
+  toast('Profissional atualizado!','success');
   renderConfig();
 }
 async function deleteProfissional(id){
