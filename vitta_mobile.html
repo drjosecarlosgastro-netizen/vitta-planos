@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#1D2846"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Vitta | Dr. José Carlos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --navy:#1D2846;--navy-light:#2d3d6b;
+  --bg:#F0F2F5;--white:#fff;--text:#1a1a2e;--text-muted:#6b7280;
+  --border:#e5e7eb;--accent:#4A90D9;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;--purple:#8b5cf6;
+  --font:'DM Sans',sans-serif;--radius:14px;--radius-sm:10px;
+  --shadow:0 2px 12px rgba(29,40,70,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--text);font-size:15px}
+/* TOPBAR */
+.topbar{background:var(--navy);padding:16px 18px 12px;position:sticky;top:0;z-index:100;
+  padding-top:calc(16px + env(safe-area-inset-top))}
+.topbar-title{color:#fff;font-size:17px;font-weight:700}
+.topbar-sub{color:rgba(255,255,255,.55);font-size:12px;margin-top:2px}
+.topbar-time{color:rgba(255,255,255,.7);font-size:12px;text-align:right}
+/* TABS */
+.tabs{display:flex;overflow-x:auto;background:var(--navy);padding:0 18px 0;scrollbar-width:none;border-top:1px solid rgba(255,255,255,.1)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 14px;border:none;background:transparent;font-family:var(--font);font-size:13px;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
+.tab.active{color:#fff;border-bottom-color:var(--accent)}
+/* CONTENT */
+.content{padding:16px;padding-bottom:32px;min-height:100vh}
+/* CARDS */
+.card{background:var(--white);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+.card-title{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+/* METRIC GRID */
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.metric-card{background:var(--white);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);text-align:center}
+.metric-num{font-size:28px;font-weight:700;color:var(--navy);line-height:1.1}
+.metric-label{font-size:11px;color:var(--text-muted);margin-top:3px;font-weight:500}
+.metric-sub{font-size:10px;color:var(--text-muted);margin-top:2px}
+/* PATIENT ROW */
+.pat-row{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--border)}
+.pat-row:last-child{border-bottom:none}
+.avatar{width:38px;height:38px;border-radius:10px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0}
+.pat-info{flex:1;min-width:0}
+.pat-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pat-meta{font-size:11px;color:var(--text-muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+/* BADGES */
+.phase-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
+.phase-1{background:#dbeafe;color:#1d4ed8}
+.phase-2{background:#dcfce7;color:#166534}
+.phase-3{background:#fef9c3;color:#854d0e}
+.pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600}
+.pill-blue{background:#dbeafe;color:#1e40af}
+.pill-purple{background:#ede9fe;color:#5b21b6}
+.etiqueta{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;color:#fff}
+/* AGENDA */
+.appt-item{padding:11px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
+.appt-item:last-child{border-bottom:none}
+.appt-time{font-weight:700;font-size:13px;color:var(--navy);min-width:44px;flex-shrink:0}
+.appt-info{flex:1}
+.appt-name{font-weight:600;font-size:14px}
+.appt-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.appt-status{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
+.status-agendado{background:#dbeafe;color:#1e40af}
+.status-compareceu{background:#dcfce7;color:#166534}
+.status-faltou{background:#fee2e2;color:#991b1b}
+.status-cancelou{background:#fef3c7;color:#92400e}
+.overdue{background:#fff5f5;border-radius:10px;padding:8px 10px;margin-bottom:6px;border-left:3px solid var(--danger)}
+/* ALERT */
+.alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--radius-sm);margin-bottom:8px;font-size:13px}
+.alert-danger{background:#fff5f5;border:1px solid #fca5a5;color:#991b1b}
+.alert-warning{background:#fffbeb;border:1px solid #fcd34d;color:#92400e}
+/* FIN ROW */
+.fin-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.fin-row:last-child{border-bottom:none}
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--text-muted)}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:30px;color:var(--text-muted);font-size:13px}
+/* SECTION DIVIDER */
+.section-label{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+/* REFRESH */
+.refresh-btn{position:fixed;bottom:24px;right:18px;width:48px;height:48px;border-radius:50%;background:var(--navy);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(29,40,70,.3);display:flex;align-items:center;justify-content:center;z-index:50;transition:transform .2s}
+.refresh-btn:active{transform:scale(.92)}
+/* SUMMARY BAR */
+.summary-bar{background:var(--navy);padding:10px 18px;display:flex;gap:16px;overflow-x:auto;scrollbar-width:none}
+.summary-bar::-webkit-scrollbar{display:none}
+.summary-item{text-align:center;flex-shrink:0}
+.summary-num{font-size:20px;font-weight:700;color:#fff;line-height:1}
+.summary-label{font-size:10px;color:rgba(255,255,255,.55);margin-top:2px}
+/* LAST UPDATE */
+.last-update{text-align:center;font-size:11px;color:var(--text-muted);padding:8px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div class="topbar-title">🏥 Clínica Vitta</div>
+      <div class="topbar-sub">Dr. José Carlos · Visão Geral</div>
+    </div>
+    <div class="topbar-time" id="clock"></div>
+  </div>
+</div>
+
+<div class="summary-bar" id="summary-bar">
+  <div class="summary-item"><div class="summary-num">—</div><div class="summary-label">Ativos</div></div>
+  <div class="summary-item"><div class="summary-num">—</div><div class="summary-label">Hoje</div></div>
+  <div class="summary-item"><div class="summary-num">—</div><div class="summary-label">Alertas</div></div>
+  <div class="summary-item"><div class="summary-num">—</div><div class="summary-label">Sessões/mês</div></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('inicio')">Início</button>
+  <button class="tab" onclick="showTab('agenda')">Agenda</button>
+  <button class="tab" onclick="showTab('pacientes')">Pacientes</button>
+  <button class="tab" onclick="showTab('alertas')">Alertas</button>
+  <button class="tab" onclick="showTab('financeiro')">Financeiro</button>
+</div>
+
+<div class="content" id="main-content">
+  <div class="loading"><div class="spinner"></div>Carregando...</div>
+</div>
+
+<button class="refresh-btn" onclick="loadAll()" title="Atualizar">↻</button>
+
+<script>
+const SUPABASE_URL = 'https://tzsamyaobtzswpklxpzx.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6c2FteWFvYnR6c3dwa2x4cHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkxNjEsImV4cCI6MjA5NDg1NTE2MX0.okDoh3yP2HHPQKIUFf64X0UzBp0aWK_5WirprPsL8vM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let allData = {};
+let currentTab = 'inicio';
+
+// ── UTILS ──────────────────────────────────────────────────────
+const fmtDate = d => {if(!d)return'';if(d.includes('/'))return d;const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d;};
+const isoToDisplay = iso => {if(!iso)return'';const p=iso.split('T')[0].split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:iso;};
+const parseDateInt = d => {if(!d)return 0;const p=d.split('/');if(p.length!==3)return 0;return parseInt(p[2]+p[1]+p[0]);};
+const todayStr = () => {const n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+String(n.getMonth()+1).padStart(2,'0')+'/'+n.getFullYear();};
+const monthsSince = dateStr => {if(!dateStr)return 0;const p=(dateStr.includes('/')?dateStr:isoToDisplay(dateStr)).split('/');if(p.length!==3)return 0;const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));const n=new Date();return Math.max(0,(n.getFullYear()-d.getFullYear())*12+(n.getMonth()-d.getMonth()));};
+const calcPhase = (inicio, dur) => {const m=monthsSince(inicio);const t=Math.ceil(dur/3);if(m<t)return 1;if(m<t*2)return 2;return 3;};
+const addMonths = (dateStr, months) => {if(!dateStr)return'';const p=(dateStr.includes('/')?dateStr:isoToDisplay(dateStr)).split('/');if(p.length!==3)return'';const d=new Date(parseInt(p[2]),parseInt(p[1])-1+months,parseInt(p[0]));return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();};
+const daysAgo = dateStr => {if(!dateStr)return null;const p=dateStr.split('/');if(p.length!==3)return null;const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));const now=new Date();now.setHours(0,0,0,0);d.setHours(0,0,0,0);return Math.round((now-d)/86400000);};
+const currMonthStart = () => {const n=new Date();return new Date(n.getFullYear(),n.getMonth(),1);};
+const currMonthEnd = () => {const n=new Date();return new Date(n.getFullYear(),n.getMonth()+1,0);};
+const dateInCurrMonth = s => {if(!s)return false;const p=s.split('/');if(p.length!==3)return false;const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));return d>=currMonthStart()&&d<=currMonthEnd();};
+
+// ── CLOCK ──────────────────────────────────────────────────────
+function updateClock(){
+  const n=new Date();
+  const h=String(n.getHours()).padStart(2,'0');
+  const m=String(n.getMinutes()).padStart(2,'0');
+  const days=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  document.getElementById('clock').innerHTML=`${days[n.getDay()]}, ${h}:${m}`;
+}
+setInterval(updateClock,1000);updateClock();
+
+// ── LOAD ALL DATA ──────────────────────────────────────────────
+async function loadAll(){
+  document.getElementById('main-content').innerHTML='<div class="loading"><div class="spinner"></div>Atualizando...</div>';
+  const[{data:patients},{data:appts},{data:sessoes},{data:envios},{data:fin},{data:impl}]=await Promise.all([
+    sb.from('planos_patients').select('*').order('name'),
+    sb.from('planos_appointments').select('*').order('created_at'),
+    sb.from('planos_soro_sessoes').select('*').order('created_at'),
+    sb.from('planos_soro_envios').select('*').order('created_at'),
+    sb.from('planos_financeiro').select('*').order('created_at'),
+    sb.from('planos_implantes').select('*').order('created_at')
+  ]);
+  allData = {
+    patients: patients||[], appts: appts||[], sessoes: sessoes||[],
+    envios: envios||[], fin: fin||[], impl: impl||[]
+  };
+  updateSummaryBar();
+  showTab(currentTab);
+}
+
+// ── SUMMARY BAR ───────────────────────────────────────────────
+function updateSummaryBar(){
+  const {patients,appts,sessoes,envios} = allData;
+  const active = patients.filter(p=>p.active).length;
+  const todayAppts = appts.filter(a=>a.date_str===todayStr()).length;
+  // alerts: envios with <=2 sessions remaining
+  let alerts = 0;
+  patients.filter(p=>p.active&&p.modality==='Online').forEach(p=>{
+    const lastEnvio = envios.filter(e=>e.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_envio)-parseDateInt(a.data_envio))[0];
+    if(lastEnvio){
+      const total=(lastEnvio.sessoes_ev||0)+(lastEnvio.sessoes_im||0);
+      const feitas=sessoes.filter(s=>s.patient_id===p.id&&s.envio_id===lastEnvio.id).length;
+      if(total-feitas<=2) alerts++;
+    }
+  });
+  const sessoesMes = sessoes.filter(s=>dateInCurrMonth(s.data_sessao)).length;
+  document.getElementById('summary-bar').innerHTML=`
+    <div class="summary-item"><div class="summary-num">${active}</div><div class="summary-label">Ativos</div></div>
+    <div class="summary-item"><div class="summary-num">${todayAppts}</div><div class="summary-label">Hoje</div></div>
+    <div class="summary-item"><div class="summary-num" style="color:${alerts>0?'#f87171':'#fff'}">${alerts}</div><div class="summary-label">Alertas</div></div>
+    <div class="summary-item"><div class="summary-num">${sessoesMes}</div><div class="summary-label">Sessões/mês</div></div>`;
+}
+
+// ── TAB SWITCH ─────────────────────────────────────────────────
+function showTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const tabs=['inicio','agenda','pacientes','alertas','financeiro'];
+    t.classList.toggle('active',tabs[i]===tab);
+  });
+  if(tab==='inicio') renderInicio();
+  else if(tab==='agenda') renderAgenda();
+  else if(tab==='pacientes') renderPacientes();
+  else if(tab==='alertas') renderAlertas();
+  else if(tab==='financeiro') renderFinanceiro();
+}
+
+// ── INÍCIO ────────────────────────────────────────────────────
+function renderInicio(){
+  const {patients,appts,sessoes,envios,fin,impl} = allData;
+  const active = patients.filter(p=>p.active);
+  const today = todayStr();
+  const todayInt = parseDateInt(today);
+
+  // Today's appointments
+  const todayAppts = appts.filter(a=>a.date_str===today).sort((a,b)=>(a.time_str||'').localeCompare(b.time_str||''));
+  const patMap = {};patients.forEach(p=>patMap[p.id]=p.name);
+
+  // Financial this month
+  const finMes = fin.filter(f=>dateInCurrMonth(f.data_pagamento));
+  const totalMes = finMes.reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+
+  // Overdue appts (past, no status)
+  const overdue = appts.filter(a=>parseDateInt(a.date_str)<todayInt&&(!a.status||a.status==='Agendado')).length;
+
+  // Alerts
+  let alertItems = [];
+  active.filter(p=>p.modality==='Online').forEach(p=>{
+    const lastEnvio=envios.filter(e=>e.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_envio)-parseDateInt(a.data_envio))[0];
+    if(lastEnvio){
+      const total=(lastEnvio.sessoes_ev||0)+(lastEnvio.sessoes_im||0);
+      const feitas=sessoes.filter(s=>s.patient_id===p.id&&s.envio_id===lastEnvio.id).length;
+      const rest=total-feitas;
+      if(rest<=1) alertItems.push({name:p.name,msg:'🚩 Enviar protocolo agora!',type:'danger'});
+      else if(rest<=2) alertItems.push({name:p.name,msg:'⚠️ Preparar próximo envio',type:'warning'});
+    }
+  });
+
+  // Phase 3 patients (ending soon)
+  const ending = active.filter(p=>{
+    if(!p.inicio_programa) return false;
+    return calcPhase(fmtDate(p.inicio_programa), p.duracao_programa||3)===3;
+  });
+
+  const c = document.getElementById('main-content');
+  c.innerHTML=`
+  <!-- METRICS -->
+  <div class="metric-grid">
+    <div class="metric-card">
+      <div class="metric-num">${active.length}</div>
+      <div class="metric-label">Pacientes Ativos</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--success)">R$${(totalMes/1000).toFixed(1)}k</div>
+      <div class="metric-label">Faturamento Mês</div>
+      <div class="metric-sub">${finMes.length} pagamento(s)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">${sessoes.filter(s=>dateInCurrMonth(s.data_sessao)).length}</div>
+      <div class="metric-label">Sessões no Mês</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:${overdue>0?'var(--danger)':'var(--text)'}">${overdue}</div>
+      <div class="metric-label">Consultas Pendentes</div>
+      <div class="metric-sub">sem status</div>
+    </div>
+  </div>
+
+  <!-- ALERTS -->
+  ${alertItems.length?`
+  <div class="section-label">🔔 Alertas</div>
+  ${alertItems.map(a=>`
+  <div class="alert alert-${a.type}">
+    <div><strong>${a.name}</strong><br/>${a.msg}</div>
+  </div>`).join('')}`:''}
+
+  <!-- TODAY'S AGENDA -->
+  <div class="section-label">📅 Agenda de Hoje — ${today}</div>
+  ${todayAppts.length?`<div class="card">${todayAppts.map(a=>`
+  <div class="appt-item">
+    <div class="appt-time">${a.time_str||'--:--'}</div>
+    <div class="appt-info">
+      <div class="appt-name">${patMap[a.patient_id]||'—'}</div>
+      <div class="appt-sub">${a.procedimento||''} · ${a.tipo||''}</div>
+    </div>
+    <span class="appt-status status-${(a.status||'agendado').toLowerCase().replace(' ','-')}">${a.status||'Agendado'}</span>
+  </div>`).join('')}</div>`:'<div class="empty">Sem consultas hoje</div>'}
+
+  <!-- ENDING SOON -->
+  ${ending.length?`
+  <div class="section-label">⏳ Encerrando em Breve (Fase 3)</div>
+  <div class="card">${ending.map(p=>`
+  <div class="pat-row">
+    <div class="avatar">${p.name.charAt(0)}</div>
+    <div class="pat-info">
+      <div class="pat-name">${p.name}</div>
+      <div class="pat-meta">
+        <span class="phase-badge phase-3">Fase 3</span>
+        <span style="font-size:10px">Fim: ${addMonths(fmtDate(p.inicio_programa||''),p.duracao_programa||3)}</span>
+      </div>
+    </div>
+  </div>`).join('')}</div>`:''}
+
+  <div class="last-update">Atualizado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>`;
+}
+
+// ── AGENDA ────────────────────────────────────────────────────
+function renderAgenda(){
+  const {appts,patients} = allData;
+  const patMap={};patients.forEach(p=>patMap[p.id]=p.name);
+  const todayInt=parseDateInt(todayStr());
+
+  // Group: today + future + overdue
+  const upcoming = appts.filter(a=>parseDateInt(a.date_str)>=todayInt).sort((a,b)=>{
+    const di=parseDateInt(a.date_str)-parseDateInt(b.date_str);
+    if(di!==0)return di;
+    return(a.time_str||'').localeCompare(b.time_str||'');
+  });
+  const overdue = appts.filter(a=>parseDateInt(a.date_str)<todayInt&&(!a.status||a.status==='Agendado'))
+    .sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+
+  // Group by date
+  const byDate={};
+  upcoming.forEach(a=>{if(!byDate[a.date_str])byDate[a.date_str]=[];byDate[a.date_str].push(a);});
+
+  const c=document.getElementById('main-content');
+  c.innerHTML=`
+  ${overdue.length?`
+  <div class="section-label" style="color:var(--danger)">⚠️ Consultas sem Status (${overdue.length})</div>
+  ${overdue.map(a=>`
+  <div class="overdue">
+    <div style="font-weight:700;font-size:13px">${patMap[a.patient_id]||'—'}</div>
+    <div style="font-size:12px;color:var(--text-muted)">${fmtDate(a.date_str)} · ${a.procedimento||''} · <strong style="color:var(--danger)">${daysAgo(a.date_str)}d atrás</strong></div>
+  </div>`).join('')}`:''}
+  ${Object.keys(byDate).map(date=>`
+  <div class="section-label">${fmtDate(date)}${date===todayStr()?' — Hoje':''}</div>
+  <div class="card">
+    ${byDate[date].map(a=>`
+    <div class="appt-item">
+      <div class="appt-time">${a.time_str||'--'}</div>
+      <div class="appt-info">
+        <div class="appt-name">${patMap[a.patient_id]||'—'}</div>
+        <div class="appt-sub">${a.procedimento||''} · ${a.tipo||''}${a.observacao?' · '+a.observacao:''}</div>
+      </div>
+      <span class="appt-status status-${(a.status||'agendado').toLowerCase().replace(/\s/,'-')}">${a.status||'Agendado'}</span>
+    </div>`).join('')}
+  </div>`).join('')}
+  ${!overdue.length&&!upcoming.length?'<div class="empty">Agenda vazia</div>':''}`;
+}
+
+// ── PACIENTES ─────────────────────────────────────────────────
+function renderPacientes(){
+  const {patients,appts,sessoes,impl} = allData;
+  const active = patients.filter(p=>p.active).sort((a,b)=>a.name.localeCompare(b.name));
+  const phaseColors=['','phase-1','phase-2','phase-3'];
+
+  const c=document.getElementById('main-content');
+  c.innerHTML=`
+  <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">${active.length} pacientes ativos</div>
+  ${active.map(p=>{
+    const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
+    const months=p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0;
+    const endDate=p.inicio_programa?addMonths(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
+    const tags=(p.etiquetas||[]);
+    // last consult
+    const patAppts=appts.filter(a=>a.patient_id===p.id&&a.status==='Compareceu').sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+    const lastConsult=patAppts[0];
+    // last soro
+    const patSoro=sessoes.filter(s=>s.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_sessao)-parseDateInt(a.data_sessao));
+    const lastSoro=patSoro[0];
+    // last implant
+    const patImpl=impl.filter(i=>i.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_implante)-parseDateInt(a.data_implante));
+    const lastImpl=patImpl[0];
+    return`<div class="card" style="margin-bottom:10px">
+      <div class="pat-row" style="padding-bottom:10px">
+        <div class="avatar">${p.name.charAt(0)}</div>
+        <div class="pat-info">
+          <div class="pat-name">${p.name}</div>
+          <div class="pat-meta">
+            <span class="phase-badge ${phaseColors[phase]}">Fase ${phase}</span>
+            <span class="pill pill-${p.modality==='Presencial'?'blue':'purple'}">${p.modality||'—'}</span>
+            <span style="font-size:10px;color:var(--text-muted)">${p.plan_type||''} · Mês ${months+1}</span>
+          </div>
+          <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">
+            ${tags.map(t=>`<span class="etiqueta" style="background:${t.color||'#6b7280'}">${t.name}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">Fim Estimado</div>
+          <div style="font-size:11px;font-weight:600">${endDate}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">Última Consulta</div>
+          <div style="font-size:11px;font-weight:600">${lastConsult?fmtDate(lastConsult.date_str):'—'}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">Último Soro</div>
+          <div style="font-size:11px;font-weight:600">${lastSoro?fmtDate(lastSoro.data_sessao):'—'}</div>
+        </div>
+      </div>
+      ${lastImpl?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted)">🔬 Último implante: <strong>${fmtDate(lastImpl.data_implante)}</strong></div>`:''}
+    </div>`;
+  }).join('')}
+  ${!active.length?'<div class="empty">Nenhum paciente ativo</div>':''}`;
+}
+
+// ── ALERTAS ───────────────────────────────────────────────────
+function renderAlertas(){
+  const {patients,appts,sessoes,envios} = allData;
+  const active=patients.filter(p=>p.active);
+  const todayInt=parseDateInt(todayStr());
+  const c=document.getElementById('main-content');
+  let html='';
+
+  // Envio alerts
+  let envioAlerts=[];
+  active.filter(p=>p.modality==='Online').forEach(p=>{
+    const lastEnvio=envios.filter(e=>e.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_envio)-parseDateInt(a.data_envio))[0];
+    if(lastEnvio){
+      const total=(lastEnvio.sessoes_ev||0)+(lastEnvio.sessoes_im||0);
+      const feitas=sessoes.filter(s=>s.patient_id===p.id&&s.envio_id===lastEnvio.id).length;
+      const rest=total-feitas;
+      if(rest<=2) envioAlerts.push({p,rest,lastEnvio});
+    }
+  });
+  envioAlerts.sort((a,b)=>a.rest-b.rest);
+
+  if(envioAlerts.length){
+    html+=`<div class="section-label">📦 Alertas de Envio (${envioAlerts.length})</div>`;
+    envioAlerts.forEach(({p,rest,lastEnvio})=>{
+      html+=`<div class="alert alert-${rest<=1?'danger':'warning'}">
+        <div style="flex:1">
+          <strong>${p.name}</strong>
+          <div style="font-size:12px;margin-top:3px">${rest<=1?'🚩 Enviar protocolo AGORA!':'⚠️ Preparar próximo envio'}</div>
+          <div style="font-size:11px;margin-top:3px;opacity:.8">
+            Último envio: ${fmtDate(lastEnvio.data_envio)} · 
+            ${rest} sessão(ões) restante(s)
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+
+  // Overdue appts
+  const overdue=appts.filter(a=>parseDateInt(a.date_str)<todayInt&&(!a.status||a.status==='Agendado'));
+  const patMap={};patients.forEach(p=>patMap[p.id]=p.name);
+  if(overdue.length){
+    html+=`<div class="section-label">📅 Consultas sem Status (${overdue.length})</div>`;
+    overdue.sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str)).forEach(a=>{
+      html+=`<div class="alert alert-warning">
+        <div>
+          <strong>${patMap[a.patient_id]||'—'}</strong>
+          <div style="font-size:12px;margin-top:2px">${fmtDate(a.date_str)} · ${a.procedimento||''} · <strong>${daysAgo(a.date_str)}d atrás</strong></div>
+        </div>
+      </div>`;
+    });
+  }
+
+  // Phase 3 (ending soon)
+  const ending=active.filter(p=>p.inicio_programa&&calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3)===3);
+  if(ending.length){
+    html+=`<div class="section-label">⏳ Encerrando em Breve — Fase 3 (${ending.length})</div><div class="card">`;
+    ending.forEach(p=>{
+      html+=`<div class="pat-row">
+        <div class="avatar">${p.name.charAt(0)}</div>
+        <div class="pat-info">
+          <div class="pat-name">${p.name}</div>
+          <div class="pat-meta">
+            <span class="phase-badge phase-3">Fase 3</span>
+            <span style="font-size:10px">Fim: ${addMonths(fmtDate(p.inicio_programa||''),p.duracao_programa||3)}</span>
+          </div>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+
+  // Etiqueta "Renovação Próxima"
+  const renovacao=active.filter(p=>(p.etiquetas||[]).some(t=>t.name==='Renovação Próxima'));
+  if(renovacao.length){
+    html+=`<div class="section-label">🔄 Renovação Próxima (${renovacao.length})</div><div class="card">`;
+    renovacao.forEach(p=>{
+      html+=`<div class="pat-row">
+        <div class="avatar">${p.name.charAt(0)}</div>
+        <div class="pat-info">
+          <div class="pat-name">${p.name}</div>
+          <div class="pat-meta">${p.plan_type||''} · ${p.modality||''}</div>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+
+  if(!html) html='<div class="empty" style="padding:60px">✅ Nenhum alerta no momento</div>';
+  c.innerHTML=html;
+}
+
+// ── FINANCEIRO ────────────────────────────────────────────────
+function renderFinanceiro(){
+  const {fin,patients} = allData;
+  const patMap={};patients.forEach(p=>patMap[p.id]=p.name);
+
+  // This month
+  const mes=fin.filter(f=>dateInCurrMonth(f.data_pagamento));
+  const totalMes=mes.reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+  const pix=mes.filter(f=>f.forma==='PIX').reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+  const cartao=mes.filter(f=>f.forma==='Cartão').reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+  const misto=mes.filter(f=>f.forma==='Misto').reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+
+  // Last 5 payments
+  const recent=fin.slice().sort((a,b)=>parseDateInt(b.data_pagamento)-parseDateInt(a.data_pagamento)).slice(0,8);
+
+  // Per patient this month
+  const perPat={};
+  mes.forEach(f=>{perPat[f.patient_id]=(perPat[f.patient_id]||0)+(parseFloat(f.valor)||0);});
+  const avgPat=Object.keys(perPat).length?totalMes/Object.keys(perPat).length:0;
+
+  const c=document.getElementById('main-content');
+  c.innerHTML=`
+  <div class="metric-grid">
+    <div class="metric-card" style="grid-column:1/-1">
+      <div class="metric-num" style="font-size:32px;color:var(--success)">R$ ${totalMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      <div class="metric-label">Faturamento — Mês Atual</div>
+      <div class="metric-sub">${mes.length} pagamento(s) · Média R$ ${avgPat.toLocaleString('pt-BR',{minimumFractionDigits:2})}/paciente</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="font-size:20px">R$ ${pix.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      <div class="metric-label">PIX</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="font-size:20px">R$ ${(cartao+misto).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+      <div class="metric-label">Cartão / Misto</div>
+    </div>
+  </div>
+  <div class="section-label">Últimos Pagamentos</div>
+  <div class="card">
+    ${recent.map(f=>`
+    <div class="fin-row">
+      <div>
+        <div style="font-weight:600;font-size:13px">${patMap[f.patient_id]||'—'}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${f.data_pagamento||''} · ${f.forma||''}${f.parcelas?' ('+f.parcelas+')':''}</div>
+        ${f.observacao?`<div style="font-size:11px;color:var(--text-muted)">${f.observacao}</div>`:''}
+      </div>
+      <div style="font-weight:700;font-size:15px;color:var(--success)">R$ ${parseFloat(f.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    </div>`).join('')}
+    ${!recent.length?'<div class="empty">Sem pagamentos</div>':''}
+  </div>`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+loadAll();
+// Auto-refresh every 5 minutes
+setInterval(loadAll, 300000);
+</script>
+</body>
+</html>
