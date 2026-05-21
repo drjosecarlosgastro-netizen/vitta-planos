@@ -974,7 +974,7 @@ function showAddSessao(){
 async function saveSessao(){
   let receita_path=null;
   const file=document.getElementById('ss-file')?.files[0];
-  if(file){const path=`${currentPatientId}/soro_${Date.now()}_${file.name}`;const{error}=await sb.storage.from('documentos').upload(path,file);if(!error)receita_path=path;}
+  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/soro_${Date.now()}_${safeName}`;const{error}=await sb.storage.from('documentos').upload(path,file,{contentType:file.type||'application/octet-stream'});if(!error)receita_path=path;}
   await sb.from('planos_soro_sessoes').insert({patient_id:currentPatientId,data_sessao:document.getElementById('ss-data').value,substancias:document.getElementById('ss-subs').value.trim(),observacao:document.getElementById('ss-obs').value.trim(),receita_path,registrado_por:currentUser.name});
   closeModal('modal-generic');toast('Sessão registrada','success');patTab('soroterapia');
 }
@@ -998,7 +998,7 @@ async function saveSessaoEdit(id, oldReceita){
   let receita_path=oldReceita||null;
   const file=document.getElementById(`ss-edit-file-${id}`)?.files[0];
   if(file){
-    const path=`${currentPatientId}/soro_${Date.now()}_${file.name}`;
+    const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/soro_${Date.now()}_${safeName}`;
     const{error}=await sb.storage.from('documentos').upload(path,file);
     if(!error)receita_path=path;
   }
@@ -1043,7 +1043,7 @@ function showAddEnvio(){
 async function saveEnvio(){
   let receita_path=null;
   const file=document.getElementById('env-file')?.files[0];
-  if(file){const path=`${currentPatientId}/envio_${Date.now()}_${file.name}`;const{error}=await sb.storage.from('documentos').upload(path,file);if(!error)receita_path=path;}
+  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/envio_${Date.now()}_${safeName}`;const{error}=await sb.storage.from('documentos').upload(path,file,{contentType:file.type||'application/octet-stream'});if(!error)receita_path=path;}
   const sessTotal=parseInt(document.getElementById('env-total')?.value)||0;
   const sessEV=parseInt(document.getElementById('env-ev').value)||0;
   const sessIM=parseInt(document.getElementById('env-im').value)||0;
@@ -1068,7 +1068,7 @@ async function saveEnvioEdit(id, oldReceita){
   let receita_path=oldReceita||null;
   const file=document.getElementById(`env-edit-file-${id}`)?.files[0];
   if(file){
-    const path=`${currentPatientId}/envio_${Date.now()}_${file.name}`;
+    const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/envio_${Date.now()}_${safeName}`;
     const{error}=await sb.storage.from('documentos').upload(path,file);
     if(!error)receita_path=path;
   }
@@ -1120,7 +1120,7 @@ function showAddImplante(){
 async function saveImplante(){
   let receita_path=null;
   const file=document.getElementById('imp-file')?.files[0];
-  if(file){const path=`${currentPatientId}/implante_${Date.now()}_${file.name}`;const{error}=await sb.storage.from('documentos').upload(path,file);if(!error)receita_path=path;}
+  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/implante_${Date.now()}_${safeName}`;const{error}=await sb.storage.from('documentos').upload(path,file,{contentType:file.type||'application/octet-stream'});if(!error)receita_path=path;}
   await sb.from('planos_implantes').insert({patient_id:currentPatientId,data_implante:document.getElementById('imp-data').value,observacao:document.getElementById('imp-obs').value.trim(),receita_path,registrado_por:currentUser.name});
   closeModal('modal-generic');toast('Implante registrado','success');patTab('implante');
 }
@@ -1224,11 +1224,17 @@ function showUploadContrato(){
 async function saveContrato(){
   const file=document.getElementById('cont-file')?.files[0];
   if(!file){toast('Selecione um arquivo','error');return;}
-  const path=`${currentPatientId}/contrato_${Date.now()}_${file.name}`;
-  const{error}=await sb.storage.from('contratos').upload(path,file);
-  if(error){toast('Erro no upload','error');return;}
+  // Sanitize filename: remove special chars and spaces
+  const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path=`${currentPatientId}/contrato_${Date.now()}_${safeName}`;
+  const{error,data}=await sb.storage.from('contratos').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});
+  if(error){
+    console.error('Upload error:',error);
+    toast('Erro: '+error.message,'error');
+    return;
+  }
   await sb.from('planos_contratos').insert({patient_id:currentPatientId,file_path:path,label:document.getElementById('cont-label').value.trim(),data_upload:todayStr(),registrado_por:currentUser.name});
-  closeModal('modal-generic');toast('Contrato salvo','success');patTab('contrato');
+  closeModal('modal-generic');toast('Contrato salvo!','success');patTab('contrato');
 }
 async function deleteContrato(id){await sb.from('planos_contratos').delete().eq('id',id);patTab('contrato');}
 
