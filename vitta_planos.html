@@ -40,7 +40,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .18s;white-space:nowrap}
 .btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:var(--navy-light)}
 .btn-accent{background:var(--accent);color:#fff}
-.btn-success{background:var(--success);color:#fff}
 .btn-ghost{background:transparent;color:var(--navy);border:1.5px solid var(--border)}.btn-ghost:hover{border-color:var(--navy)}
 .btn-sm{padding:6px 13px;font-size:12px;border-radius:6px}
 .btn-full{width:100%;justify-content:center;padding:13px}
@@ -144,62 +143,55 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .edit-inline.open{display:block}
 .edit-inline .field{margin-bottom:10px}
 .edit-inline .field input,.edit-inline .field select,.edit-inline .field textarea{font-size:13px;padding:8px 10px}
-/* Agenda link badge */
 .agenda-link-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;background:#dcfce7;color:#166534;cursor:pointer}
 .agenda-link-badge.pending{background:#fef3c7;color:#92400e}
-/* Historico boxes */
 .hist-box{border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
 .hist-box-soro{background:#f0f9ff;border:1.5px solid #bae6fd}
 .hist-box-impl{background:#fdf4ff;border:1.5px solid #e9d5ff}
 .hist-box-consult{background:#f0fdf4;border:1.5px solid #bbf7d0}
-.hist-box-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
-.hist-item{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:13px;display:flex;align-items:flex-start;gap:10px}
-.hist-item:last-child{border-bottom:none}
 </style>
 </head>
 <body>
 <div id="toast"></div>
-<!-- LOGIN -->
+
 <div id="screen-login" class="screen active">
   <div class="login-card">
-    <div class="login-logo">🏥</div>
-    <div class="login-title">Clínica Vitta | Alphaville</div>
+    <div class="login-logo">&#127973;</div>
+    <div class="login-title">Cl&#237;nica Vitta | Alphaville</div>
     <div class="login-sub">Controle de Planos de Cuidado</div>
     <div class="login-type">
-      <button id="btn-type-doc" class="active" onclick="setLoginType('doctor')">Dr. José Carlos</button>
-      <button id="btn-type-sec" onclick="setLoginType('secretary')">Secretária</button>
+      <button id="btn-type-doc" class="active" onclick="setLoginType('doctor')">Dr. Jos&#233; Carlos</button>
+      <button id="btn-type-sec" onclick="setLoginType('secretary')">Secret&#225;ria</button>
     </div>
     <div class="input-group"><label>Senha</label>
-      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <input type="password" id="login-pass" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
     <button class="btn btn-accent btn-full" onclick="doLogin()">Entrar</button>
     <div id="login-error" style="color:#f87171;font-size:13px;margin-top:12px;display:none"></div>
   </div>
 </div>
 
-<!-- MAIN APP -->
 <div id="screen-app" class="screen" style="background:var(--bg)">
   <div class="topbar">
-    <span class="topbar-logo">🏥 Clínica Vitta</span>
+    <span class="topbar-logo">&#127973; Cl&#237;nica Vitta</span>
     <span class="topbar-user" id="topbar-user"></span>
     <div class="topbar-spacer"></div>
-    <button class="topbar-action" onclick="logout()">Sair →</button>
+    <button class="topbar-action" onclick="logout()">Sair &#8594;</button>
   </div>
   <div class="navtabs">
     <button class="ntab active" id="ntab-dashboard" onclick="mainNav('dashboard')">Dashboard</button>
     <button class="ntab" id="ntab-patients" onclick="mainNav('patients')">Pacientes</button>
     <button class="ntab" id="ntab-agenda" onclick="mainNav('agenda')">Agenda</button>
     <button class="ntab" id="ntab-programa" onclick="mainNav('programa')">Programa</button>
-    <button class="ntab" id="ntab-config" onclick="mainNav('config')">Configurações</button>
-    <button class="ntab" id="ntab-relatorios" onclick="mainNav('relatorios')">Relatórios</button>
+    <button class="ntab" id="ntab-config" onclick="mainNav('config')">Configura&#231;&#245;es</button>
+    <button class="ntab" id="ntab-relatorios" onclick="mainNav('relatorios')">Relat&#243;rios</button>
   </div>
   <div id="main-content" class="content"></div>
 </div>
 
-<!-- PATIENT DETAIL -->
 <div id="screen-patient-detail" class="screen" style="background:var(--bg)">
   <div class="topbar">
-    <button class="topbar-back" onclick="backToMain()">‹</button>
+    <button class="topbar-back" onclick="backToMain()">&#8249;</button>
     <span class="topbar-logo" id="pd-name-header">Paciente</span>
     <div class="topbar-spacer"></div>
   </div>
@@ -210,12 +202,11 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="tab" onclick="patTab('implante')">Implante</button>
     <button class="tab" onclick="patTab('agenda')">Agenda</button>
     <button class="tab" onclick="patTab('contrato')">Contrato</button>
-    <button class="tab" onclick="patTab('historico')">Histórico</button>
+    <button class="tab" onclick="patTab('historico')">Hist&#243;rico</button>
   </div>
   <div id="patient-tab-content" class="content"></div>
 </div>
 
-<!-- MODALS -->
 <div class="modal-overlay" id="modal-new-patient">
   <div class="modal"><div class="modal-handle"></div><div class="modal-title">Novo Paciente</div><div id="new-patient-form"></div></div>
 </div>
@@ -225,16 +216,13 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 <div class="modal-overlay" id="modal-patient-list">
   <div class="modal"><div class="modal-handle"></div><div id="modal-patient-list-content"></div></div>
 </div>
-
 <script>
 const SUPABASE_URL='https://tzsamyaobtzswpklxpzx.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6c2FteWFvYnR6c3dwa2x4cHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkxNjEsImV4cCI6MjA5NDg1NTE2MX0.okDoh3yP2HHPQKIUFf64X0UzBp0aWK_5WirprPsL8vM';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let currentUser=null,currentSection='dashboard',currentPatientId=null,currentPatientData=null,allPatients=[];
-
-const TIPOS_SESSAO=['Soroterapia EV','Soroterapia IM','Soroterapia EV + IM','Vitamina C High Dose','Glutationa','Myers Cocktail','Chelation','Ozônio','Outra'];
-
-const titleCase=s=>s?s.toLowerCase().replace(/(?:^|\s|'|-)[a-záàãâéêíóôõúç]/g,c=>c.toUpperCase()):'';
+const TIPOS_SESSAO=['Soroterapia EV','Soroterapia IM','Soroterapia EV + IM','Vitamina C High Dose','Glutationa','Myers Cocktail','Chelation','Oz\u00f4nio','Outra'];
+const titleCase=s=>s?s.toLowerCase().replace(/(?:^|\s|'|-)[a-z\u00e1\u00e0\u00e3\u00e2\u00e9\u00ea\u00ed\u00f3\u00f4\u00f5\u00fa\u00e7]/g,c=>c.toUpperCase()):'';
 const normStr=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 function parseDateInt(d){if(!d)return 0;const p=d.split('/');if(p.length!==3)return 0;return parseInt(p[2]+p[1]+p[0]);}
 function fmtDate(d){if(!d)return'';if(d.includes('/'))return d;const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d;}
@@ -245,39 +233,24 @@ function isoToDisplay(iso){if(!iso)return'';const p=iso.split('T')[0].split('-')
 function daysAgo(dateStr){if(!dateStr)return null;const p=dateStr.split('/');if(p.length!==3)return null;const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));const now=new Date();now.setHours(0,0,0,0);d.setHours(0,0,0,0);return Math.round((now-d)/86400000);}
 function monthsSince(dateStr){if(!dateStr)return 0;const p=(dateStr.includes('/')?dateStr:isoToDisplay(dateStr)).split('/');if(p.length!==3)return 0;const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));const n=new Date();return Math.max(0,(n.getFullYear()-d.getFullYear())*12+(n.getMonth()-d.getMonth()));}
 function addMonthsToDisplay(dateStr,months){if(!dateStr)return'';const p=(dateStr.includes('/')?dateStr:isoToDisplay(dateStr)).split('/');if(p.length!==3)return'';const d=new Date(parseInt(p[2]),parseInt(p[1])-1+months,parseInt(p[0]));return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
-function addDaysToDisplay(dateStr,days){if(!dateStr)return'—';const p=(dateStr.includes('/')?dateStr:isoToDisplay(dateStr)).split('/');if(p.length!==3)return'—';const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));d.setDate(d.getDate()+days);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
+function addDaysToDisplay(dateStr,days){if(!dateStr)return'\u2014';const p=(dateStr.includes('/')?dateStr:isoToDisplay(dateStr)).split('/');if(p.length!==3)return'\u2014';const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));d.setDate(d.getDate()+days);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
 function calcPhase(inicioStr,duracao){const months=monthsSince(inicioStr);const third=Math.ceil(duracao/3);if(months<third)return 1;if(months<third*2)return 2;return 3;}
-function toast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='error'?'#dc2626':type==='success'?'#059669':'var(--navy)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='error'?'#dc2626':type==='success'?'#059669':'var(--navy)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');}
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-function showGenericModal(html,title){document.getElementById('modal-generic-content').innerHTML=`<div class="modal-title">${title}</div>${html}`;openModal('modal-generic');}
+function showGenericModal(html,title){document.getElementById('modal-generic-content').innerHTML='<div class="modal-title">'+title+'</div>'+html;openModal('modal-generic');}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
-function toggleEdit(id){document.getElementById(id)?.classList.toggle('open');}
+function toggleEdit(id){document.getElementById(id)&&document.getElementById(id).classList.toggle('open');}
 
 async function logHistorico(tabela,registroId,acao,dadosAntes,dadosNovos){
   try{await sb.from('planos_historico_edicoes').insert({patient_id:currentPatientId,tabela,registro_id:registroId,acao,dados_anteriores:JSON.stringify(dadosAntes||{}),dados_novos:JSON.stringify(dadosNovos||{}),registrado_por:currentUser.name,created_at:new Date().toISOString()});}catch(e){console.warn('Log falhou',e);}
 }
-
-// AUTO-AGENDA: when registering soro/implante, create an appointment entry
-async function criarAgendaAutomatica(tipo, data, descricao, registroId, tabelaOrigem){
+async function criarAgendaAutomatica(tipo,data,descricao,registroId,tabelaOrigem){
   try{
-    const procedimento = tipo === 'implante' ? 'Implante Hormonal' : 'Soroterapia';
-    const apptData = {
-      patient_id: currentPatientId,
-      date_str: data, // DD/MM/YYYY
-      time_str: '00:00',
-      procedimento: procedimento,
-      tipo: tipo === 'implante' ? 'Injetável' : 'Injetável',
-      observacao: descricao ? descricao.slice(0,80) : '',
-      status: 'Compareceu',
-      registrado_por: currentUser.name,
-      // link back to source record
-      origem_tabela: tabelaOrigem,
-      origem_id: registroId
-    };
-    const {data:appt, error} = await sb.from('planos_appointments').insert(apptData).select().single();
-    if(!error && appt) return appt.id;
+    const proc=tipo==='implante'?'Implante Hormonal':'Soroterapia';
+    const {data:appt,error}=await sb.from('planos_appointments').insert({patient_id:currentPatientId,date_str:data,time_str:'09:00',procedimento:proc,tipo:'Injet\u00e1vel',observacao:descricao?(descricao+'').slice(0,80):'',status:'Compareceu',registrado_por:currentUser.name,origem_tabela:tabelaOrigem,origem_id:registroId}).select().single();
+    if(!error&&appt)return appt.id;
   }catch(e){console.warn('Auto-agenda falhou:',e);}
   return null;
 }
@@ -286,12 +259,14 @@ let loginType='doctor';
 function setLoginType(t){loginType=t;document.getElementById('btn-type-doc').classList.toggle('active',t==='doctor');document.getElementById('btn-type-sec').classList.toggle('active',t==='secretary');document.getElementById('login-error').style.display='none';}
 async function doLogin(){
   const pass=document.getElementById('login-pass').value.trim();
-  if(!pass){showLoginError('Informe a senha');return;}
+  if(!pass){document.getElementById('login-error').textContent='Informe a senha';document.getElementById('login-error').style.display='block';return;}
   const{data}=await sb.from('planos_config').select('value').eq('key',loginType==='doctor'?'doctor_password':'secretary_password').single();
-  if(data&&data.value===pass){currentUser={type:loginType,name:loginType==='doctor'?'Dr. José Carlos':'Secretária'};document.getElementById('topbar-user').textContent='· '+currentUser.name;showScreen('app');mainNav('dashboard');}
-  else{showLoginError('Senha incorreta');}
+  if(data&&data.value===pass){
+    currentUser={type:loginType,name:loginType==='doctor'?'Dr. Jos\u00e9 Carlos':'Secret\u00e1ria'};
+    document.getElementById('topbar-user').textContent='\u00b7 '+currentUser.name;
+    showScreen('app');mainNav('dashboard');
+  }else{document.getElementById('login-error').textContent='Senha incorreta';document.getElementById('login-error').style.display='block';}
 }
-function showLoginError(msg){const e=document.getElementById('login-error');e.textContent=msg;e.style.display='block';}
 function logout(){currentUser=null;showScreen('login');document.getElementById('login-pass').value='';}
 
 function mainNav(section){
@@ -311,64 +286,81 @@ function mainNav(section){
 async function renderDashboard(){
   const{data:patients}=await sb.from('planos_patients').select('*').order('name');
   allPatients=patients||[];
-  const{data:appts}=await sb.from('planos_appointments').select('*').order('date_str');
+  const{data:appts}=await sb.from('planos_appointments').select('*');
   const c=document.getElementById('main-content');
   const active=allPatients.filter(p=>p.active),finished=allPatients.filter(p=>!p.active);
-  function lastConsultDays(pid){const pa=(appts||[]).filter(a=>a.patient_id===pid&&a.status==='Compareceu');if(!pa.length)return null;return daysAgo(pa.sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str))[0].date_str);}
+  function lastConsultDays(pid){const pa=(appts||[]).filter(a=>a.patient_id===pid&&a.status==='Compareceu'&&!a.origem_tabela);if(!pa.length)return null;return daysAgo(pa.sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str))[0].date_str);}
   const p90=allPatients.filter(p=>{const d=lastConsultDays(p.id);return d!==null&&d<=90;});
   const p120=allPatients.filter(p=>{const d=lastConsultDays(p.id);return d!==null&&d<=120;});
   const p365=allPatients.filter(p=>{const d=lastConsultDays(p.id);return d!==null&&d<=365;});
-  c.innerHTML=`
-  <div class="section-header"><div class="section-title">Visão Geral</div><button class="btn btn-primary btn-sm" onclick="showNewPatientModal()">+ Novo Paciente</button></div>
-  <div class="dash-grid-2">
-    <div class="dash-card" onclick="showPatientListModal('Planos Ativos',${JSON.stringify(active.map(p=>p.id))})"><div class="dash-card-num">${active.length}</div><div class="dash-card-label">Planos Ativos</div></div>
-    <div class="dash-card" onclick="showPatientListModal('Planos Finalizados',${JSON.stringify(finished.map(p=>p.id))})"><div class="dash-card-num">${finished.length}</div><div class="dash-card-label">Planos Finalizados</div></div>
-  </div>
-  <div class="dash-grid">
-    <div class="dash-card" onclick="showPatientListModal('Últimos 90 dias',${JSON.stringify(p90.map(p=>p.id))})"><div class="dash-card-num">${p90.length}</div><div class="dash-card-label">Últimos 90 dias</div><div class="dash-card-sub">por última consulta</div></div>
-    <div class="dash-card" onclick="showPatientListModal('Últimos 120 dias',${JSON.stringify(p120.map(p=>p.id))})"><div class="dash-card-num">${p120.length}</div><div class="dash-card-label">Últimos 120 dias</div></div>
-    <div class="dash-card" onclick="showPatientListModal('Últimos 365 dias',${JSON.stringify(p365.map(p=>p.id))})"><div class="dash-card-num">${p365.length}</div><div class="dash-card-label">Últimos 365 dias</div></div>
-  </div>
-  <div class="dash-card" style="margin-bottom:16px" onclick="mainNav('patients')"><div class="dash-card-num">${allPatients.length}</div><div class="dash-card-label">Total de Pacientes</div></div>
-  <div class="section-header"><div class="section-title">Pacientes Ativos (${active.length})</div></div>
-  ${active.length?active.map(p=>patientRowHtml(p)).join(''):'<div class="empty"><div class="empty-icon">👤</div>Nenhum paciente ativo</div>'}`;
+  const activeIds=JSON.stringify(active.map(p=>p.id));
+  const finIds=JSON.stringify(finished.map(p=>p.id));
+  const p90ids=JSON.stringify(p90.map(p=>p.id));
+  const p120ids=JSON.stringify(p120.map(p=>p.id));
+  const p365ids=JSON.stringify(p365.map(p=>p.id));
+  c.innerHTML=
+    '<div class="section-header"><div class="section-title">Vis\u00e3o Geral</div><button class="btn btn-primary btn-sm" onclick="showNewPatientModal()">+ Novo Paciente</button></div>'+
+    '<div class="dash-grid-2">'+
+    '<div class="dash-card" onclick="showPatientListModal(\'Planos Ativos\','+activeIds+')"><div class="dash-card-num">'+active.length+'</div><div class="dash-card-label">Planos Ativos</div></div>'+
+    '<div class="dash-card" onclick="showPatientListModal(\'Planos Finalizados\','+finIds+')"><div class="dash-card-num">'+finished.length+'</div><div class="dash-card-label">Planos Finalizados</div></div>'+
+    '</div>'+
+    '<div class="dash-grid">'+
+    '<div class="dash-card" onclick="showPatientListModal(\'90 dias\','+p90ids+')"><div class="dash-card-num">'+p90.length+'</div><div class="dash-card-label">\u00daltimos 90 dias</div><div class="dash-card-sub">por \u00faltima consulta</div></div>'+
+    '<div class="dash-card" onclick="showPatientListModal(\'120 dias\','+p120ids+')"><div class="dash-card-num">'+p120.length+'</div><div class="dash-card-label">\u00daltimos 120 dias</div></div>'+
+    '<div class="dash-card" onclick="showPatientListModal(\'365 dias\','+p365ids+')"><div class="dash-card-num">'+p365.length+'</div><div class="dash-card-label">\u00daltimos 365 dias</div></div>'+
+    '</div>'+
+    '<div class="dash-card" style="margin-bottom:16px" onclick="mainNav(\'patients\')"><div class="dash-card-num">'+allPatients.length+'</div><div class="dash-card-label">Total de Pacientes</div></div>'+
+    '<div class="section-header"><div class="section-title">Pacientes Ativos ('+active.length+')</div></div>'+
+    (active.length?active.map(p=>patientRowHtml(p)).join(''):'<div class="empty"><div class="empty-icon">\ud83d\udc64</div>Nenhum paciente ativo</div>');
 }
-async function showPatientListModal(title,ids){
+function showPatientListModal(title,ids){
   const patients=allPatients.filter(p=>ids.includes(p.id));
-  document.getElementById('modal-patient-list-content').innerHTML=`<div class="modal-title">${title}</div>${patients.length?patients.map(p=>`<div class="patient-row" onclick="closeModal('modal-patient-list');openPatient(${p.id})" style="margin-bottom:8px"><div class="patient-avatar">${p.name.charAt(0)}</div><div class="patient-info"><div class="patient-name">${p.name}</div><div class="patient-meta">${p.plan_type||''} · ${p.modality||''}</div></div></div>`).join(''):'<div class="empty">Nenhum paciente</div>'}`;
+  let html='<div class="modal-title">'+title+'</div>';
+  if(patients.length){html+=patients.map(p=>'<div class="patient-row" onclick="closeModal(\'modal-patient-list\');openPatient('+p.id+')" style="margin-bottom:8px"><div class="patient-avatar">'+p.name.charAt(0)+'</div><div class="patient-info"><div class="patient-name">'+p.name+'</div><div class="patient-meta">'+(p.plan_type||'')+' \u00b7 '+(p.modality||'')+'</div></div></div>').join('');}
+  else{html+='<div class="empty">Nenhum paciente</div>';}
+  document.getElementById('modal-patient-list-content').innerHTML=html;
   openModal('modal-patient-list');
 }
 function patientRowHtml(p){
   const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
   const months=p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0;
+  const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'\u2014';
   const tags=(p.etiquetas||[]);
-  const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
-  const encHtml=p.motivo_encerramento?`<span style="font-weight:700;color:${p.motivo_encerramento==='fim'?'#3b82f6':'#f97316'}">Encerrado: ${isoToDisplay(p.data_encerramento||'')} — ${p.motivo_encerramento==='fim'?'Fim do Plano':'Desistência'}</span>`:'';
-  return`<div class="patient-row" onclick="openPatient(${p.id})">
-    <div class="patient-avatar">${p.name.charAt(0)}</div>
-    <div class="patient-info">
-      <div class="patient-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${p.name}${tags.map(tag=>`<span class="etiqueta" style="background:${tag.color||'#6b7280'}">${tag.name}</span>`).join('')}</div>
-      <div class="patient-meta"><span class="phase-badge phase-${phase}">F${phase}</span><span>${p.plan_type||'—'}</span><span>Mês ${months+1}</span><span class="pill pill-${p.modality==='Presencial'?'blue':'purple'}">${p.modality||'—'}</span><span>${fmtDate(p.inicio_programa||'')}</span>${p.inicio_programa?`<span>Fim: ${endDate}</span>`:''}${encHtml}</div>
-    </div><span style="color:var(--text-muted);font-size:18px">›</span>
-  </div>`;
+  let tagHtml=tags.map(tag=>'<span class="etiqueta" style="background:'+(tag.color||'#6b7280')+'">'+tag.name+'</span>').join('');
+  let encHtml=p.motivo_encerramento?'<span style="font-weight:700;color:'+(p.motivo_encerramento==='fim'?'#3b82f6':'#f97316')+'">Encerrado: '+isoToDisplay(p.data_encerramento||'')+' \u2014 '+(p.motivo_encerramento==='fim'?'Fim do Plano':'Desist\u00eancia')+'</span>':'';
+  return '<div class="patient-row" onclick="openPatient('+p.id+')">'
+    +'<div class="patient-avatar">'+p.name.charAt(0)+'</div>'
+    +'<div class="patient-info">'
+    +'<div class="patient-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'+p.name+tagHtml+'</div>'
+    +'<div class="patient-meta"><span class="phase-badge phase-'+phase+'">F'+phase+'</span><span>'+(p.plan_type||'\u2014')+'</span><span>M\u00eas '+(months+1)+'</span>'
+    +'<span class="pill pill-'+(p.modality==='Presencial'?'blue':'purple')+'">'+(p.modality||'\u2014')+'</span>'
+    +'<span>'+fmtDate(p.inicio_programa||'')+'</span>'
+    +(p.inicio_programa?'<span>Fim: '+endDate+'</span>':'')
+    +encHtml+'</div></div>'
+    +'<span style="color:var(--text-muted);font-size:18px">\u203a</span></div>';
 }
-
 let patientsFilter='active';
-async function renderPatients(query=''){const{data}=await sb.from('planos_patients').select('*').order('name');allPatients=data||[];renderPatientList(query);}
-function renderPatientList(query=''){
+async function renderPatients(query){
+  query=query||'';
+  const{data}=await sb.from('planos_patients').select('*').order('name');
+  allPatients=data||[];renderPatientList(query);
+}
+function renderPatientList(query){
+  query=query||'';
   const c=document.getElementById('main-content');
   const norm=normStr(query);
   let filtered=allPatients;
   if(patientsFilter==='active')filtered=filtered.filter(p=>p.active);
   else if(patientsFilter==='inactive')filtered=filtered.filter(p=>!p.active);
   if(norm)filtered=filtered.filter(p=>normStr(p.name).includes(norm)||normStr(p.cpf||'').includes(norm));
-  c.innerHTML=`<div class="search-bar"><span>🔍</span><input type="text" placeholder="Buscar por nome ou CPF..." value="${query}" oninput="renderPatientList(this.value)"/><button class="btn btn-primary btn-sm" onclick="showNewPatientModal()">+</button></div>
-  <div style="display:flex;gap:8px;margin-bottom:14px">
-    <button class="btn btn-sm ${patientsFilter==='all'?'btn-primary':'btn-ghost'}" onclick="patientsFilter='all';renderPatients()">Todos (${allPatients.length})</button>
-    <button class="btn btn-sm ${patientsFilter==='active'?'btn-primary':'btn-ghost'}" onclick="patientsFilter='active';renderPatients()">Ativos (${allPatients.filter(p=>p.active).length})</button>
-    <button class="btn btn-sm ${patientsFilter==='inactive'?'btn-primary':'btn-ghost'}" onclick="patientsFilter='inactive';renderPatients()">Encerrados (${allPatients.filter(p=>!p.active).length})</button>
-  </div>
-  ${filtered.length?filtered.map(p=>patientRowHtml(p)).join(''):'<div class="empty"><div class="empty-icon">🔍</div>Nenhum paciente encontrado</div>'}`;
+  c.innerHTML=
+    '<div class="search-bar"><span>\ud83d\udd0d</span><input type="text" placeholder="Buscar por nome ou CPF..." value="'+query+'" oninput="renderPatientList(this.value)"/><button class="btn btn-primary btn-sm" onclick="showNewPatientModal()">+</button></div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:14px">'
+    +'<button class="btn btn-sm '+(patientsFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'all\';renderPatients()">Todos ('+allPatients.length+')</button>'
+    +'<button class="btn btn-sm '+(patientsFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'active\';renderPatients()">Ativos ('+allPatients.filter(p=>p.active).length+')</button>'
+    +'<button class="btn btn-sm '+(patientsFilter==='inactive'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'inactive\';renderPatients()">Encerrados ('+allPatients.filter(p=>!p.active).length+')</button>'
+    +'</div>'
+    +(filtered.length?filtered.map(p=>patientRowHtml(p)).join(''):'<div class="empty"><div class="empty-icon">\ud83d\udd0d</div>Nenhum paciente encontrado</div>');
 }
 async function openPatient(id){
   currentPatientId=id;
@@ -393,8 +385,8 @@ function patTab(tab){
   else if(tab==='contrato')renderContrato();
   else if(tab==='historico')renderHistorico();
 }
+// block2 done
 
-// ── TAB INFO ──────────────────────────────────────────────────
 async function renderPatInfo(){
   const p=currentPatientData;
   const[{data:etCfg},{data:appts},{data:soro},{data:impl}]=await Promise.all([
@@ -406,7 +398,7 @@ async function renderPatInfo(){
   const allTags=etCfg?JSON.parse(etCfg.value||'[]'):[];
   const patTags=p.etiquetas||[];
   const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
-  const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
+  const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'\u2014';
   const isEncerrado=!p.active&&p.motivo_encerramento;
   const consultasFeitas=(appts||[]).filter(a=>a.status==='Compareceu'&&!a.origem_tabela).length;
   const sessoesCount=(soro||[]).length;
@@ -415,60 +407,78 @@ async function renderPatInfo(){
   const lastSoro=(soro||[]).sort((a,b)=>parseDateInt(b.data_sessao||'')-parseDateInt(a.data_sessao||''))[0];
   const lastImpl=(impl||[]).sort((a,b)=>parseDateInt(b.data_implante||'')-parseDateInt(a.data_implante||''))[0];
   const encBlock=isEncerrado
-    ?`<div class="enc-box-encerrado"><div style="font-size:24px">🔒</div><div style="flex:1"><div style="font-weight:700;font-size:14px;color:#1d4ed8;margin-bottom:4px">Plano Encerrado</div><div style="font-size:13px;color:#1e40af">Motivo: <strong>${p.motivo_encerramento==='fim'?'Fim do Plano':'Desistência'}</strong>${p.data_encerramento?` · <strong>${isoToDisplay(p.data_encerramento)}</strong>`:''}</div><div style="margin-top:10px"><button class="btn btn-sm" style="background:#1d4ed8;color:#fff;border:none" onclick="reativarPlano()">↩ Reativar Plano</button></div></div></div>`
-    :`<div class="enc-box-ativo"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Encerramento do Plano</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:1.5px solid #93c5fd;font-weight:700" onclick="encerrarPlano('fim')">✅ Fim do Plano</button><button class="btn btn-sm" style="background:#fff7ed;color:#c2410c;border:1.5px solid #fdba74;font-weight:700" onclick="encerrarPlano('desistencia')">❌ Desistência</button></div><div style="font-size:11px;color:var(--text-muted);margin-top:8px">⚠️ Ao encerrar, as sessões de soroterapia serão arquivadas no histórico.</div></div>`;
+    ?'<div class="enc-box-encerrado"><div style="font-size:24px">\ud83d\udd12</div><div style="flex:1"><div style="font-weight:700;font-size:14px;color:#1d4ed8;margin-bottom:4px">Plano Encerrado</div><div style="font-size:13px;color:#1e40af">Motivo: <strong>'+(p.motivo_encerramento==='fim'?'Fim do Plano':'Desist\u00eancia')+'</strong>'+(p.data_encerramento?' \u00b7 <strong>'+isoToDisplay(p.data_encerramento)+'</strong>':'')+'</div><div style="margin-top:10px"><button class="btn btn-sm" style="background:#1d4ed8;color:#fff;border:none" onclick="reativarPlano()">\u21a9 Reativar Plano</button></div></div></div>'
+    :'<div class="enc-box-ativo"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Encerramento do Plano</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:1.5px solid #93c5fd;font-weight:700" onclick="encerrarPlano(\'fim\')">\u2705 Fim do Plano</button><button class="btn btn-sm" style="background:#fff7ed;color:#c2410c;border:1.5px solid #fdba74;font-weight:700" onclick="encerrarPlano(\'desistencia\')">\u274c Desist\u00eancia</button></div><div style="font-size:11px;color:var(--text-muted);margin-top:8px">\u26a0\ufe0f Ao encerrar, as sess\u00f5es de soroterapia ser\u00e3o arquivadas no hist\u00f3rico.</div></div>';
+  const tagSelectHtml=allTags.map(tag=>{
+    const sel=patTags.some(t=>t.name===tag.name);
+    return '<div class="etiqueta" style="background:'+(sel?tag.color:'#e5e7eb')+';color:'+(sel?'#fff':'#6b7280')+';cursor:pointer;border:2px solid '+tag.color+'" onclick="toggleTag(this,\''+tag.name+'\',\''+tag.color+'\')">'+tag.name+'</div>';
+  }).join('');
   const c=document.getElementById('patient-tab-content');
-  c.innerHTML=`
-  <div class="card">
-    <div class="card-title">Dados Pessoais</div>
-    <div class="grid-2">
-      <div class="field"><label>Nome Completo *</label><input id="pi-name" value="${p.name||''}" oninput="this.value=titleCase(this.value)"/></div>
-      <div class="field"><label>Data de Nascimento</label><input id="pi-dob" value="${fmtDate(p.dob||'')}"/></div>
-      <div class="field"><label>CPF</label><input id="pi-cpf" value="${p.cpf||''}" placeholder="000.000.000-00"/></div>
-      <div class="field"><label>Telefone</label><input id="pi-tel" value="${p.telefone||''}" placeholder="(00) 00000-0000"/></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">Plano de Acompanhamento</div>
-    <div class="grid-2">
-      <div class="field"><label>Tipo de Plano</label>
-        <select id="pi-plan"><option value="Plano 3 meses" ${p.plan_type==='Plano 3 meses'?'selected':''}>Plano 3 meses</option><option value="Plano 6 meses" ${p.plan_type==='Plano 6 meses'?'selected':''}>Plano 6 meses</option><option value="Consulta Avulsa" ${p.plan_type==='Consulta Avulsa'?'selected':''}>Consulta Avulsa</option></select></div>
-      <div class="field"><label>Modalidade</label>
-        <select id="pi-modality"><option value="Presencial" ${p.modality==='Presencial'?'selected':''}>Presencial</option><option value="Online" ${p.modality==='Online'?'selected':''}>Online</option></select></div>
-      <div class="field"><label>Data de Início</label><input id="pi-inicio" value="${fmtDate(p.inicio_programa||'')}"/></div>
-      <div class="field"><label>Fase Atual (automática)</label>
-        <div style="padding:10px 13px;background:var(--bg);border-radius:var(--radius-sm);font-weight:700"><span class="phase-badge phase-${phase}">Fase ${phase}</span> · Mês ${(p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0)+1}</div></div>
-    </div>
-    <div class="field"><label>Encerramento Estimado</label><div style="padding:10px 13px;background:var(--bg);border-radius:var(--radius-sm);font-size:14px">${endDate}</div></div>
-    <div class="field"><label>Observações</label><textarea id="pi-obs" rows="3">${p.observacao||''}</textarea></div>
-    ${encBlock}
-  </div>
-  <div class="card">
-    <div class="card-title" style="margin-bottom:10px">Resumo do Plano</div>
-    <div class="resumo-mini">
-      <div class="resumo-mini-card" onclick="patTab('agenda')"><div class="resumo-mini-num">${consultasFeitas}</div><div class="resumo-mini-label">Consultas</div><div class="resumo-mini-link">→ Ver Agenda</div></div>
-      <div class="resumo-mini-card" onclick="patTab('soroterapia')"><div class="resumo-mini-num">${sessoesCount}</div><div class="resumo-mini-label">Sessões Soro</div><div class="resumo-mini-link">→ Ver Soroterapia</div></div>
-      <div class="resumo-mini-card" onclick="patTab('implante')"><div class="resumo-mini-num">${implantesCount}</div><div class="resumo-mini-label">Implantes</div><div class="resumo-mini-link">→ Ver Implante</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;font-size:11px;color:var(--text-muted);text-align:center">
-      <div>${lastConsult?'Últ.: '+fmtDate(lastConsult.date_str):'—'}</div>
-      <div>${lastSoro?'Últ.: '+fmtDate(lastSoro.data_sessao||'')+(lastSoro.tipo_sessao?' · '+lastSoro.tipo_sessao:''):'—'}</div>
-      <div>${lastImpl?'Últ.: '+fmtDate(lastImpl.data_implante||''):'—'}</div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">Etiquetas</div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">${allTags.map(tag=>{const sel=patTags.some(t=>t.name===tag.name);return`<div class="etiqueta" style="background:${sel?tag.color:'#e5e7eb'};color:${sel?'#fff':'#6b7280'};cursor:pointer;border:2px solid ${tag.color}" onclick="toggleTag(this,'${tag.name}','${tag.color}')">${tag.name}</div>`;}).join('')}</div>
-    <input type="hidden" id="pi-tags" value='${JSON.stringify(patTags)}'/>
-    <div style="border-top:1px solid var(--border-light);padding-top:12px"><div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase">Nova Etiqueta</div>
-      <div style="display:flex;gap:8px;align-items:center"><input type="text" id="new-tag-name" placeholder="Nome" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/><input type="color" id="new-tag-color" value="#6b7280" style="width:36px;height:34px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer"/><button class="btn btn-primary btn-sm" onclick="saveNewTagFromInfo()">Criar</button></div>
-    </div>
-  </div>
-  <div class="card"><div class="card-title">Auditoria</div><div style="font-size:12px;color:var(--text-muted)">${p.updated_by?`Última alteração por <strong>${p.updated_by}</strong> em ${isoToDisplay(p.updated_at||'')}`:' — '}</div></div>
-  <button class="btn btn-primary btn-full" onclick="savePatInfo()">💾 Salvar Alterações</button>`;
+  c.innerHTML=
+    '<div class="card"><div class="card-title">Dados Pessoais</div>'
+    +'<div class="grid-2">'
+    +'<div class="field"><label>Nome Completo *</label><input id="pi-name" value="'+(p.name||'')+'" oninput="this.value=titleCase(this.value)"/></div>'
+    +'<div class="field"><label>Data de Nascimento</label><input id="pi-dob" value="'+fmtDate(p.dob||'')+'"/></div>'
+    +'<div class="field"><label>CPF</label><input id="pi-cpf" value="'+(p.cpf||'')+'" placeholder="000.000.000-00"/></div>'
+    +'<div class="field"><label>Telefone</label><input id="pi-tel" value="'+(p.telefone||'')+'" placeholder="(00) 00000-0000"/></div>'
+    +'</div></div>'
+    +'<div class="card"><div class="card-title">Plano de Acompanhamento</div>'
+    +'<div class="grid-2">'
+    +'<div class="field"><label>Tipo de Plano</label><select id="pi-plan">'
+    +'<option value="Plano 3 meses" '+(p.plan_type==='Plano 3 meses'?'selected':'')+'>Plano 3 meses</option>'
+    +'<option value="Plano 6 meses" '+(p.plan_type==='Plano 6 meses'?'selected':'')+'>Plano 6 meses</option>'
+    +'<option value="Consulta Avulsa" '+(p.plan_type==='Consulta Avulsa'?'selected':'')+'>Consulta Avulsa</option>'
+    +'</select></div>'
+    +'<div class="field"><label>Modalidade</label><select id="pi-modality">'
+    +'<option value="Presencial" '+(p.modality==='Presencial'?'selected':'')+'>Presencial</option>'
+    +'<option value="Online" '+(p.modality==='Online'?'selected':'')+'>Online</option>'
+    +'</select></div>'
+    +'<div class="field"><label>Data de In\u00edcio</label><input id="pi-inicio" value="'+fmtDate(p.inicio_programa||'')+'"/></div>'
+    +'<div class="field"><label>Fase Atual (autom\u00e1tica)</label>'
+    +'<div style="padding:10px 13px;background:var(--bg);border-radius:var(--radius-sm);font-weight:700"><span class="phase-badge phase-'+phase+'">Fase '+phase+'</span> \u00b7 M\u00eas '+(p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0+1)+'</div></div>'
+    +'</div>'
+    +'<div class="field"><label>Encerramento Estimado</label><div style="padding:10px 13px;background:var(--bg);border-radius:var(--radius-sm);font-size:14px">'+endDate+'</div></div>'
+    +'<div class="field"><label>Observa\u00e7\u00f5es</label><textarea id="pi-obs" rows="3">'+(p.observacao||'')+'</textarea></div>'
+    +encBlock
+    +'</div>'
+    +'<div class="card"><div class="card-title" style="margin-bottom:10px">Resumo do Plano</div>'
+    +'<div class="resumo-mini">'
+    +'<div class="resumo-mini-card" onclick="patTab(\'agenda\')"><div class="resumo-mini-num">'+consultasFeitas+'</div><div class="resumo-mini-label">Consultas</div><div class="resumo-mini-link">\u2192 Ver Agenda</div></div>'
+    +'<div class="resumo-mini-card" onclick="patTab(\'soroterapia\')"><div class="resumo-mini-num">'+sessoesCount+'</div><div class="resumo-mini-label">Sess\u00f5es Soro</div><div class="resumo-mini-link">\u2192 Ver Soroterapia</div></div>'
+    +'<div class="resumo-mini-card" onclick="patTab(\'implante\')"><div class="resumo-mini-num">'+implantesCount+'</div><div class="resumo-mini-label">Implantes</div><div class="resumo-mini-link">\u2192 Ver Implante</div></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;font-size:11px;color:var(--text-muted);text-align:center">'
+    +'<div>'+(lastConsult?'\u00dalt.: '+fmtDate(lastConsult.date_str):'\u2014')+'</div>'
+    +'<div>'+(lastSoro?'\u00dalt.: '+fmtDate(lastSoro.data_sessao||'')+(lastSoro.tipo_sessao?' \u00b7 '+lastSoro.tipo_sessao:''):'\u2014')+'</div>'
+    +'<div>'+(lastImpl?'\u00dalt.: '+fmtDate(lastImpl.data_implante||''):'\u2014')+'</div>'
+    +'</div></div>'
+    +'<div class="card"><div class="card-title">Etiquetas</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">'+tagSelectHtml+'</div>'
+    +'<input type="hidden" id="pi-tags" value=\''+JSON.stringify(patTags)+'\'/>'
+    +'<div style="border-top:1px solid var(--border-light);padding-top:12px"><div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase">Nova Etiqueta</div>'
+    +'<div style="display:flex;gap:8px;align-items:center"><input type="text" id="new-tag-name" placeholder="Nome" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/><input type="color" id="new-tag-color" value="#6b7280" style="width:36px;height:34px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer"/><button class="btn btn-primary btn-sm" onclick="saveNewTagFromInfo()">Criar</button></div>'
+    +'</div></div>'
+    +'<div class="card"><div class="card-title">Auditoria</div><div style="font-size:12px;color:var(--text-muted)">'+(p.updated_by?'Last altera\u00e7\u00e3o por <strong>'+p.updated_by+'</strong> em '+isoToDisplay(p.updated_at||''):'  \u2014 ')+'</div></div>'
+    +'<button class="btn btn-primary btn-full" onclick="savePatInfo()">\ud83d\udcbe Salvar Altera\u00e7\u00f5es</button>';
 }
-function toggleTag(el,name,color){let tags=JSON.parse(document.getElementById('pi-tags').value||'[]');const idx=tags.findIndex(t=>t.name===name);if(idx>=0){tags.splice(idx,1);el.style.background='#e5e7eb';el.style.color='#6b7280';}else{tags.push({name,color});el.style.background=color;el.style.color='#fff';}document.getElementById('pi-tags').value=JSON.stringify(tags);}
-async function saveNewTagFromInfo(){const name=document.getElementById('new-tag-name').value.trim();const color=document.getElementById('new-tag-color').value;if(!name)return;const{data}=await sb.from('planos_config').select('value').eq('key','etiquetas').single();let tags=[];try{tags=JSON.parse(data?.value||'[]')}catch(e){}if(tags.some(t=>t.name===name)){toast('Etiqueta já existe','error');return;}tags.push({name,color});await sb.from('planos_config').upsert({key:'etiquetas',value:JSON.stringify(tags)});toast('Etiqueta criada!','success');renderPatInfo();}
+function toggleTag(el,name,color){
+  let tags=JSON.parse(document.getElementById('pi-tags').value||'[]');
+  const idx=tags.findIndex(t=>t.name===name);
+  if(idx>=0){tags.splice(idx,1);el.style.background='#e5e7eb';el.style.color='#6b7280';}
+  else{tags.push({name,color});el.style.background=color;el.style.color='#fff';}
+  document.getElementById('pi-tags').value=JSON.stringify(tags);
+}
+async function saveNewTagFromInfo(){
+  const name=document.getElementById('new-tag-name').value.trim();
+  const color=document.getElementById('new-tag-color').value;
+  if(!name)return;
+  const{data}=await sb.from('planos_config').select('value').eq('key','etiquetas').single();
+  let tags=[];try{tags=JSON.parse(data?.value||'[]')}catch(e){}
+  if(tags.some(t=>t.name===name)){toast('Etiqueta j\u00e1 existe','error');return;}
+  tags.push({name,color});
+  await sb.from('planos_config').upsert({key:'etiquetas',value:JSON.stringify(tags)});
+  toast('Etiqueta criada!','success');renderPatInfo();
+}
 async function savePatInfo(){
   const inicio=displayToISO(document.getElementById('pi-inicio').value.trim());
   const planType=document.getElementById('pi-plan').value;
@@ -479,8 +489,8 @@ async function savePatInfo(){
   Object.assign(currentPatientData,data);document.getElementById('pd-name-header').textContent=data.name;toast('Salvo!','success');
 }
 async function encerrarPlano(motivo){
-  const label=motivo==='fim'?'Fim do Plano':'Desistência';
-  if(!confirm('Confirmar encerramento por "'+label+'"?\n\nAs sessões de soroterapia serão arquivadas.'))return;
+  const label=motivo==='fim'?'Fim do Plano':'Desist\u00eancia';
+  if(!confirm('Confirmar encerramento por "'+label+'"?\n\nAs sess\u00f5es de soroterapia ser\u00e3o arquivadas.'))return;
   const [{data:sessoes},{data:envios}]=await Promise.all([sb.from('planos_soro_sessoes').select('*').eq('patient_id',currentPatientId),sb.from('planos_soro_envios').select('*').eq('patient_id',currentPatientId)]);
   await sb.from('planos_historico_ciclos').insert({patient_id:currentPatientId,data_encerramento:todayISO(),motivo,plan_type:currentPatientData.plan_type,inicio_programa:currentPatientData.inicio_programa,sessoes_count:(sessoes||[]).length,envios_count:(envios||[]).length,sessoes_data:JSON.stringify(sessoes||[]),envios_data:JSON.stringify(envios||[]),registrado_por:currentUser.name});
   if((sessoes||[]).length)await sb.from('planos_soro_sessoes').delete().eq('patient_id',currentPatientId);
@@ -495,73 +505,78 @@ async function reativarPlano(){
   currentPatientData.active=true;currentPatientData.motivo_encerramento=null;currentPatientData.data_encerramento=null;
   toast('Plano reativado!','success');patTab('info');
 }
+// block3 done
 
-// ── TAB FINANCEIRO ────────────────────────────────────────────
 async function renderFinanceiro(){
   const{data:fin}=await sb.from('planos_financeiro').select('*').eq('patient_id',currentPatientId).order('created_at');
-  const c=document.getElementById('patient-tab-content');
   const items=fin||[];
   const total=items.reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
-  c.innerHTML=`
-  <div class="card">
-    <div class="card-header"><div class="card-title" style="margin:0">Pagamentos</div><button class="btn btn-primary btn-sm" onclick="showAddPagamento()">+ Add</button></div>
-    <div style="font-size:22px;font-weight:700;color:var(--navy);margin-bottom:12px">R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}<span style="font-size:13px;color:var(--text-muted);font-weight:400"> total recebido</span></div>
-    ${items.length?items.map(i=>`
-    <div style="margin-bottom:8px">
-      <div class="attach-item">
-        <div class="attach-icon">${i.forma==='PIX'?'💠':'💳'}</div>
-        <div class="attach-info">
-          <div class="attach-name">R$ ${parseFloat(i.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})} · ${i.forma||''}${i.parcelas?` (${i.parcelas})`:''}</div>
-          <div class="attach-date">${i.data_pagamento||''}${i.observacao?' · '+i.observacao:''}</div>
-          <div class="attach-date"><span class="user-badge">${i.registrado_por||''}</span></div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn-icon" onclick="toggleEdit('fin-edit-${i.id}')" title="Editar">✏️</button>
-          <button class="btn-icon" onclick="deleteFinanceiro(${i.id})">🗑</button>
-        </div>
-      </div>
-      <div id="fin-edit-${i.id}" class="edit-inline">
-        <div class="grid-2">
-          <div class="field"><label>Forma</label><select id="fin-ef-forma-${i.id}"><option ${i.forma==='PIX'?'selected':''}>PIX</option><option ${i.forma==='Cartão'?'selected':''}>Cartão</option><option ${i.forma==='Misto'?'selected':''}>Misto</option></select></div>
-          <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="fin-ef-valor-${i.id}" value="${i.valor||0}"/></div>
-          <div class="field"><label>Parcelas</label><input id="fin-ef-parc-${i.id}" value="${i.parcelas||''}"/></div>
-          <div class="field"><label>Data</label><input id="fin-ef-data-${i.id}" value="${i.data_pagamento||''}"/></div>
-        </div>
-        <div class="field"><label>Observação</label><input id="fin-ef-obs-${i.id}" value="${i.observacao||''}"/></div>
-        <div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="saveFinEdit(${i.id})">💾 Salvar</button><button class="btn btn-ghost btn-sm" onclick="toggleEdit('fin-edit-${i.id}')">Cancelar</button></div>
-      </div>
-    </div>`).join(''):'<div class="text-muted text-sm">Nenhum pagamento registrado</div>'}
-  </div>`;
+  const c=document.getElementById('patient-tab-content');
+  let html='<div class="card"><div class="card-header"><div class="card-title" style="margin:0">Pagamentos</div><button class="btn btn-primary btn-sm" onclick="showAddPagamento()">+ Add</button></div>';
+  html+='<div style="font-size:22px;font-weight:700;color:var(--navy);margin-bottom:12px">R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2})+'<span style="font-size:13px;color:var(--text-muted);font-weight:400"> total recebido</span></div>';
+  if(items.length){
+    items.forEach(i=>{
+      const forma=i.forma||'';
+      const icon=forma==='PIX'?'\ud83d\udca0':'\ud83d\udcb3';
+      const valorFmt='R$ '+parseFloat(i.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+' \u00b7 '+forma+(i.parcelas?' ('+i.parcelas+')':'');
+      const editId='fin-edit-'+i.id;
+      html+='<div style="margin-bottom:8px">'
+        +'<div class="attach-item">'
+        +'<div class="attach-icon">'+icon+'</div>'
+        +'<div class="attach-info"><div class="attach-name">'+valorFmt+'</div>'
+        +'<div class="attach-date">'+(i.data_pagamento||'')+(i.observacao?' \u00b7 '+i.observacao:'')+'</div>'
+        +'<div class="attach-date"><span class="user-badge">'+(i.registrado_por||'')+'</span></div></div>'
+        +'<div style="display:flex;gap:6px;flex-shrink:0">'
+        +'<button class="btn-icon" onclick="toggleEdit(\''+editId+'\')">\u270f\ufe0f</button>'
+        +'<button class="btn-icon" onclick="deleteFinanceiro('+i.id+')">\ud83d\uddd1</button>'
+        +'</div></div>'
+        +'<div id="'+editId+'" class="edit-inline">'
+        +'<div class="grid-2">'
+        +'<div class="field"><label>Forma</label><select id="fin-ef-forma-'+i.id+'">'
+        +'<option '+(forma==='PIX'?'selected':'')+'>PIX</option>'
+        +'<option '+(forma==='Cart\u00e3o'?'selected':'')+'>Cart\u00e3o</option>'
+        +'<option '+(forma==='Misto'?'selected':'')+'>Misto</option>'
+        +'</select></div>'
+        +'<div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="fin-ef-valor-'+i.id+'" value="'+(i.valor||0)+'"/></div>'
+        +'<div class="field"><label>Parcelas</label><input id="fin-ef-parc-'+i.id+'" value="'+(i.parcelas||'')+'"/></div>'
+        +'<div class="field"><label>Data</label><input id="fin-ef-data-'+i.id+'" value="'+(i.data_pagamento||'')+'"/></div>'
+        +'</div><div class="field"><label>Observa\u00e7\u00e3o</label><input id="fin-ef-obs-'+i.id+'" value="'+(i.observacao||'')+'"/></div>'
+        +'<div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="saveFinEdit('+i.id+')">\ud83d\udcbe Salvar</button>'
+        +'<button class="btn btn-ghost btn-sm" onclick="toggleEdit(\''+editId+'\')">Cancelar</button></div>'
+        +'</div></div>';
+    });
+  }else{html+='<div class="text-muted text-sm">Nenhum pagamento registrado</div>';}
+  html+='</div>';
+  c.innerHTML=html;
 }
 async function saveFinEdit(id){
   const{data:old}=await sb.from('planos_financeiro').select('*').eq('id',id).single();
-  const newData={forma:document.getElementById(`fin-ef-forma-${id}`).value,valor:parseFloat(document.getElementById(`fin-ef-valor-${id}`).value)||0,parcelas:document.getElementById(`fin-ef-parc-${id}`).value.trim()||null,data_pagamento:document.getElementById(`fin-ef-data-${id}`).value.trim(),observacao:document.getElementById(`fin-ef-obs-${id}`).value.trim(),updated_by:currentUser.name,updated_at:new Date().toISOString()};
+  const newData={forma:document.getElementById('fin-ef-forma-'+id).value,valor:parseFloat(document.getElementById('fin-ef-valor-'+id).value)||0,parcelas:document.getElementById('fin-ef-parc-'+id).value.trim()||null,data_pagamento:document.getElementById('fin-ef-data-'+id).value.trim(),observacao:document.getElementById('fin-ef-obs-'+id).value.trim(),updated_by:currentUser.name,updated_at:new Date().toISOString()};
   await sb.from('planos_financeiro').update(newData).eq('id',id);
   await logHistorico('financeiro',id,'edicao',old,newData);
   toast('Pagamento atualizado!','success');patTab('financeiro');
 }
 function showAddPagamento(){
-  showGenericModal(`
-    <div class="field"><label>Forma</label><select id="fin-forma" onchange="togglePagamentoFields()"><option>PIX</option><option>Cartão</option><option>Misto</option></select></div>
-    <div class="field"><label>Valor Total (R$)</label><input type="number" step="0.01" id="fin-valor" placeholder="0,00"/></div>
-    <div id="fin-misto-wrap" style="display:none">
-      <div class="field"><label>Valor PIX (R$)</label><input type="number" step="0.01" id="fin-valor-pix"/></div>
-      <div class="field"><label>Valor Cartão (R$)</label><input type="number" step="0.01" id="fin-valor-cartao"/></div>
-    </div>
-    <div id="fin-parcelas-wrap" style="display:none" class="field"><label>Parcelas</label><select id="fin-parcelas">${[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>`<option>${n}x</option>`).join('')}</select></div>
-    <div class="field"><label>Data</label><input id="fin-data" value="${todayStr()}"/></div>
-    <div class="field"><label>Observação</label><input type="text" id="fin-obs"/></div>
-    <button class="btn btn-primary btn-full" onclick="savePagamento()">Salvar</button>
-  `,'Novo Pagamento');
+  let opts=[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>'<option>'+n+'x</option>').join('');
+  showGenericModal(
+    '<div class="field"><label>Forma</label><select id="fin-forma" onchange="togglePagamentoFields()"><option>PIX</option><option>Cart\u00e3o</option><option>Misto</option></select></div>'
+    +'<div class="field"><label>Valor Total (R$)</label><input type="number" step="0.01" id="fin-valor" placeholder="0,00"/></div>'
+    +'<div id="fin-misto-wrap" style="display:none"><div class="field"><label>Valor PIX (R$)</label><input type="number" step="0.01" id="fin-valor-pix"/></div><div class="field"><label>Valor Cart\u00e3o (R$)</label><input type="number" step="0.01" id="fin-valor-cartao"/></div></div>'
+    +'<div id="fin-parcelas-wrap" style="display:none" class="field"><label>Parcelas</label><select id="fin-parcelas">'+opts+'</select></div>'
+    +'<div class="field"><label>Data</label><input id="fin-data" value="'+todayStr()+'"/></div>'
+    +'<div class="field"><label>Observa\u00e7\u00e3o</label><input type="text" id="fin-obs"/></div>'
+    +'<button class="btn btn-primary btn-full" onclick="savePagamento()">Salvar</button>',
+    'Novo Pagamento'
+  );
 }
-function togglePagamentoFields(){const f=document.getElementById('fin-forma').value;document.getElementById('fin-parcelas-wrap').style.display=f==='Cartão'||f==='Misto'?'block':'none';document.getElementById('fin-misto-wrap').style.display=f==='Misto'?'block':'none';}
+function togglePagamentoFields(){const f=document.getElementById('fin-forma').value;document.getElementById('fin-parcelas-wrap').style.display=f==='Cart\u00e3o'||f==='Misto'?'block':'none';document.getElementById('fin-misto-wrap').style.display=f==='Misto'?'block':'none';}
 async function savePagamento(){
   const forma=document.getElementById('fin-forma').value;
-  const parcelas=forma==='Cartão'||forma==='Misto'?document.getElementById('fin-parcelas').value:null;
+  const parcelas=forma==='Cart\u00e3o'||forma==='Misto'?document.getElementById('fin-parcelas').value:null;
   const vPix=forma==='Misto'?parseFloat(document.getElementById('fin-valor-pix').value)||0:null;
   const vCart=forma==='Misto'?parseFloat(document.getElementById('fin-valor-cartao').value)||0:null;
   let obs=document.getElementById('fin-obs').value.trim();
-  if(forma==='Misto'&&(vPix||vCart)){const ex=`PIX: R$${(vPix||0).toLocaleString('pt-BR',{minimumFractionDigits:2})} + Cartão: R$${(vCart||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;obs=obs?ex+' — '+obs:ex;}
+  if(forma==='Misto'&&(vPix||vCart)){const ex='PIX: R$'+(vPix||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+' + Cart\u00e3o: R$'+(vCart||0).toLocaleString('pt-BR',{minimumFractionDigits:2});obs=obs?ex+' \u2014 '+obs:ex;}
   await sb.from('planos_financeiro').insert({patient_id:currentPatientId,forma,valor:parseFloat(document.getElementById('fin-valor').value)||0,parcelas,data_pagamento:document.getElementById('fin-data').value,observacao:obs,registrado_por:currentUser.name});
   closeModal('modal-generic');toast('Pagamento registrado','success');patTab('financeiro');
 }
@@ -572,11 +587,7 @@ async function deleteFinanceiro(id){
   await logHistorico('financeiro',id,'exclusao',old,null);
   patTab('financeiro');
 }
-
-// ── TAB SOROTERAPIA ───────────────────────────────────────────
-// FLUXO: Soro → Agenda (não ao contrário)
-// - Ao salvar sessão: cria appt automático com status 'Compareceu'
-// - Se agendamento existia antes (origem_tabela NULL): fica na agenda mas não contabiliza
+// block4 done
 
 async function renderSoroterapia(){
   const[{data:sessoes},{data:envios},{data:appts}]=await Promise.all([
@@ -586,117 +597,118 @@ async function renderSoroterapia(){
   ]);
   const c=document.getElementById('patient-tab-content');
   const p=currentPatientData;
-  let alertHtml='';
-  if(envios&&envios.length){const le=envios[envios.length-1];const st=(le.sessoes_ev||0)+(le.sessoes_im||0);const sf=(sessoes||[]).filter(s=>s.envio_id===le.id).length;const r=st-sf;if(r===1)alertHtml=`<div class="alert-banner alert-danger">🚩 Falta <strong>1 sessão</strong> para acabar o protocolo!</div>`;else if(r===2)alertHtml=`<div class="alert-banner alert-warning">⚠️ Faltam <strong>2 sessões</strong> para acabar o protocolo.</div>`;}
-
-  // Map appts linked to sessoes
-  const apptMap={};(appts||[]).forEach(a=>{if(a.origem_tabela==='soro_sessoes'&&a.origem_id)apptMap[a.origem_id]=a;});
-
-  function buildEnvioCard(e,idx,allE){
-    const sEV=e.sessoes_ev||0,sIM=e.sessoes_im||0,tot=sEV+sIM;
-    const totProt=allE.reduce((s,en)=>s+(en.sessoes_ev||0)+(en.sessoes_im||0),0);
-    const totAntes=allE.slice(0,idx).reduce((s,en)=>s+(en.sessoes_ev||0)+(en.sessoes_im||0),0);
-    const sN=(sessoes||[]).filter(s=>s.envio_id===e.id).length;
-    const proxData=e.data_envio?addDaysToDisplay(e.data_envio,28):'—';
-    const termProt=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
-    const dProx=proxData!=='—'?daysAgo(proxData)*-1:99;
-    let fC='var(--success)',fL='Em dia';
-    if(tot>0&&sN>=tot){fC='var(--text-muted)';fL='Concluído';}
-    else if(dProx<=3&&dProx>=0){fC='var(--danger)';fL='🚩 Enviar agora!';}
-    else if(dProx<=7&&dProx>3){fC='var(--warning)';fL='⚠️ Preparar envio';}
-    else if(dProx<0){fC='var(--danger)';fL='🚩 Atrasado!';}
-    const cId=`envio-detail-${e.id}`;
-    return`<div class="prog-row" style="margin-bottom:8px">
-      <div class="prog-header" onclick="toggleEnvioCard('${cId}',this)" style="padding:12px 14px">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:700;font-size:13px">Envio ${idx+1} · ${e.data_envio||'—'}</span><span style="font-size:11px;font-weight:700;color:${fC};background:${fC==='var(--success)'?'#dcfce7':fC==='var(--warning)'?'#fef3c7':fC==='var(--text-muted)'?'#f3f4f6':'#fee2e2'};padding:2px 7px;border-radius:99px">${fL}</span></div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap"><span>EV:${sEV} IM:${sIM} Tot:${tot}</span><span style="color:var(--navy);font-weight:600">Acum:${totAntes+tot}/${totProt}</span>${tot>0&&sN<tot?`<span style="color:${fC};font-weight:600">Próx: até ${proxData}</span>`:''}</div>
-        </div>
-        <span class="envio-arrow" style="color:var(--text-muted);font-size:14px;transition:transform .2s">▼</span>
-      </div>
-      <div id="${cId}" style="padding:14px;border-top:1px solid var(--border-light);display:none">
-        <div class="grid-2" style="margin-bottom:12px">
-          <div style="background:var(--bg);border-radius:8px;padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Próximo Envio</div><div style="font-weight:700;font-size:13px;color:${fC}">${proxData}</div><div style="font-size:11px;color:var(--text-muted)">28 dias após este</div></div>
-          <div style="background:var(--bg);border-radius:8px;padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Término Protocolo</div><div style="font-weight:700;font-size:13px;color:var(--navy)">${termProt}</div></div>
-        </div>
-        <div style="border-top:1px solid var(--border-light);padding-top:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px">✏️ Editar Envio</div>
-          <div class="grid-3" style="margin-bottom:8px">
-            <div class="field" style="margin:0"><label>Data</label><input id="env-edit-data-${e.id}" value="${e.data_envio||''}" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/></div>
-            <div class="field" style="margin:0"><label>Sess. EV</label><input type="number" id="env-edit-ev-${e.id}" value="${sEV}" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/></div>
-            <div class="field" style="margin:0"><label>Sess. IM</label><input type="number" id="env-edit-im-${e.id}" value="${sIM}" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/></div>
-          </div>
-          <div class="field"><label>Substâncias</label><textarea id="env-edit-subs-${e.id}" rows="2" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;resize:vertical">${e.substancias||''}</textarea></div>
-          ${e.receita_path?`<div style="margin-bottom:8px"><button class="btn btn-ghost btn-sm" onclick="openFile('documents','${e.receita_path}')">📄 Ver Receita</button></div>`:''}
-          <div class="field"><label>Substituir Receita</label><input type="file" id="env-edit-file-${e.id}" accept=".pdf,.jpg,.jpeg,.png" style="font-size:13px;width:100%"/></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <button class="btn btn-primary btn-sm" onclick="saveEnvioEdit(${e.id},'${e.receita_path||''}')">💾 Salvar</button>
-            <button class="btn-icon btn-sm" onclick="deleteEnvio(${e.id})">🗑</button>
-            <span class="user-badge" style="margin-left:4px">${e.registrado_por||''}</span>
-          </div>
-        </div>
-      </div>
-    </div>`;
+  const apptMap={};
+  (appts||[]).forEach(a=>{if(a.origem_tabela==='soro_sessoes'&&a.origem_id)apptMap[a.origem_id]=a;});
+  let html='<div class="alert-info" style="margin-bottom:12px;font-size:12px"><strong>\u2139\ufe0f Fluxo principal:</strong> Registre aqui \u2192 a agenda \u00e9 preenchida automaticamente. Agendamentos diretos n\u00e3o contabilizam sess\u00f5es.</div>';
+  // Alert banner
+  if(envios&&envios.length){
+    const le=envios[envios.length-1];
+    const st=(le.sessoes_ev||0)+(le.sessoes_im||0);
+    const sf=(sessoes||[]).filter(s=>s.envio_id===le.id).length;
+    const r=st-sf;
+    if(r===1)html='<div class="alert-banner alert-danger">\ud83d\udea9 Falta <strong>1 sess\u00e3o</strong> para acabar o protocolo!</div>'+html;
+    else if(r===2)html='<div class="alert-banner alert-warning">\u26a0\ufe0f Faltam <strong>2 sess\u00f5es</strong> para acabar o protocolo.</div>'+html;
   }
-
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">';
+  // LEFT: sessoes
+  html+='<div class="card" style="margin:0"><div class="card-header"><div class="card-title" style="margin:0">Sess\u00f5es Realizadas</div><button class="btn btn-primary btn-sm" onclick="showAddSessao()">+ Adicionar</button></div>';
+  if((sessoes||[]).length){
+    const sessReversed=[...(sessoes||[])].reverse();
+    sessReversed.forEach((s,i)=>{
+      const num=(sessoes||[]).length-i;
+      const linkedAppt=apptMap[s.id];
+      const badge=linkedAppt
+        ?'<span class="agenda-link-badge" onclick="patTab(\'agenda\')">\ud83d\udcc5 '+fmtDate(linkedAppt.date_str)+' '+(linkedAppt.time_str||'')+'</span>'
+        :'<span class="agenda-link-badge pending">\ud83d\udcc5 Sem agendamento</span>';
+      const cId='sessao-detail-'+s.id;
+      const tipoOpts=TIPOS_SESSAO.map(t=>'<option value="'+t+'" '+(s.tipo_sessao===t?'selected':'')+'>'+t+'</option>').join('');
+      const apptIdStr=linkedAppt?linkedAppt.id:'null';
+      html+='<div class="prog-row" style="margin-bottom:8px">'
+        +'<div class="prog-header" onclick="toggleEnvioCard(\''+cId+'\',this)" style="padding:10px 12px">'
+        +'<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:700;color:#fff;background:var(--navy);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+num+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;font-size:13px">'+(s.data_sessao||'\u2014')+(s.tipo_sessao?' <span style="font-size:11px;color:var(--accent);font-weight:600">\u00b7 '+s.tipo_sessao+'</span>':'')+'</div>'
+        +'<div style="font-size:11px;color:var(--text-muted);margin-top:2px">'+badge+'</div>'
+        +'</div></div>'
+        +'<span class="envio-arrow" style="color:var(--text-muted);font-size:14px;transition:transform .2s">\u25bc</span>'
+        +'</div>'
+        +'<div id="'+cId+'" style="padding:12px 14px;border-top:1px solid var(--border-light);display:none">'
+        +'<div class="field"><label>Tipo de Sess\u00e3o</label><select id="ss-edit-tipo-'+s.id+'" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px">'+tipoOpts+'</select></div>'
+        +'<div class="field"><label>Data da Sess\u00e3o</label><input id="ss-edit-data-'+s.id+'" value="'+(s.data_sessao||'')+'" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/></div>'
+        +'<div class="field"><label>Substâncias e Dosagens</label><textarea id="ss-edit-subs-'+s.id+'" rows="3" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;resize:vertical">'+(s.substancias||'')+'</textarea></div>'
+        +'<div class="field"><label>Observa\u00e7\u00e3o</label><textarea id="ss-edit-obs-'+s.id+'" rows="2" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;resize:vertical">'+(s.observacao||'')+'</textarea></div>'
+        +'<div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">Agendamento vinculado</div>'
+        +(linkedAppt?'<div style="font-size:13px">\ud83d\udcc5 '+fmtDate(linkedAppt.date_str)+' '+(linkedAppt.time_str||'')+' \u00b7 '+(linkedAppt.procedimento||'')+'</div><div style="font-size:11px;color:var(--success);margin-top:2px">\u2713 Marcado automaticamente como Compareceu</div>'
+        :'<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sem agendamento vinculado</div>')
+        +'</div>'
+        +(s.receita_path?'<div style="margin-bottom:10px"><button class="btn btn-ghost btn-sm" onclick="openFile(\'documents\',\''+s.receita_path+'\')">\ud83d\udcc4 Ver Receita</button></div>':'')
+        +'<div class="field"><label>Substituir Receita</label><input type="file" id="ss-edit-file-'+s.id+'" accept=".pdf,.jpg,.jpeg,.png" style="font-size:13px"/></div>'
+        +'<div style="display:flex;gap:8px;margin-top:4px;align-items:center">'
+        +'<button class="btn btn-primary btn-sm" onclick="saveSessaoEdit('+s.id+',\''+(s.receita_path||'')+'\','+apptIdStr+')">\ud83d\udcbe Salvar</button>'
+        +'<button class="btn-icon" onclick="deleteSessao('+s.id+','+apptIdStr+')">\ud83d\uddd1</button>'
+        +'<span class="user-badge">'+(s.registrado_por||'')+'</span>'
+        +'</div></div></div>';
+    });
+  }else{html+='<div class="text-muted text-sm" style="padding:8px 0">Nenhuma sess\u00e3o registrada</div>';}
+  html+='</div>';
+  // RIGHT: envios
   const enviosArr=(envios||[]);
-  c.innerHTML=`
-  ${alertHtml}
-  <div class="alert-info" style="margin-bottom:12px;font-size:12px"><strong>ℹ️ Fluxo principal:</strong> Registre aqui → a agenda é preenchida automaticamente. Agendamentos diretos não contabilizam sessões.</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
-    <!-- SESSÕES -->
-    <div class="card" style="margin:0">
-      <div class="card-header"><div class="card-title" style="margin:0">Sessões Realizadas</div><button class="btn btn-primary btn-sm" onclick="showAddSessao()">+ Adicionar</button></div>
-      ${(sessoes||[]).length?(sessoes||[]).slice().reverse().map((s,i)=>{
-        const num=(sessoes||[]).length-i;
-        const linkedAppt=apptMap[s.id];
-        const agendaBadge=linkedAppt
-          ?`<span class="agenda-link-badge" onclick="patTab('agenda')" title="Ver na agenda">📅 Agenda: ${fmtDate(linkedAppt.date_str)} ${linkedAppt.time_str||''}</span>`
-          :`<span class="agenda-link-badge pending" title="Sem link de agenda">📅 Sem agendamento</span>`;
-        const cId=`sessao-detail-${s.id}`;
-        return`<div class="prog-row" style="margin-bottom:8px">
-          <div class="prog-header" onclick="toggleEnvioCard('${cId}',this)" style="padding:10px 12px">
-            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:700;color:#fff;background:var(--navy);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${num}</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-weight:700;font-size:13px">${s.data_sessao||'—'}${s.tipo_sessao?` <span style="font-size:11px;color:var(--accent);font-weight:600">· ${s.tipo_sessao}</span>`:''}</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${agendaBadge}</div>
-              </div>
-            </div>
-            <span class="envio-arrow" style="color:var(--text-muted);font-size:14px;transition:transform .2s">▼</span>
-          </div>
-          <div id="${cId}" style="padding:12px 14px;border-top:1px solid var(--border-light);display:none">
-            <div class="field"><label>Tipo de Sessão</label>
-              <select id="ss-edit-tipo-${s.id}" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px">
-                ${TIPOS_SESSAO.map(t=>`<option value="${t}" ${s.tipo_sessao===t?'selected':''}>${t}</option>`).join('')}
-              </select></div>
-            <div class="field"><label>Data da Sessão</label><input id="ss-edit-data-${s.id}" value="${s.data_sessao||''}" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/></div>
-            <div class="field"><label>Substâncias e Dosagens</label><textarea id="ss-edit-subs-${s.id}" rows="3" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;resize:vertical">${s.substancias||''}</textarea></div>
-            <div class="field"><label>Observação</label><textarea id="ss-edit-obs-${s.id}" rows="2" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;resize:vertical">${s.observacao||''}</textarea></div>
-            <!-- Agenda link info -->
-            <div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:10px">
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px">Agendamento vinculado</div>
-              ${linkedAppt?`<div style="font-size:13px">📅 ${fmtDate(linkedAppt.date_str)} ${linkedAppt.time_str||''} · ${linkedAppt.procedimento||''}</div><div style="font-size:11px;color:var(--success);margin-top:2px">✓ Marcado automaticamente como Compareceu</div>`:`<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sem agendamento vinculado</div>`}
-            </div>
-            ${s.receita_path?`<div style="margin-bottom:10px"><button class="btn btn-ghost btn-sm" onclick="openFile('documents','${s.receita_path}')">📄 Ver Receita</button></div>`:''}
-            <div class="field"><label>Substituir Receita</label><input type="file" id="ss-edit-file-${s.id}" accept=".pdf,.jpg,.jpeg,.png" style="font-size:13px"/></div>
-            <div style="display:flex;gap:8px;margin-top:4px;align-items:center">
-              <button class="btn btn-primary btn-sm" onclick="saveSessaoEdit(${s.id},'${s.receita_path||''}',${linkedAppt?linkedAppt.id:'null'})">💾 Salvar</button>
-              <button class="btn-icon btn-sm" onclick="deleteSessao(${s.id},${linkedAppt?linkedAppt.id:'null'})">🗑</button>
-              <span class="user-badge">${s.registrado_por||''}</span>
-            </div>
-          </div>
-        </div>`;
-      }).join(''):'<div class="text-muted text-sm" style="padding:8px 0">Nenhuma sessão registrada</div>'}
-    </div>
-    <!-- ENVIOS -->
-    <div class="card" style="margin:0">
-      <div class="card-header"><div class="card-title" style="margin:0">Injetáveis Enviados</div><button class="btn btn-primary btn-sm" onclick="showAddEnvio()">+ Adicionar</button></div>
-      ${enviosArr.length?enviosArr.slice().reverse().map((e,i,arr)=>buildEnvioCard(e,enviosArr.length-1-i,enviosArr)).join(''):'<div class="text-muted text-sm" style="padding:8px 0">Nenhum envio registrado</div>'}
-    </div>
-  </div>`;
+  html+='<div class="card" style="margin:0"><div class="card-header"><div class="card-title" style="margin:0">Ijet\u00e1veis Enviados</div><button class="btn btn-primary btn-sm" onclick="showAddEnvio()">+ Adicionar</button></div>';
+  if(enviosArr.length){
+    const envRev=[...enviosArr].reverse();
+    envRev.forEach((e,i)=>{
+      const realIdx=enviosArr.length-1-i;
+      const sEV=e.sessoes_ev||0,sIM=e.sessoes_im||0,tot=sEV+sIM;
+      const totProt=enviosArr.reduce((s,en)=>s+(en.sessoes_ev||0)+(en.sessoes_im||0),0);
+      const totAntes=enviosArr.slice(0,realIdx).reduce((s,en)=>s+(en.sessoes_ev||0)+(en.sessoes_im||0),0);
+      const sN=(sessoes||[]).filter(s=>s.envio_id===e.id).length;
+      const proxData=e.data_envio?addDaysToDisplay(e.data_envio,28):'\u2014';
+      const dProx=proxData!=='\u2014'?daysAgo(proxData)*-1:99;
+      let fC='var(--success)',fL='Em dia';
+      if(tot>0&&sN>=tot){fC='var(--text-muted)';fL='Conclu\u00eddo';}
+      else if(dProx<=3&&dProx>=0){fC='var(--danger)';fL='\ud83d\udea9 Enviar agora!';}
+      else if(dProx<=7&&dProx>3){fC='var(--warning)';fL='\u26a0\ufe0f Preparar envio';}
+      else if(dProx<0){fC='var(--danger)';fL='\ud83d\udea9 Atrasado!';}
+      const bgFlag=fC==='var(--success)'?'#dcfce7':fC==='var(--warning)'?'#fef3c7':fC==='var(--text-muted)'?'#f3f4f6':'#fee2e2';
+      const cId='envio-detail-'+e.id;
+      const termProt=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'\u2014';
+      html+='<div class="prog-row" style="margin-bottom:8px">'
+        +'<div class="prog-header" onclick="toggleEnvioCard(\''+cId+'\',this)" style="padding:12px 14px">'
+        +'<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        +'<span style="font-weight:700;font-size:13px">Envio '+(realIdx+1)+' \u00b7 '+(e.data_envio||'\u2014')+'</span>'
+        +'<span style="font-size:11px;font-weight:700;color:'+fC+';background:'+bgFlag+';padding:2px 7px;border-radius:99px">'+fL+'</span>'
+        +'</div><div style="font-size:12px;color:var(--text-muted);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap">'
+        +'<span>EV:'+sEV+' IM:'+sIM+' Tot:'+tot+'</span>'
+        +'<span style="color:var(--navy);font-weight:600">Acum:'+(totAntes+tot)+'/'+totProt+'</span>'
+        +(tot>0&&sN<tot?'<span style="color:'+fC+';font-weight:600">Pr\u00f3x: at\u00e9 '+proxData+'</span>':'')
+        +'</div></div>'
+        +'<span class="envio-arrow" style="color:var(--text-muted);font-size:14px;transition:transform .2s">\u25bc</span>'
+        +'</div>'
+        +'<div id="'+cId+'" style="padding:14px;border-top:1px solid var(--border-light);display:none">'
+        +'<div class="grid-2" style="margin-bottom:12px">'
+        +'<div style="background:var(--bg);border-radius:8px;padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">Pr\u00f3ximo Envio</div><div style="font-weight:700;font-size:13px;color:'+fC+'">'+proxData+'</div><div style="font-size:11px;color:var(--text-muted)">28 dias ap\u00f3s este</div></div>'
+        +'<div style="background:var(--bg);border-radius:8px;padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px">T\u00e9rmino Protocolo</div><div style="font-weight:700;font-size:13px;color:var(--navy)">'+termProt+'</div></div>'
+        +'</div>'
+        +'<div style="border-top:1px solid var(--border-light);padding-top:12px"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px">\u270f\ufe0f Editar Envio</div>'
+        +'<div class="grid-3" style="margin-bottom:8px">'
+        +'<div class="field" style="margin:0"><label>Data</label><input id="env-edit-data-'+e.id+'" value="'+(e.data_envio||'')+'" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/></div>'
+        +'<div class="field" style="margin:0"><label>Sess. EV</label><input type="number" id="env-edit-ev-'+e.id+'" value="'+sEV+'" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/></div>'
+        +'<div class="field" style="margin:0"><label>Sess. IM</label><input type="number" id="env-edit-im-'+e.id+'" value="'+sIM+'" min="0" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/></div>'
+        +'</div>'
+        +'<div class="field"><label>Substâncias</label><textarea id="env-edit-subs-'+e.id+'" rows="2" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;resize:vertical">'+(e.substancias||'')+'</textarea></div>'
+        +(e.receita_path?'<div style="margin-bottom:8px"><button class="btn btn-ghost btn-sm" onclick="openFile(\'documents\',\''+e.receita_path+'\')">\ud83d\udcc4 Ver Receita</button></div>':'')
+        +'<div class="field"><label>Substituir Receita</label><input type="file" id="env-edit-file-'+e.id+'" accept=".pdf,.jpg,.jpeg,.png" style="font-size:13px;width:100%"/></div>'
+        +'<div style="display:flex;gap:8px;align-items:center">'
+        +'<button class="btn btn-primary btn-sm" onclick="saveEnvioEdit('+e.id+',\''+(e.receita_path||'')+'\')">\ud83d\udcbe Salvar</button>'
+        +'<button class="btn-icon" onclick="deleteEnvio('+e.id+')">\ud83d\uddd1</button>'
+        +'<span class="user-badge" style="margin-left:4px">'+(e.registrado_por||'')+'</span>'
+        +'</div></div></div></div>';
+    });
+  }else{html+='<div class="text-muted text-sm" style="padding:8px 0">Nenhum envio registrado</div>';}
+  html+='</div></div>';
+  c.innerHTML=html;
 }
-
 function toggleEnvioCard(id,header){
   const detail=document.getElementById(id);if(!detail)return;
   const open=detail.style.display!=='none';
@@ -704,230 +716,214 @@ function toggleEnvioCard(id,header){
   const arrow=header.querySelector('.envio-arrow');
   if(arrow)arrow.style.transform=open?'':'rotate(180deg)';
 }
-
 function showAddSessao(){
-  const tipoOpts=TIPOS_SESSAO.map(t=>`<option value="${t}">${t}</option>`).join('');
-  showGenericModal(`
-    <div class="field"><label>Tipo de Sessão *</label><select id="ss-tipo">${tipoOpts}</select></div>
-    <div class="field"><label>Data da Sessão</label><input id="ss-data" value="${todayStr()}"/></div>
-    <div class="field"><label>Hora (para a agenda)</label><input id="ss-hora" type="time" value="09:00"/></div>
-    <div class="field"><label>Upload Receita (PDF/Imagem)</label><input type="file" id="ss-file" accept=".pdf,.jpg,.jpeg,.png"/></div>
-    <div class="field"><label>Substâncias e Dosagens</label><textarea id="ss-subs" rows="4" placeholder="Descreva as substâncias e dosagens..."></textarea></div>
-    <div class="field"><label>Observação</label><textarea id="ss-obs" rows="2"></textarea></div>
-    <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:#166534">✅ Ao salvar, um agendamento será criado automaticamente com status <strong>Compareceu</strong>.</div>
-    <button class="btn btn-primary btn-full" onclick="saveSessao()">Salvar</button>
-  `,'Nova Sessão Realizada');
+  const tipoOpts=TIPOS_SESSAO.map(t=>'<option value="'+t+'">'+t+'</option>').join('');
+  showGenericModal(
+    '<div class="field"><label>Tipo de Sess\u00e3o *</label><select id="ss-tipo">'+tipoOpts+'</select></div>'
+    +'<div class="field"><label>Data da Sess\u00e3o</label><input id="ss-data" value="'+todayStr()+'"/></div>'
+    +'<div class="field"><label>Hora (para a agenda)</label><input id="ss-hora" type="time" value="09:00"/></div>'
+    +'<div class="field"><label>Upload Receita (PDF/Imagem)</label><input type="file" id="ss-file" accept=".pdf,.jpg,.jpeg,.png"/></div>'
+    +'<div class="field"><label>Substâncias e Dosagens</label><textarea id="ss-subs" rows="4" placeholder="Descreva as substâncias e dosagens..."></textarea></div>'
+    +'<div class="field"><label>Observa\u00e7\u00e3o</label><textarea id="ss-obs" rows="2"></textarea></div>'
+    +'<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:#166534">\u2705 Ao salvar, um agendamento ser\u00e1 criado automaticamente com status <strong>Compareceu</strong>.</div>'
+    +'<button class="btn btn-primary btn-full" onclick="saveSessao()">Salvar</button>',
+    'Nova Sess\u00e3o Realizada'
+  );
 }
-
 async function saveSessao(){
   let receita_path=null;
   const file=document.getElementById('ss-file')?.files[0];
-  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/soro_${Date.now()}_${safeName}`;const{error}=await sb.storage.from('documents').upload(path,file,{contentType:file.type||'application/octet-stream'});if(!error)receita_path=path;}
+  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=currentPatientId+'/soro_'+Date.now()+'_'+safeName;const{error}=await sb.storage.from('documents').upload(path,file,{contentType:file.type||'application/octet-stream'});if(!error)receita_path=path;}
   const tipo=document.getElementById('ss-tipo').value;
   const dataSessao=document.getElementById('ss-data').value;
   const hora=document.getElementById('ss-hora').value||'09:00';
   const subs=document.getElementById('ss-subs').value.trim();
   const obs=document.getElementById('ss-obs').value.trim();
-
-  // 1. Insert soro sessao
   const{data:novaSessao,error}=await sb.from('planos_soro_sessoes').insert({patient_id:currentPatientId,tipo_sessao:tipo,data_sessao:dataSessao,substancias:subs,observacao:obs,receita_path,registrado_por:currentUser.name}).select().single();
-  if(error){toast('Erro ao salvar sessão','error');return;}
-
-  // 2. Auto-create appointment linked to this session
-  const apptId=await criarAgendaAutomatica('soro', dataSessao, tipo+(subs?': '+subs.slice(0,50):''), novaSessao.id, 'soro_sessoes');
-  if(apptId){
-    // Update hora
-    await sb.from('planos_appointments').update({time_str:hora}).eq('id',apptId);
-  }
-
-  closeModal('modal-generic');toast('Sessão registrada + agenda criada!','success');patTab('soroterapia');
+  if(error){toast('Erro ao salvar sess\u00e3o','error');return;}
+  const apptId=await criarAgendaAutomatica('soro',dataSessao,tipo+(subs?': '+subs.slice(0,50):''),novaSessao.id,'soro_sessoes');
+  if(apptId)await sb.from('planos_appointments').update({time_str:hora}).eq('id',apptId);
+  closeModal('modal-generic');toast('Sess\u00e3o registrada + agenda criada!','success');patTab('soroterapia');
 }
-
-async function deleteSessao(id, apptId){
-  if(!confirm('Remover esta sessão? O agendamento vinculado também será removido.'))return;
+async function deleteSessao(id,apptId){
+  if(!confirm('Remover esta sess\u00e3o? O agendamento vinculado tamb\u00e9m ser\u00e1 removido.'))return;
   const{data:old}=await sb.from('planos_soro_sessoes').select('*').eq('id',id).single();
   await sb.from('planos_soro_sessoes').delete().eq('id',id);
   if(apptId)await sb.from('planos_appointments').delete().eq('id',apptId);
   await logHistorico('soro_sessoes',id,'exclusao',old,null);
   patTab('soroterapia');
 }
-
-async function saveSessaoEdit(id, oldReceita, linkedApptId){
+async function saveSessaoEdit(id,oldReceita,linkedApptId){
   const{data:old}=await sb.from('planos_soro_sessoes').select('*').eq('id',id).single();
   let receita_path=oldReceita||null;
-  const file=document.getElementById(`ss-edit-file-${id}`)?.files[0];
-  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/soro_${Date.now()}_${safeName}`;const{error}=await sb.storage.from('documents').upload(path,file);if(!error)receita_path=path;}
-  const newData={tipo_sessao:document.getElementById(`ss-edit-tipo-${id}`).value,data_sessao:document.getElementById(`ss-edit-data-${id}`).value.trim(),substancias:document.getElementById(`ss-edit-subs-${id}`).value.trim(),observacao:document.getElementById(`ss-edit-obs-${id}`).value.trim(),receita_path,updated_by:currentUser.name,updated_at:new Date().toISOString()};
+  const file=document.getElementById('ss-edit-file-'+id)?.files[0];
+  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=currentPatientId+'/soro_'+Date.now()+'_'+safeName;const{error}=await sb.storage.from('documents').upload(path,file);if(!error)receita_path=path;}
+  const newData={tipo_sessao:document.getElementById('ss-edit-tipo-'+id).value,data_sessao:document.getElementById('ss-edit-data-'+id).value.trim(),substancias:document.getElementById('ss-edit-subs-'+id).value.trim(),observacao:document.getElementById('ss-edit-obs-'+id).value.trim(),receita_path,updated_by:currentUser.name,updated_at:new Date().toISOString()};
   const{error}=await sb.from('planos_soro_sessoes').update(newData).eq('id',id);
   if(error){toast('Erro ao salvar','error');return;}
-  // Sync agenda if linked
-  if(linkedApptId){await sb.from('planos_appointments').update({date_str:newData.data_sessao,observacao:(newData.tipo_sessao||'')+(newData.substancias?': '+newData.substancias.slice(0,50):'')}).eq('id',linkedApptId);}
+  if(linkedApptId)await sb.from('planos_appointments').update({date_str:newData.data_sessao,observacao:(newData.tipo_sessao||'')+(newData.substancias?': '+newData.substancias.slice(0,50):'')}).eq('id',linkedApptId);
   await logHistorico('soro_sessoes',id,'edicao',old,newData);
-  toast('Sessão atualizada!','success');patTab('soroterapia');
+  toast('Sess\u00e3o atualizada!','success');patTab('soroterapia');
 }
-
 function showAddEnvio(){
-  showGenericModal(`
-    <div class="field"><label>Data do Envio</label><input id="env-data" value="${todayStr()}"/></div>
-    <div class="field"><label>Total Sessões no Protocolo</label><input type="number" id="env-total" min="1" value="8"/></div>
-    <div class="field"><label>Substâncias Enviadas</label><textarea id="env-subs" rows="3" placeholder="Ex: Vitamina C 7,5g, Glutationa 600mg..."></textarea></div>
-    <div class="grid-2"><div class="field"><label>Sessões EV</label><input type="number" id="env-ev" min="0" value="0"/></div><div class="field"><label>Sessões IM</label><input type="number" id="env-im" min="0" value="0"/></div></div>
-    <div class="field"><label>Upload Receita</label><input type="file" id="env-file" accept=".pdf,.jpg,.jpeg,.png"/></div>
-    <button class="btn btn-primary btn-full" onclick="saveEnvio()">Salvar</button>
-  `,'Novo Envio de Injetável');
+  showGenericModal(
+    '<div class="field"><label>Data do Envio</label><input id="env-data" value="'+todayStr()+'"/></div>'
+    +'<div class="field"><label>Total Sess\u00f5es no Protocolo</label><input type="number" id="env-total" min="1" value="8"/></div>'
+    +'<div class="field"><label>Substâncias Enviadas</label><textarea id="env-subs" rows="3" placeholder="Ex: Vitamina C 7,5g, Glutationa 600mg..."></textarea></div>'
+    +'<div class="grid-2"><div class="field"><label>Sess\u00f5es EV</label><input type="number" id="env-ev" min="0" value="0"/></div><div class="field"><label>Sess\u00f5es IM</label><input type="number" id="env-im" min="0" value="0"/></div></div>'
+    +'<div class="field"><label>Upload Receita</label><input type="file" id="env-file" accept=".pdf,.jpg,.jpeg,.png"/></div>'
+    +'<button class="btn btn-primary btn-full" onclick="saveEnvio()">Salvar</button>',
+    'Novo Envio de Ijet\u00e1vel'
+  );
 }
 async function saveEnvio(){
   let receita_path=null;
   const file=document.getElementById('env-file')?.files[0];
-  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/envio_${Date.now()}_${safeName}`;const{error}=await sb.storage.from('documents').upload(path,file,{contentType:file.type||'application/octet-stream'});if(!error)receita_path=path;}
+  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=currentPatientId+'/envio_'+Date.now()+'_'+safeName;const{error}=await sb.storage.from('documents').upload(path,file,{contentType:file.type||'application/octet-stream'});if(!error)receita_path=path;}
   await sb.from('planos_soro_envios').insert({patient_id:currentPatientId,data_envio:document.getElementById('env-data').value,substancias:document.getElementById('env-subs').value.trim(),sessoes_ev:parseInt(document.getElementById('env-ev').value)||0,sessoes_im:parseInt(document.getElementById('env-im').value)||0,total_protocolo:parseInt(document.getElementById('env-total')?.value)||0,receita_path,registrado_por:currentUser.name});
   closeModal('modal-generic');toast('Envio registrado','success');patTab('soroterapia');
 }
 async function deleteEnvio(id){if(!confirm('Remover este envio?'))return;await sb.from('planos_soro_envios').delete().eq('id',id);patTab('soroterapia');}
 async function saveEnvioEdit(id,oldReceita){
   let receita_path=oldReceita||null;
-  const file=document.getElementById(`env-edit-file-${id}`)?.files[0];
-  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/envio_${Date.now()}_${safeName}`;const{error}=await sb.storage.from('documents').upload(path,file);if(!error)receita_path=path;}
-  const{error}=await sb.from('planos_soro_envios').update({data_envio:document.getElementById(`env-edit-data-${id}`).value.trim(),sessoes_ev:parseInt(document.getElementById(`env-edit-ev-${id}`).value)||0,sessoes_im:parseInt(document.getElementById(`env-edit-im-${id}`).value)||0,substancias:document.getElementById(`env-edit-subs-${id}`).value.trim(),receita_path,updated_by:currentUser.name,updated_at:new Date().toISOString()}).eq('id',id);
+  const file=document.getElementById('env-edit-file-'+id)?.files[0];
+  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=currentPatientId+'/envio_'+Date.now()+'_'+safeName;const{error}=await sb.storage.from('documents').upload(path,file);if(!error)receita_path=path;}
+  const{error}=await sb.from('planos_soro_envios').update({data_envio:document.getElementById('env-edit-data-'+id).value.trim(),sessoes_ev:parseInt(document.getElementById('env-edit-ev-'+id).value)||0,sessoes_im:parseInt(document.getElementById('env-edit-im-'+id).value)||0,substancias:document.getElementById('env-edit-subs-'+id).value.trim(),receita_path,updated_by:currentUser.name,updated_at:new Date().toISOString()}).eq('id',id);
   if(error){toast('Erro ao salvar','error');return;}
   toast('Envio atualizado!','success');patTab('soroterapia');
 }
+// block5 done
 
-// ── TAB IMPLANTE ──────────────────────────────────────────────
 async function renderImplante(){
   const[{data:items},{data:appts}]=await Promise.all([
     sb.from('planos_implantes').select('*').eq('patient_id',currentPatientId).order('created_at'),
     sb.from('planos_appointments').select('*').eq('patient_id',currentPatientId)
   ]);
   const c=document.getElementById('patient-tab-content');
-  const apptMap={};(appts||[]).forEach(a=>{if(a.origem_tabela==='implantes'&&a.origem_id)apptMap[a.origem_id]=a;});
-  c.innerHTML=`
-  <div class="alert-info" style="margin-bottom:12px;font-size:12px"><strong>ℹ️ Fluxo principal:</strong> Registre aqui → a agenda é preenchida automaticamente como Compareceu.</div>
-  <div class="card">
-    <div class="card-header"><div class="card-title" style="margin:0">Implantes Hormonais</div><button class="btn btn-primary btn-sm" onclick="showAddImplante()">+ Add</button></div>
-    ${(items||[]).length?(items||[]).slice().reverse().map(i=>{
+  const apptMap={};
+  (appts||[]).forEach(a=>{if(a.origem_tabela==='implantes'&&a.origem_id)apptMap[a.origem_id]=a;});
+  let html='<div class="alert-info" style="margin-bottom:12px;font-size:12px"><strong>\u2139\ufe0f Fluxo principal:</strong> Registre aqui \u2192 a agenda \u00e9 preenchida automaticamente como Compareceu.</div>';
+  html+='<div class="card"><div class="card-header"><div class="card-title" style="margin:0">Implantes Hormonais</div><button class="btn btn-primary btn-sm" onclick="showAddImplante()">+ Add</button></div>';
+  if((items||[]).length){
+    [...(items||[])].reverse().forEach(i=>{
       const linkedAppt=apptMap[i.id];
-      const agendaBadge=linkedAppt
-        ?`<span class="agenda-link-badge" onclick="patTab('agenda')">📅 ${fmtDate(linkedAppt.date_str)} ${linkedAppt.time_str||''}</span>`
-        :`<span class="agenda-link-badge pending">📅 Sem agendamento</span>`;
-      return`
-      <div style="margin-bottom:8px">
-        <div class="attach-item">
-          <div class="attach-icon">💉</div>
-          <div class="attach-info">
-            <div class="attach-name">Implante · ${i.data_implante||'—'}</div>
-            ${i.observacao?`<div class="attach-date">${i.observacao}</div>`:''}
-            <div style="margin-top:4px">${agendaBadge}</div>
-            <div class="attach-date" style="margin-top:4px"><span class="user-badge">${i.registrado_por||''}</span></div>
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0">
-            ${i.receita_path?`<button class="btn-icon" onclick="openFile('documents','${i.receita_path}')">📄</button>`:''}
-            <button class="btn-icon" onclick="toggleEdit('impl-edit-${i.id}')" title="Editar">✏️</button>
-            <button class="btn-icon" onclick="deleteImplante(${i.id},${linkedAppt?linkedAppt.id:'null'})">🗑</button>
-          </div>
-        </div>
-        <div id="impl-edit-${i.id}" class="edit-inline">
-          <div class="field"><label>Data do Implante</label><input id="impl-ef-data-${i.id}" value="${i.data_implante||''}"/></div>
-          <div class="field"><label>Observação (hormônio, dose, etc.)</label><textarea id="impl-ef-obs-${i.id}" rows="3">${i.observacao||''}</textarea></div>
-          <div class="field"><label>Substituir Receita</label><input type="file" id="impl-ef-file-${i.id}" accept=".pdf,.jpg,.jpeg,.png"/></div>
-          <div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="saveImplEdit(${i.id},'${i.receita_path||''}',${linkedAppt?linkedAppt.id:'null'})">💾 Salvar</button><button class="btn btn-ghost btn-sm" onclick="toggleEdit('impl-edit-${i.id}')">Cancelar</button></div>
-        </div>
-      </div>`;
-    }).join(''):'<div class="text-muted text-sm">Nenhum implante registrado</div>'}
-  </div>`;
+      const badge=linkedAppt
+        ?'<span class="agenda-link-badge" onclick="patTab(\'agenda\')">\ud83d\udcc5 '+fmtDate(linkedAppt.date_str)+' '+(linkedAppt.time_str||'')+'</span>'
+        :'<span class="agenda-link-badge pending">\ud83d\udcc5 Sem agendamento</span>';
+      const apptIdStr=linkedAppt?linkedAppt.id:'null';
+      const editId='impl-edit-'+i.id;
+      html+='<div style="margin-bottom:8px">'
+        +'<div class="attach-item">'
+        +'<div class="attach-icon">\ud83d\udc89</div>'
+        +'<div class="attach-info">'
+        +'<div class="attach-name">Implante \u00b7 '+(i.data_implante||'\u2014')+'</div>'
+        +(i.observacao?'<div class="attach-date">'+i.observacao+'</div>':'')
+        +'<div style="margin-top:4px">'+badge+'</div>'
+        +'<div class="attach-date" style="margin-top:4px"><span class="user-badge">'+(i.registrado_por||'')+'</span></div>'
+        +'</div>'
+        +'<div style="display:flex;gap:6px;flex-shrink:0">'
+        +(i.receita_path?'<button class="btn-icon" onclick="openFile(\'documents\',\''+i.receita_path+'\')">\ud83d\udcc4</button>':'')
+        +'<button class="btn-icon" onclick="toggleEdit(\''+editId+'\')">\u270f\ufe0f</button>'
+        +'<button class="btn-icon" onclick="deleteImplante('+i.id+','+apptIdStr+')">\ud83d\uddd1</button>'
+        +'</div></div>'
+        +'<div id="'+editId+'" class="edit-inline">'
+        +'<div class="field"><label>Data do Implante</label><input id="impl-ef-data-'+i.id+'" value="'+(i.data_implante||'')+'"/></div>'
+        +'<div class="field"><label>Observa\u00e7\u00e3o (horm\u00f4nio, dose, etc.)</label><textarea id="impl-ef-obs-'+i.id+'" rows="3">'+(i.observacao||'')+'</textarea></div>'
+        +'<div class="field"><label>Substituir Receita</label><input type="file" id="impl-ef-file-'+i.id+'" accept=".pdf,.jpg,.jpeg,.png"/></div>'
+        +'<div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="saveImplEdit('+i.id+',\''+(i.receita_path||'')+'\','+apptIdStr+')">\ud83d\udcbe Salvar</button><button class="btn btn-ghost btn-sm" onclick="toggleEdit(\''+editId+'\')">Cancelar</button></div>'
+        +'</div></div>';
+    });
+  }else{html+='<div class="text-muted text-sm">Nenhum implante registrado</div>';}
+  html+='</div>';
+  c.innerHTML=html;
 }
-
 async function saveImplEdit(id,oldReceita,linkedApptId){
   const{data:old}=await sb.from('planos_implantes').select('*').eq('id',id).single();
   let receita_path=oldReceita||null;
-  const file=document.getElementById(`impl-ef-file-${id}`)?.files[0];
-  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/implante_${Date.now()}_${safeName}`;const{error}=await sb.storage.from('documents').upload(path,file);if(!error)receita_path=path;}
-  const novaData=document.getElementById(`impl-ef-data-${id}`).value.trim();
-  const novaObs=document.getElementById(`impl-ef-obs-${id}`).value.trim();
+  const file=document.getElementById('impl-ef-file-'+id)?.files[0];
+  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=currentPatientId+'/implante_'+Date.now()+'_'+safeName;const{error}=await sb.storage.from('documents').upload(path,file);if(!error)receita_path=path;}
+  const novaData=document.getElementById('impl-ef-data-'+id).value.trim();
+  const novaObs=document.getElementById('impl-ef-obs-'+id).value.trim();
   const newData={data_implante:novaData,observacao:novaObs,receita_path,updated_by:currentUser.name,updated_at:new Date().toISOString()};
   await sb.from('planos_implantes').update(newData).eq('id',id);
-  if(linkedApptId){await sb.from('planos_appointments').update({date_str:novaData,observacao:'Implante Hormonal'+(novaObs?': '+novaObs.slice(0,60):'')}).eq('id',linkedApptId);}
+  if(linkedApptId)await sb.from('planos_appointments').update({date_str:novaData,observacao:'Implante Hormonal'+(novaObs?': '+novaObs.slice(0,60):'')}).eq('id',linkedApptId);
   await logHistorico('implantes',id,'edicao',old,newData);
   toast('Implante atualizado!','success');patTab('implante');
 }
-
 function showAddImplante(){
-  showGenericModal(`
-    <div class="field"><label>Data do Implante</label><input id="imp-data" value="${todayStr()}"/></div>
-    <div class="field"><label>Hora (para a agenda)</label><input id="imp-hora" type="time" value="09:00"/></div>
-    <div class="field"><label>Observação (hormônio, dose, etc.)</label><textarea id="imp-obs" rows="3"></textarea></div>
-    <div class="field"><label>Upload Receita</label><input type="file" id="imp-file" accept=".pdf,.jpg,.jpeg,.png"/></div>
-    <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:#166534">✅ Ao salvar, um agendamento será criado automaticamente com status <strong>Compareceu</strong>.</div>
-    <button class="btn btn-primary btn-full" onclick="saveImplante()">Salvar</button>
-  `,'Novo Implante');
+  showGenericModal(
+    '<div class="field"><label>Data do Implante</label><input id="imp-data" value="'+todayStr()+'"/></div>'
+    +'<div class="field"><label>Hora (para a agenda)</label><input id="imp-hora" type="time" value="09:00"/></div>'
+    +'<div class="field"><label>Observa\u00e7\u00e3o (horm\u00f4nio, dose, etc.)</label><textarea id="imp-obs" rows="3"></textarea></div>'
+    +'<div class="field"><label>Upload Receita</label><input type="file" id="imp-file" accept=".pdf,.jpg,.jpeg,.png"/></div>'
+    +'<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:#166534">\u2705 Ao salvar, um agendamento ser\u00e1 criado automaticamente com status <strong>Compareceu</strong>.</div>'
+    +'<button class="btn btn-primary btn-full" onclick="saveImplante()">Salvar</button>',
+    'Novo Implante'
+  );
 }
-
 async function saveImplante(){
   let receita_path=null;
   const file=document.getElementById('imp-file')?.files[0];
-  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${currentPatientId}/implante_${Date.now()}_${safeName}`;const{error}=await sb.storage.from('documents').upload(path,file,{contentType:file.type||'application/octet-stream'});if(!error)receita_path=path;}
+  if(file){const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');const path=currentPatientId+'/implante_'+Date.now()+'_'+safeName;const{error}=await sb.storage.from('documents').upload(path,file,{contentType:file.type||'application/octet-stream'});if(!error)receita_path=path;}
   const dataImpl=document.getElementById('imp-data').value;
   const hora=document.getElementById('imp-hora').value||'09:00';
   const obs=document.getElementById('imp-obs').value.trim();
-
-  // 1. Insert implante
   const{data:novoImpl,error}=await sb.from('planos_implantes').insert({patient_id:currentPatientId,data_implante:dataImpl,observacao:obs,receita_path,registrado_por:currentUser.name}).select().single();
   if(error){toast('Erro ao salvar implante','error');return;}
-
-  // 2. Auto-create appointment
-  const apptId=await criarAgendaAutomatica('implante', dataImpl, 'Implante Hormonal'+(obs?': '+obs.slice(0,60):''), novoImpl.id, 'implantes');
-  if(apptId){await sb.from('planos_appointments').update({time_str:hora}).eq('id',apptId);}
-
+  const apptId=await criarAgendaAutomatica('implante',dataImpl,'Implante Hormonal'+(obs?': '+obs.slice(0,60):''),novoImpl.id,'implantes');
+  if(apptId)await sb.from('planos_appointments').update({time_str:hora}).eq('id',apptId);
   closeModal('modal-generic');toast('Implante registrado + agenda criada!','success');patTab('implante');
 }
-
-async function deleteImplante(id, apptId){
-  if(!confirm('Remover este implante? O agendamento vinculado também será removido.'))return;
+async function deleteImplante(id,apptId){
+  if(!confirm('Remover este implante? O agendamento vinculado tamb\u00e9m ser\u00e1 removido.'))return;
   const{data:old}=await sb.from('planos_implantes').select('*').eq('id',id).single();
   await sb.from('planos_implantes').delete().eq('id',id);
   if(apptId)await sb.from('planos_appointments').delete().eq('id',apptId);
   await logHistorico('implantes',id,'exclusao',old,null);
   patTab('implante');
 }
+// block6 done
 
-// ── TAB AGENDA ────────────────────────────────────────────────
 async function renderPatAgenda(){
   const{data:appts}=await sb.from('planos_appointments').select('*').eq('patient_id',currentPatientId).order('created_at');
-  const c=document.getElementById('patient-tab-content');
   const sorted=(appts||[]).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+  const c=document.getElementById('patient-tab-content');
+  let html='<div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#92400e"><strong>\u2139\ufe0f Aten\u00e7\u00e3o:</strong> Agendamentos via Soroterapia/Implante (borda verde) j\u00e1 contabilizam nessas abas. Agendamentos criados aqui n\u00e3o contabilizam como sess\u00e3o de soro.</div>';
+  html+='<div class="section-header"><div class="section-title">Agendamentos</div><button class="btn btn-primary btn-sm" onclick="showAddApptPatient()">+ Add</button></div>';
   function apptHtml(a){
-    const isAutoLinked=!!a.origem_tabela;
-    return`<div class="appt-item" style="${isAutoLinked?'border-left:3px solid var(--success)':''}">
-      <div class="appt-time">${a.time_str||'--:--'}</div>
-      <div class="appt-info">
-        <div class="appt-name">${fmtDate(a.date_str||'')} · ${a.procedimento||''}</div>
-        <div class="appt-sub">${a.tipo||''} ${a.observacao?' · '+a.observacao:''}</div>
-        ${isAutoLinked?`<div class="appt-sub" style="color:var(--success);font-weight:600">🔗 Vinculado via ${a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante'} — não contabiliza em separado</div>`:''}
-        ${a.profissional_nome?`<div class="appt-sub" style="color:var(--navy);font-weight:600">👤 ${a.profissional_nome}</div>`:''}
-        <div style="margin-top:2px"><span class="user-badge">${a.registrado_por||''}</span></div>
-      </div>
-      <select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="updateApptStatus(${a.id},this.value)">
-        ${['Agendado','Compareceu','Faltou','Cancelou'].map(s=>`<option ${a.status===s?'selected':''}>${s}</option>`).join('')}
-      </select>
-      <button class="btn-icon" onclick="deleteAppt(${a.id})">🗑</button>
-    </div>`;
+    const isAuto=!!a.origem_tabela;
+    const statusOpts=['Agendado','Compareceu','Faltou','Cancelou'].map(s=>'<option '+(a.status===s?'selected':'')+'>'+s+'</option>').join('');
+    return '<div class="appt-item" style="'+(isAuto?'border-left:3px solid var(--success)':'')+'">'
+      +'<div class="appt-time">'+(a.time_str||'--:--')+'</div>'
+      +'<div class="appt-info">'
+      +'<div class="appt-name">'+fmtDate(a.date_str||'')+' \u00b7 '+(a.procedimento||'')+'</div>'
+      +'<div class="appt-sub">'+(a.tipo||'')+(a.observacao?' \u00b7 '+a.observacao:'')+'</div>'
+      +(isAuto?'<div class="appt-sub" style="color:var(--success);font-weight:600">\ud83d\udd17 Vinculado via '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>':'')
+      +(a.profissional_nome?'<div class="appt-sub" style="color:var(--navy);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>':'')
+      +'<div style="margin-top:2px"><span class="user-badge">'+(a.registrado_por||'')+'</span></div>'
+      +'</div>'
+      +'<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="updateApptStatus('+a.id+',this.value)">'+statusOpts+'</select>'
+      +'<button class="btn-icon" onclick="deleteAppt('+a.id+')">\ud83d\uddd1</button>'
+      +'</div>';
   }
-  c.innerHTML=`
-  <div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#92400e"><strong>ℹ️ Atenção:</strong> Agendamentos criados via Soroterapia/Implante (marcados em verde) já contabilizam nessas abas. Agendamentos criados aqui não contabilizam como sessão de soro.</div>
-  <div class="section-header"><div class="section-title">Agendamentos</div><button class="btn btn-primary btn-sm" onclick="showAddApptPatient()">+ Add</button></div>
-  ${sorted.slice(0,5).map(a=>apptHtml(a)).join('')}
-  ${sorted.length>5?`<div id="more-appts" style="display:none">${sorted.slice(5).map(a=>apptHtml(a)).join('')}</div><button class="btn btn-ghost btn-full" onclick="document.getElementById('more-appts').style.display='block';this.style.display='none'">Ver todos (${sorted.length}) ↓</button>`:''}
-  ${!sorted.length?'<div class="empty"><div class="empty-icon">📅</div>Sem agendamentos</div>':''}`;
+  html+=sorted.slice(0,5).map(a=>apptHtml(a)).join('');
+  if(sorted.length>5){
+    html+='<div id="more-appts" style="display:none">'+sorted.slice(5).map(a=>apptHtml(a)).join('')+'</div>';
+    html+='<button class="btn btn-ghost btn-full" onclick="document.getElementById(\'more-appts\').style.display=\'block\';this.style.display=\'none\'">Ver todos ('+sorted.length+') \u2193</button>';
+  }
+  if(!sorted.length)html+='<div class="empty"><div class="empty-icon">\ud83d\udcc5</div>Sem agendamentos</div>';
+  c.innerHTML=html;
 }
 function showAddApptPatient(){
-  showGenericModal(`
-    <div class="grid-2"><div class="field"><label>Data</label><input id="ap-date" value="${todayStr()}"/></div><div class="field"><label>Hora</label><input id="ap-time" type="time" value="09:00"/></div></div>
-    <div class="field"><label>Procedimento</label><select id="ap-proc"><option>Consulta Avulsa</option><option>Consulta de Plano de Acompanhamento</option><option>Enfermeira</option><option>Nutricionista</option><option>Exame</option><option>Preparador Físico</option></select></div>
-    <div class="field"><label>Tipo</label><select id="ap-tipo"><option>Consulta</option><option>Injetável</option><option>Teste Respiratório</option><option>Bioimpedância</option></select></div>
-    <div class="field"><label>Profissional</label><select id="ap-prof"><option value="">— Selecionar —</option></select></div>
-    <div class="field"><label>Observação</label><input type="text" id="ap-obs"/></div>
-    <button class="btn btn-primary btn-full" onclick="saveApptPatient()">Salvar</button>
-  `,'Novo Agendamento');
+  showGenericModal(
+    '<div class="grid-2"><div class="field"><label>Data</label><input id="ap-date" value="'+todayStr()+'"/></div><div class="field"><label>Hora</label><input id="ap-time" type="time" value="09:00"/></div></div>'
+    +'<div class="field"><label>Procedimento</label><select id="ap-proc"><option>Consulta Avulsa</option><option>Consulta de Plano de Acompanhamento</option><option>Enfermeira</option><option>Nutricionista</option><option>Exame</option><option>Preparador F\u00edsico</option></select></div>'
+    +'<div class="field"><label>Tipo</label><select id="ap-tipo"><option>Consulta</option><option>Ijet\u00e1vel</option><option>Teste Respirat\u00f3rio</option><option>Bioimpedância</option></select></div>'
+    +'<div class="field"><label>Profissional</label><select id="ap-prof"><option value="">— Selecionar —</option></select></div>'
+    +'<div class="field"><label>Observa\u00e7\u00e3o</label><input type="text" id="ap-obs"/></div>'
+    +'<button class="btn btn-primary btn-full" onclick="saveApptPatient()">Salvar</button>',
+    'Novo Agendamento'
+  );
   loadProfsIntoSelect('ap-prof');
 }
 async function saveApptPatient(){
@@ -937,30 +933,39 @@ async function saveApptPatient(){
 async function updateApptStatus(id,status){await sb.from('planos_appointments').update({status,updated_by:currentUser.name}).eq('id',id);toast('Status atualizado','success');}
 async function deleteAppt(id){await sb.from('planos_appointments').delete().eq('id',id);patTab('agenda');}
 
-// ── TAB CONTRATO ──────────────────────────────────────────────
 async function renderContrato(){
   const{data:items}=await sb.from('planos_contratos').select('*').eq('patient_id',currentPatientId).order('created_at');
   const c=document.getElementById('patient-tab-content');
-  c.innerHTML=`<div class="card"><div class="card-header"><div class="card-title" style="margin:0">Contratos</div><button class="btn btn-primary btn-sm" onclick="showUploadContrato()">+ Upload</button></div>
-    ${(items||[]).length?(items||[]).slice().reverse().map(i=>`<div class="attach-item"><div class="attach-icon" style="font-size:11px;font-weight:700;color:var(--text-muted);width:36px;text-align:center">PDF</div><div class="attach-info"><div class="attach-name">${i.label||'Contrato'}</div><div class="attach-date">${i.data_upload||''}</div><div class="attach-date"><span class="user-badge">${i.registrado_por||''}</span></div></div><button class="btn btn-ghost btn-sm" onclick="openFile('contracts','${i.file_path}')">Abrir</button><button class="btn-icon" onclick="deleteContrato(${i.id})">🗑</button></div>`).join(''):'<div class="text-muted text-sm">Nenhum contrato</div>'}
-  </div>`;
+  let html='<div class="card"><div class="card-header"><div class="card-title" style="margin:0">Contratos</div><button class="btn btn-primary btn-sm" onclick="showUploadContrato()">+ Upload</button></div>';
+  if((items||[]).length){
+    [...(items||[])].reverse().forEach(i=>{
+      html+='<div class="attach-item">'
+        +'<div class="attach-icon" style="font-size:11px;font-weight:700;color:var(--text-muted);width:36px;text-align:center">PDF</div>'
+        +'<div class="attach-info"><div class="attach-name">'+(i.label||'Contrato')+'</div><div class="attach-date">'+(i.data_upload||'')+'</div><div class="attach-date"><span class="user-badge">'+(i.registrado_por||'')+'</span></div></div>'
+        +'<button class="btn btn-ghost btn-sm" onclick="openFile(\'contracts\',\''+i.file_path+'\')">Abrir</button>'
+        +'<button class="btn-icon" onclick="deleteContrato('+i.id+')">\ud83d\uddd1</button>'
+        +'</div>';
+    });
+  }else{html+='<div class="text-muted text-sm">Nenhum contrato</div>';}
+  html+='</div>';
+  c.innerHTML=html;
 }
 function showUploadContrato(){
-  showGenericModal(`<div class="field"><label>Descrição</label><input id="cont-label" placeholder="Ex: Contrato Plano 6 meses"/></div><div class="field"><label>Arquivo (PDF/Imagem)</label><input type="file" id="cont-file" accept=".pdf,.jpg,.jpeg,.png"/></div><button class="btn btn-primary btn-full" onclick="saveContrato()">Upload</button>`,'Upload de Contrato');
+  showGenericModal('<div class="field"><label>Descri\u00e7\u00e3o</label><input id="cont-label" placeholder="Ex: Contrato Plano 6 meses"/></div><div class="field"><label>Arquivo (PDF/Imagem)</label><input type="file" id="cont-file" accept=".pdf,.jpg,.jpeg,.png"/></div><button class="btn btn-primary btn-full" onclick="saveContrato()">Upload</button>','Upload de Contrato');
 }
 async function saveContrato(){
   const file=document.getElementById('cont-file')?.files[0];
   if(!file){toast('Selecione um arquivo','error');return;}
   const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
-  const path=`pat${currentPatientId}_${Date.now()}_${safeName}`;
+  const path='pat'+currentPatientId+'_'+Date.now()+'_'+safeName;
   const{error}=await sb.storage.from('contracts').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:true});
   if(error){toast('Erro: '+error.message,'error');return;}
   await sb.from('planos_contratos').insert({patient_id:currentPatientId,file_path:path,label:document.getElementById('cont-label').value.trim(),data_upload:todayStr(),registrado_por:currentUser.name});
   closeModal('modal-generic');toast('Contrato salvo!','success');patTab('contrato');
 }
 async function deleteContrato(id){await sb.from('planos_contratos').delete().eq('id',id);patTab('contrato');}
+// block7 done
 
-// ── TAB HISTÓRICO ─────────────────────────────────────────────
 async function renderHistorico(){
   const[{data:appts},{data:fin},{data:soro},{data:impl},{data:ciclos},{data:edicoes}]=await Promise.all([
     sb.from('planos_appointments').select('*').eq('patient_id',currentPatientId).order('created_at'),
@@ -972,116 +977,133 @@ async function renderHistorico(){
   ]);
   const c=document.getElementById('patient-tab-content');
   const totalFin=(fin||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
-  // Only count appts NOT linked to soro/implante as "consultas"
   const consultasLista=(appts||[]).filter(a=>a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
-  const soroLista=(soro||[]);
-  const implLista=(impl||[]);
+  const soroLista=soro||[];
+  const implLista=impl||[];
 
-  const tabelaLabel=t=>t==='soro_sessoes'?'Sessão Soro':t==='implantes'?'Implante':t==='financeiro'?'Pagamento':'Registro';
-  const acaoLabel=a=>a==='edicao'?'Editado':a==='exclusao'?'Excluído':'Criado';
-  const acaoColor=a=>a==='edicao'?'var(--accent)':a==='exclusao'?'var(--danger)':'var(--success)';
-  const acaoBg=a=>a==='edicao'?'#dbeafe':a==='exclusao'?'#fee2e2':'#dcfce7';
+  let html='';
 
-  c.innerHTML=`
-  <!-- CONTADORES -->
-  <div class="card">
-    <div class="card-title">Resumo do Plano</div>
-    <div class="grid-3">
-      <div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">${consultasLista.length}</div><div style="font-size:11px;color:var(--text-muted)">Consultas</div></div>
-      <div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">${soroLista.length}</div><div style="font-size:11px;color:var(--text-muted)">Sessões Soro</div></div>
-      <div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">${implLista.length}</div><div style="font-size:11px;color:var(--text-muted)">Implantes</div></div>
-    </div>
-  </div>
+  // CONTADORES
+  html+='<div class="card"><div class="card-title">Resumo do Plano</div><div class="grid-3">'
+    +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+consultasLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Consultas</div></div>'
+    +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+soroLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Sess\u00f5es Soro</div></div>'
+    +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+implLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Implantes</div></div>'
+    +'</div></div>';
 
-  <!-- CONSULTAS -->
-  <div class="card">
-    <div class="card-title" style="margin-bottom:10px">🩺 Consultas (${consultasLista.length})</div>
-    ${consultasLista.length?consultasLista.map(a=>`
-    <div class="hist-box hist-box-consult">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div>
-          <div style="font-weight:700;font-size:14px">📅 ${fmtDate(a.date_str)}</div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:3px">${a.procedimento||''}${a.tipo?' · '+a.tipo:''}</div>
-          ${a.profissional_nome?`<div style="font-size:12px;color:var(--navy);font-weight:600;margin-top:2px">👤 ${a.profissional_nome}</div>`:''}
-          ${a.observacao?`<div style="font-size:12px;color:var(--text-muted);margin-top:2px;font-style:italic">${a.observacao}</div>`:''}
-        </div>
-        <span class="pill pill-green">${a.status}</span>
-      </div>
-    </div>`).join(''):'<div class="text-muted text-sm">Nenhuma consulta registrada</div>'}
-  </div>
+  // CONSULTAS
+  html+='<div class="card"><div class="card-title" style="margin-bottom:10px">\ud83e\ude7a Consultas ('+consultasLista.length+')</div>';
+  if(consultasLista.length){
+    consultasLista.forEach(a=>{
+      const statusCls=a.status==='Compareceu'?'pill-green':a.status==='Faltou'?'pill-red':a.status==='Cancelou'?'pill-amber':'pill-blue';
+      html+='<div class="hist-box hist-box-consult">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+        +'<div><div style="font-weight:700;font-size:14px">\ud83d\udcc5 '+fmtDate(a.date_str)+'</div>'
+        +'<div style="font-size:13px;color:var(--text-muted);margin-top:3px">'+(a.procedimento||'')+(a.tipo?' \u00b7 '+a.tipo:'')+'</div>'
+        +(a.profissional_nome?'<div style="font-size:12px;color:var(--navy);font-weight:600;margin-top:2px">\ud83d\udc64 '+a.profissional_nome+'</div>':'')
+        +(a.observacao?'<div style="font-size:12px;color:var(--text-muted);margin-top:2px;font-style:italic">'+a.observacao+'</div>':'')
+        +'</div><span class="pill '+statusCls+'">'+a.status+'</span></div></div>';
+    });
+  }else{html+='<div class="text-muted text-sm">Nenhuma consulta registrada</div>';}
+  html+='</div>';
 
-  <!-- SOROTERAPIA -->
-  <div class="card">
-    <div class="card-title" style="margin-bottom:10px">💉 Sessões de Soroterapia (${soroLista.length})</div>
-    ${soroLista.length?soroLista.map((s,i)=>`
-    <div class="hist-box hist-box-soro" style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-size:12px;font-weight:700;color:#fff;background:#0ea5e9;border-radius:5px;padding:2px 8px">#${soroLista.length-i}</span>
-            <span style="font-weight:700;font-size:14px">📅 ${s.data_sessao||'—'}</span>
-            ${s.tipo_sessao?`<span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${s.tipo_sessao}</span>`:''}
-          </div>
-          ${s.substancias?`<div style="font-size:12px;color:var(--text-muted);margin-top:5px">${s.substancias}</div>`:''}
-          ${s.observacao?`<div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-style:italic">${s.observacao}</div>`:''}
-          <div style="margin-top:4px"><span class="user-badge">${s.registrado_por||''}</span></div>
-        </div>
-        ${s.receita_path?`<button class="btn btn-ghost btn-sm" onclick="openFile('documents','${s.receita_path}')">📄</button>`:''}
-      </div>
-    </div>`).join(''):'<div class="text-muted text-sm">Nenhuma sessão de soro registrada</div>'}
-  </div>
+  // SOROTERAPIA
+  html+='<div class="card"><div class="card-title" style="margin-bottom:10px">\ud83d\udc89 Sess\u00f5es de Soroterapia ('+soroLista.length+')</div>';
+  if(soroLista.length){
+    soroLista.forEach((s,i)=>{
+      html+='<div class="hist-box hist-box-soro" style="margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+        +'<div style="flex:1">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        +'<span style="font-size:12px;font-weight:700;color:#fff;background:#0ea5e9;border-radius:5px;padding:2px 8px">#'+(soroLista.length-i)+'</span>'
+        +'<span style="font-weight:700;font-size:14px">\ud83d\udcc5 '+(s.data_sessao||'\u2014')+'</span>'
+        +(s.tipo_sessao?'<span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">'+s.tipo_sessao+'</span>':'')
+        +'</div>'
+        +(s.substancias?'<div style="font-size:12px;color:var(--text-muted);margin-top:5px">'+s.substancias+'</div>':'')
+        +(s.observacao?'<div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-style:italic">'+s.observacao+'</div>':'')
+        +'<div style="margin-top:4px"><span class="user-badge">'+(s.registrado_por||'')+'</span></div>'
+        +'</div>'
+        +(s.receita_path?'<button class="btn btn-ghost btn-sm" onclick="openFile(\'documents\',\''+s.receita_path+'\')">\ud83d\udcc4</button>':'')
+        +'</div></div>';
+    });
+  }else{html+='<div class="text-muted text-sm">Nenhuma sess\u00e3o de soro registrada</div>';}
+  html+='</div>';
 
-  <!-- IMPLANTES -->
-  <div class="card">
-    <div class="card-title" style="margin-bottom:10px">🧬 Implantes (${implLista.length})</div>
-    ${implLista.length?implLista.map((i,idx)=>`
-    <div class="hist-box hist-box-impl" style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-size:12px;font-weight:700;color:#fff;background:#a855f7;border-radius:5px;padding:2px 8px">#${implLista.length-idx}</span>
-            <span style="font-weight:700;font-size:14px">📅 ${i.data_implante||'—'}</span>
-          </div>
-          ${i.observacao?`<div style="font-size:12px;color:var(--text-muted);margin-top:5px">${i.observacao}</div>`:''}
-          <div style="margin-top:4px"><span class="user-badge">${i.registrado_por||''}</span></div>
-        </div>
-        ${i.receita_path?`<button class="btn btn-ghost btn-sm" onclick="openFile('documents','${i.receita_path}')">📄</button>`:''}
-      </div>
-    </div>`).join(''):'<div class="text-muted text-sm">Nenhum implante registrado</div>'}
-  </div>
+  // IMPLANTES
+  html+='<div class="card"><div class="card-title" style="margin-bottom:10px">\ud83e\uddec Implantes ('+implLista.length+')</div>';
+  if(implLista.length){
+    implLista.forEach((imp,i)=>{
+      html+='<div class="hist-box hist-box-impl" style="margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+        +'<div style="flex:1">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        +'<span style="font-size:12px;font-weight:700;color:#fff;background:#a855f7;border-radius:5px;padding:2px 8px">#'+(implLista.length-i)+'</span>'
+        +'<span style="font-weight:700;font-size:14px">\ud83d\udcc5 '+(imp.data_implante||'\u2014')+'</span>'
+        +'</div>'
+        +(imp.observacao?'<div style="font-size:12px;color:var(--text-muted);margin-top:5px">'+imp.observacao+'</div>':'')
+        +'<div style="margin-top:4px"><span class="user-badge">'+(imp.registrado_por||'')+'</span></div>'
+        +'</div>'
+        +(imp.receita_path?'<button class="btn btn-ghost btn-sm" onclick="openFile(\'documents\',\''+imp.receita_path+'\')">\ud83d\udcc4</button>':'')
+        +'</div></div>';
+    });
+  }else{html+='<div class="text-muted text-sm">Nenhum implante registrado</div>';}
+  html+='</div>';
 
-  <!-- FINANCEIRO -->
-  <div class="card">
-    <div class="card-title">Histórico Financeiro</div>
-    <div style="font-size:20px;font-weight:700;color:var(--navy)">R$ ${totalFin.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${(fin||[]).length} pagamento(s) registrado(s)</div>
-  </div>
+  // FINANCEIRO
+  html+='<div class="card"><div class="card-title">Hist\u00f3rico Financeiro</div>'
+    +'<div style="font-size:20px;font-weight:700;color:var(--navy)">R$ '+totalFin.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>'
+    +'<div style="font-size:12px;color:var(--text-muted);margin-top:4px">'+(fin||[]).length+' pagamento(s) registrado(s)</div></div>';
 
-  <!-- CICLOS ANTERIORES -->
-  ${(ciclos||[]).length?`<div class="card"><div class="card-title">Ciclos Anteriores</div>${(ciclos||[]).slice().reverse().map(c=>`<div style="padding:10px 0;border-bottom:1px solid var(--border-light)"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700;font-size:14px">${c.plan_type||'Plano'}</div><span style="font-weight:700;font-size:12px;color:${c.motivo==='fim'?'#3b82f6':'#f97316'}">${c.motivo==='fim'?'Fim do Plano':'Desistência'}</span></div><div style="font-size:12px;color:var(--text-muted);margin-top:3px">Início: ${isoToDisplay(c.inicio_programa||'')} · Encerrado: ${isoToDisplay(c.data_encerramento||'')}</div><div style="font-size:12px;color:var(--text-muted)">${c.sessoes_count||0} sessões · ${c.envios_count||0} envios</div><div style="font-size:11px;margin-top:2px"><span class="user-badge">${c.registrado_por||''}</span></div></div>`).join('')}</div>`:''}
+  // CICLOS ANTERIORES
+  if((ciclos||[]).length){
+    html+='<div class="card"><div class="card-title">Ciclos Anteriores</div>';
+    [...(ciclos||[])].reverse().forEach(ci=>{
+      html+='<div style="padding:10px 0;border-bottom:1px solid var(--border-light)">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center">'
+        +'<div style="font-weight:700;font-size:14px">'+(ci.plan_type||'Plano')+'</div>'
+        +'<span style="font-weight:700;font-size:12px;color:'+(ci.motivo==='fim'?'#3b82f6':'#f97316')+'">'+(ci.motivo==='fim'?'Fim do Plano':'Desist\u00eancia')+'</span>'
+        +'</div>'
+        +'<div style="font-size:12px;color:var(--text-muted);margin-top:3px">In\u00edcio: '+isoToDisplay(ci.inicio_programa||'')+' \u00b7 Encerrado: '+isoToDisplay(ci.data_encerramento||'')+'</div>'
+        +'<div style="font-size:12px;color:var(--text-muted)">'+(ci.sessoes_count||0)+' sess\u00f5es \u00b7 '+(ci.envios_count||0)+' envios</div>'
+        +'<div style="font-size:11px;margin-top:2px"><span class="user-badge">'+(ci.registrado_por||'')+'</span></div>'
+        +'</div>';
+    });
+    html+='</div>';
+  }
 
-  <!-- LOG DE EDIÇÕES -->
-  ${(edicoes||[]).length?`<div class="card"><div class="card-title">📝 Log de Edições e Exclusões</div>
-    ${edicoes.map(e=>{
+  // LOG EDICOES
+  if((edicoes||[]).length){
+    const tabelaLabel=t=>t==='soro_sessoes'?'Sess\u00e3o Soro':t==='implantes'?'Implante':t==='financeiro'?'Pagamento':'Registro';
+    const acaoLabel=a=>a==='edicao'?'Editado':a==='exclusao'?'Exclu\u00eddo':'Criado';
+    const acaoColor=a=>a==='edicao'?'var(--accent)':a==='exclusao'?'var(--danger)':'var(--success)';
+    const acaoBg=a=>a==='edicao'?'#dbeafe':a==='exclusao'?'#fee2e2':'#dcfce7';
+    const campos={tipo_sessao:'Tipo',data_sessao:'Data',substancias:'Subs.',observacao:'Obs',data_implante:'Data Impl.',forma:'Forma',valor:'Valor',data_pagamento:'Data Pag.'};
+    html+='<div class="card"><div class="card-title">\ud83d\udcdd Log de Edi\u00e7\u00f5es e Exclus\u00f5es</div>';
+    edicoes.forEach(e=>{
       let dadosAntes={};let dadosNovos={};
       try{dadosAntes=JSON.parse(e.dados_anteriores||'{}')}catch(x){}
       try{dadosNovos=JSON.parse(e.dados_novos||'{}')}catch(x){}
-      const campos={tipo_sessao:'Tipo',data_sessao:'Data',substancias:'Substâncias',observacao:'Obs',data_implante:'Data Impl.',forma:'Forma',valor:'Valor',data_pagamento:'Data Pag.'};
-      const diffItems=e.acao==='edicao'?Object.keys(campos).filter(k=>dadosAntes[k]!==dadosNovos[k]&&(dadosAntes[k]||dadosNovos[k])).map(k=>`${campos[k]}: ${dadosAntes[k]||'—'} → ${dadosNovos[k]||'—'}'):[];
-      return`<div style="padding:10px 0;border-bottom:1px solid var(--border-light)">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-weight:700;font-size:13px">${tabelaLabel(e.tabela)}</span><span style="font-size:11px;font-weight:700;color:${acaoColor(e.acao)};background:${acaoBg(e.acao)};padding:2px 7px;border-radius:99px">${acaoLabel(e.acao)}</span></div>
-            ${diffItems.length?`<div style="font-size:11px;color:var(--text-muted);margin-top:4px">${diffItems.join(' | ')}</div>`:''}
-          </div>
-          <div style="text-align:right;flex-shrink:0"><div style="font-size:11px;color:var(--text-muted)">${isoToDisplay(e.created_at||'')}</div><div style="margin-top:2px"><span class="user-badge">${e.registrado_por||''}</span></div></div>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>`:''}`;
-}
+      const diffs=e.acao==='edicao'?Object.keys(campos).filter(k=>dadosAntes[k]!==dadosNovos[k]&&(dadosAntes[k]||dadosNovos[k])).map(k=>campos[k]+': '+(dadosAntes[k]||'\u2014')+' \u2192 '+(dadosNovos[k]||'\u2014')):[];
+      html+='<div style="padding:10px 0;border-bottom:1px solid var(--border-light)">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+        +'<div style="flex:1">'
+        +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+        +'<span style="font-weight:700;font-size:13px">'+tabelaLabel(e.tabela)+'</span>'
+        +'<span style="font-size:11px;font-weight:700;color:'+acaoColor(e.acao)+';background:'+acaoBg(e.acao)+';padding:2px 7px;border-radius:99px">'+acaoLabel(e.acao)+'</span>'
+        +'</div>'
+        +(diffs.length?'<div style="font-size:11px;color:var(--text-muted);margin-top:4px">'+diffs.join(' | ')+'</div>':'')
+        +'</div>'
+        +'<div style="text-align:right;flex-shrink:0">'
+        +'<div style="font-size:11px;color:var(--text-muted)">'+isoToDisplay(e.created_at||'')+'</div>'
+        +'<div style="margin-top:2px"><span class="user-badge">'+(e.registrado_por||'')+'</span></div>'
+        +'</div></div></div>';
+    });
+    html+='</div>';
+  }
 
-// ── AGENDA GLOBAL ─────────────────────────────────────────────
+  c.innerHTML=html;
+}
+// block8 done
+
 async function renderAgenda(){
   const[{data:appts},{data:patients}]=await Promise.all([
     sb.from('planos_appointments').select('*').order('created_at'),
@@ -1093,47 +1115,60 @@ async function renderAgenda(){
   (appts||[]).forEach(a=>{
     const di=parseDateInt(a.date_str);
     if(di>=todayInt||!a.status||a.status==='Agendado'){
-      if(!byDate[a.date_str])byDate[a.date_str]=[];byDate[a.date_str].push(a);
+      if(!byDate[a.date_str])byDate[a.date_str]=[];
+      byDate[a.date_str].push(a);
     }
   });
   const dates=Object.keys(byDate).sort((a,b)=>parseDateInt(a)-parseDateInt(b));
   const c=document.getElementById('main-content');
-  c.innerHTML=`
-  <div class="section-header"><div class="section-title">Agenda</div><button class="btn btn-primary btn-sm" onclick="showAddApptGlobal()">+ Add</button></div>
-  ${dates.length?dates.map(date=>{
-    const isPast=parseDateInt(date)<todayInt,isToday=date===todayStr();
-    return`<div style="margin-bottom:20px">
-      <div class="agenda-day-header">${fmtDate(date)}${isToday?' — Hoje':''}</div>
-      ${byDate[date].sort((a,b)=>(a.time_str||'').localeCompare(b.time_str||'')).map(a=>`
-      <div class="appt-item ${isPast&&(!a.status||a.status==='Agendado')?'overdue':''}" style="${a.origem_tabela?'border-left:3px solid var(--success)':''}">
-        <div class="appt-time">${a.time_str||'--:--'}</div>
-        <div class="appt-info">
-          <div class="appt-name" style="cursor:pointer" onclick="openPatient(${a.patient_id})">${patMap[a.patient_id]||'#'+a.patient_id}</div>
-          <div class="appt-sub">${a.procedimento||''} · ${a.tipo||''}${isPast&&(!a.status||a.status==='Agendado')?`<span style="color:var(--danger);font-weight:700"> ${daysAgo(a.date_str)}d atrás</span>`:''}</div>
-          ${a.origem_tabela?`<div class="appt-sub" style="color:var(--success);font-weight:600">🔗 ${a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante'}</div>`:''}
-          ${a.profissional_nome?`<div class="appt-sub" style="color:var(--navy);font-weight:600">👤 ${a.profissional_nome}</div>`:''}
-          ${a.observacao?`<div class="appt-sub" style="font-style:italic">${a.observacao}</div>`:''}
-        </div>
-        <select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="updateApptStatus(${a.id},this.value)">
-          ${['Agendado','Compareceu','Faltou','Cancelou'].map(s=>`<option ${a.status===s?'selected':''}>${s}</option>`).join('')}
-        </select>
-      </div>`).join('')}
-    </div>`;
-  }).join(''):'<div class="empty"><div class="empty-icon">📅</div>Agenda vazia</div>'}`;
+  let html='<div class="section-header"><div class="section-title">Agenda</div><button class="btn btn-primary btn-sm" onclick="showAddApptGlobal()">+ Add</button></div>';
+  if(dates.length){
+    dates.forEach(date=>{
+      const isPast=parseDateInt(date)<todayInt;
+      const isToday=date===todayStr();
+      html+='<div style="margin-bottom:20px">';
+      html+='<div class="agenda-day-header">'+fmtDate(date)+(isToday?' \u2014 Hoje':'')+'</div>';
+      byDate[date].sort((a,b)=>(a.time_str||'').localeCompare(b.time_str||'')).forEach(a=>{
+        const overdue=isPast&&(!a.status||a.status==='Agendado');
+        const isAuto=!!a.origem_tabela;
+        const statusOpts=['Agendado','Compareceu','Faltou','Cancelou'].map(s=>'<option '+(a.status===s?'selected':'')+'>'+s+'</option>').join('');
+        html+='<div class="appt-item'+(overdue?' overdue':'')+'" style="'+(isAuto?'border-left:3px solid var(--success)':'')+'">'
+          +'<div class="appt-time">'+(a.time_str||'--:--')+'</div>'
+          +'<div class="appt-info">'
+          +'<div class="appt-name" style="cursor:pointer" onclick="openPatient('+a.patient_id+')">'+(patMap[a.patient_id]||'#'+a.patient_id)+'</div>'
+          +'<div class="appt-sub">'+(a.procedimento||'')+' \u00b7 '+(a.tipo||'')+(overdue?'<span style="color:var(--danger);font-weight:700"> '+daysAgo(a.date_str)+'d atr\u00e1s</span>':'')+'</div>'
+          +(isAuto?'<div class="appt-sub" style="color:var(--success);font-weight:600">\ud83d\udd17 '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>':'')
+          +(a.profissional_nome?'<div class="appt-sub" style="color:var(--navy);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>':'')
+          +(a.observacao?'<div class="appt-sub" style="font-style:italic">'+a.observacao+'</div>':'')
+          +'</div>'
+          +'<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="updateApptStatus('+a.id+',this.value)">'+statusOpts+'</select>'
+          +'</div>';
+      });
+      html+='</div>';
+    });
+  }else{html+='<div class="empty"><div class="empty-icon">\ud83d\udcc5</div>Agenda vazia</div>';}
+  c.innerHTML=html;
 }
 function showAddApptGlobal(){
-  showGenericModal(`
-    <div class="field"><label>Paciente</label><input id="gag-pat-name" placeholder="Digite o nome..." oninput="searchPatForAppt(this.value)"/><div id="gag-pat-results" style="margin-top:4px"></div><input type="hidden" id="gag-pat-id"/></div>
-    <div class="grid-2"><div class="field"><label>Data</label><input id="gag-date" value="${todayStr()}"/></div><div class="field"><label>Hora</label><input id="gag-time" type="time" value="09:00"/></div></div>
-    <div class="field"><label>Procedimento</label><select id="gag-proc"><option>Consulta Avulsa</option><option>Consulta de Plano de Acompanhamento</option><option>Enfermeira</option><option>Nutricionista</option><option>Exame</option><option>Preparador Físico</option></select></div>
-    <div class="field"><label>Tipo</label><select id="gag-tipo"><option>Consulta</option><option>Injetável</option><option>Teste Respiratório</option><option>Bioimpedância</option></select></div>
-    <div class="field"><label>Profissional</label><select id="gag-prof"><option value="">— Selecionar —</option></select></div>
-    <div class="field"><label>Observação</label><input type="text" id="gag-obs"/></div>
-    <button class="btn btn-primary btn-full" onclick="saveApptGlobal()">Salvar</button>
-  `,'Novo Agendamento');
+  showGenericModal(
+    '<div class="field"><label>Paciente</label><input id="gag-pat-name" placeholder="Digite o nome..." oninput="searchPatForAppt(this.value)"/><div id="gag-pat-results" style="margin-top:4px"></div><input type="hidden" id="gag-pat-id"/></div>'
+    +'<div class="grid-2"><div class="field"><label>Data</label><input id="gag-date" value="'+todayStr()+'"/></div><div class="field"><label>Hora</label><input id="gag-time" type="time" value="09:00"/></div></div>'
+    +'<div class="field"><label>Procedimento</label><select id="gag-proc"><option>Consulta Avulsa</option><option>Consulta de Plano de Acompanhamento</option><option>Enfermeira</option><option>Nutricionista</option><option>Exame</option><option>Preparador F\u00edsico</option></select></div>'
+    +'<div class="field"><label>Tipo</label><select id="gag-tipo"><option>Consulta</option><option>Ijet\u00e1vel</option><option>Teste Respirat\u00f3rio</option><option>Bioimpedância</option></select></div>'
+    +'<div class="field"><label>Profissional</label><select id="gag-prof"><option value="">— Selecionar —</option></select></div>'
+    +'<div class="field"><label>Observa\u00e7\u00e3o</label><input type="text" id="gag-obs"/></div>'
+    +'<button class="btn btn-primary btn-full" onclick="saveApptGlobal()">Salvar</button>',
+    'Novo Agendamento'
+  );
   loadProfsIntoSelect('gag-prof');
 }
-function searchPatForAppt(q){const norm=normStr(q);const matches=allPatients.filter(p=>normStr(p.name).includes(norm)).slice(0,5);const res=document.getElementById('gag-pat-results');if(!res||!q)return;res.innerHTML=matches.map(p=>`<div style="padding:6px 10px;cursor:pointer;background:var(--bg);border-radius:6px;margin-bottom:3px;font-size:13px" onclick="selectPatAppt(${p.id},'${p.name}')">${p.name}</div>`).join('');}
+function searchPatForAppt(q){
+  const norm=normStr(q);
+  const matches=allPatients.filter(p=>normStr(p.name).includes(norm)).slice(0,5);
+  const res=document.getElementById('gag-pat-results');
+  if(!res||!q)return;
+  res.innerHTML=matches.map(p=>'<div style="padding:6px 10px;cursor:pointer;background:var(--bg);border-radius:6px;margin-bottom:3px;font-size:13px" onclick="selectPatAppt('+p.id+',\''+p.name.replace(/'/g,"\\'")+'\')">' +p.name+'</div>').join('');
+}
 function selectPatAppt(id,name){document.getElementById('gag-pat-id').value=id;document.getElementById('gag-pat-name').value=name;document.getElementById('gag-pat-results').innerHTML='';}
 async function saveApptGlobal(){
   const patId=document.getElementById('gag-pat-id').value;
@@ -1141,8 +1176,8 @@ async function saveApptGlobal(){
   await sb.from('planos_appointments').insert({patient_id:parseInt(patId),date_str:document.getElementById('gag-date').value,time_str:document.getElementById('gag-time').value,procedimento:document.getElementById('gag-proc').value,tipo:document.getElementById('gag-tipo').value,observacao:document.getElementById('gag-obs').value.trim(),profissional_nome:document.getElementById('gag-prof')?.value||null,status:'Agendado',registrado_por:currentUser.name});
   closeModal('modal-generic');toast('Agendamento salvo','success');renderAgenda();
 }
+// block9 done
 
-// ── PROGRAMA ──────────────────────────────────────────────────
 async function renderPrograma(){
   const[{data:patients},{data:appts},{data:sessoes},{data:implantes},{data:envios}]=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
@@ -1159,137 +1194,203 @@ async function renderPrograma(){
     if(progFilter==='active')filtered=filtered.filter(p=>p.active);
     else if(progFilter==='inactive')filtered=filtered.filter(p=>!p.active);
     if(phaseFilter>0)filtered=filtered.filter(p=>p.inicio_programa&&calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3)===phaseFilter);
-    return`
-    <div class="section-header"><div class="section-title">Programa</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${['active','inactive','all'].map(f=>`<button class="btn btn-sm ${progFilter===f?'btn-primary':'btn-ghost'}" onclick="window._pf='${f}';rebuildProg()">${f==='active'?'Ativos':f==='inactive'?'Inativos':'Todos'}</button>`).join('')}
-        ${[0,1,2,3].map(ph=>`<button class="btn btn-sm ${phaseFilter===ph?'btn-accent':'btn-ghost'}" onclick="window._ph=${ph};rebuildProg()">${ph===0?'F-Todos':'F'+ph}</button>`).join('')}
-      </div>
-    </div>
-    ${filtered.map(p=>{
+    let html='<div class="section-header"><div class="section-title">Programa</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +'<button class="btn btn-sm '+(progFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="window._pf=\'active\';rebuildProg()">Ativos</button>'
+      +'<button class="btn btn-sm '+(progFilter==='inactive'?'btn-primary':'btn-ghost')+'" onclick="window._pf=\'inactive\';rebuildProg()">Inativos</button>'
+      +'<button class="btn btn-sm '+(progFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="window._pf=\'all\';rebuildProg()">Todos</button>'
+      +'<button class="btn btn-sm '+(phaseFilter===0?'btn-accent':'btn-ghost')+'" onclick="window._ph=0;rebuildProg()">F-Todos</button>'
+      +'<button class="btn btn-sm '+(phaseFilter===1?'btn-accent':'btn-ghost')+'" onclick="window._ph=1;rebuildProg()">F1</button>'
+      +'<button class="btn btn-sm '+(phaseFilter===2?'btn-accent':'btn-ghost')+'" onclick="window._ph=2;rebuildProg()">F2</button>'
+      +'<button class="btn btn-sm '+(phaseFilter===3?'btn-accent':'btn-ghost')+'" onclick="window._ph=3;rebuildProg()">F3</button>'
+      +'</div></div>';
+    if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc65</div>Sem pacientes</div>';return html;}
+    filtered.forEach(p=>{
       const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
       const months=p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0;
-      const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
+      const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'\u2014';
       const tags=(p.etiquetas||[]);
       const patAppts=(appts||[]).filter(a=>a.patient_id===p.id).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
-      const lastConsult=patAppts.find(a=>a.status==='Compareceu'&&!a.origem_tabela&&(a.tipo==='Consulta'||a.procedimento?.includes('Consulta')));
+      const lastConsult=patAppts.find(a=>a.status==='Compareceu'&&!a.origem_tabela&&(a.tipo==='Consulta'||!!(a.procedimento&&a.procedimento.includes('Consulta'))));
       const lastSoro=(sessoes||[]).filter(s=>s.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_sessao)-parseDateInt(a.data_sessao))[0];
       const lastImpl=(implantes||[]).filter(i=>i.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_implante)-parseDateInt(a.data_implante))[0];
       const lastEnvio=(envios||[]).filter(e=>e.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_envio)-parseDateInt(a.data_envio))[0];
       const isOnline=p.modality==='Online';
       let envioAlert='';
-      if(isOnline&&lastEnvio){const total=(lastEnvio.sessoes_ev||0)+(lastEnvio.sessoes_im||0);const feitas=(sessoes||[]).filter(s=>s.patient_id===p.id&&s.envio_id===lastEnvio.id).length;const rest=total-feitas;if(rest<=1)envioAlert=`<span style="color:var(--danger);font-weight:700">🚩 Enviar!</span>`;else if(rest<=2)envioAlert=`<span style="color:var(--warning);font-weight:700">⚠️ Preparar</span>`;}
-      return`<div class="prog-row"><div class="prog-header" onclick="toggleProg(this)">
-        <div class="patient-avatar" style="width:38px;height:38px;font-size:14px">${p.name.charAt(0)}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">${p.name}${tags.map(t=>`<span class="etiqueta" style="background:${t.color||'#6b7280'}">${t.name}</span>`).join('')}${envioAlert}</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap"><span class="phase-badge phase-${phase}">F${phase}</span><span>${p.plan_type||'—'}</span><span>Mês ${months+1}</span><span class="pill pill-${p.modality==='Presencial'?'blue':'purple'}">${p.modality||'—'}</span><span>Início: ${fmtDate(p.inicio_programa||'')}</span><span>Fim: ${endDate}</span>${p.motivo_encerramento?`<span style="font-weight:700;color:${p.motivo_encerramento==='fim'?'#3b82f6':'#f97316'}">Encerrado: ${isoToDisplay(p.data_encerramento||'')} — ${p.motivo_encerramento==='fim'?'Fim do Plano':'Desistência'}</span>`:''}</div>
-        </div><span style="color:var(--text-muted)">▾</span>
-      </div>
-      <div class="prog-detail">
-        <div class="grid-2" style="margin-bottom:10px">
-          <div class="card" style="margin:0;padding:12px"><div class="card-title">Última Consulta</div><div style="font-size:14px;font-weight:600">${lastConsult?fmtDate(lastConsult.date_str):'—'}</div>${lastConsult?`<div class="text-sm text-muted">${lastConsult.procedimento||''}</div>`:''}</div>
-          <div class="card" style="margin:0;padding:12px"><div class="card-title">Última Sessão Soro</div><div style="font-size:14px;font-weight:600">${lastSoro?fmtDate(lastSoro.data_sessao):'—'}</div>${lastSoro?`<div class="text-sm text-muted">${lastSoro.tipo_sessao||''}</div>`:''}</div>
-          <div class="card" style="margin:0;padding:12px"><div class="card-title">Último Implante</div><div style="font-size:14px;font-weight:600">${lastImpl?fmtDate(lastImpl.data_implante):'—'}</div></div>
-          ${isOnline&&lastEnvio?`<div class="card" style="margin:0;padding:12px"><div class="card-title">Último Envio</div><div style="font-size:14px;font-weight:600">${fmtDate(lastEnvio.data_envio)}</div><div class="text-sm text-muted">EV:${lastEnvio.sessoes_ev} IM:${lastEnvio.sessoes_im}</div></div>`:''}
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="openPatient(${p.id})">Ver Prontuário →</button>
-      </div></div>`;
-    }).join('')||'<div class="empty"><div class="empty-icon">👥</div>Sem pacientes</div>'}`;
+      if(isOnline&&lastEnvio){
+        const total=(lastEnvio.sessoes_ev||0)+(lastEnvio.sessoes_im||0);
+        const feitas=(sessoes||[]).filter(s=>s.patient_id===p.id&&s.envio_id===lastEnvio.id).length;
+        const rest=total-feitas;
+        if(rest<=1)envioAlert='<span style="color:var(--danger);font-weight:700">\ud83d\udea9 Enviar!</span>';
+        else if(rest<=2)envioAlert='<span style="color:var(--warning);font-weight:700">\u26a0\ufe0f Preparar</span>';
+      }
+      const tagHtml=tags.map(t=>'<span class="etiqueta" style="background:'+(t.color||'#6b7280')+'">'+t.name+'</span>').join('');
+      const encHtml=p.motivo_encerramento?'<span style="font-weight:700;color:'+(p.motivo_encerramento==='fim'?'#3b82f6':'#f97316')+'">Encerrado: '+isoToDisplay(p.data_encerramento||'')+' \u2014 '+(p.motivo_encerramento==='fim'?'Fim do Plano':'Desist\u00eancia')+'</span>':'';
+      html+='<div class="prog-row">'
+        +'<div class="prog-header" onclick="toggleProg(this)">'
+        +'<div class="patient-avatar" style="width:38px;height:38px;font-size:14px">'+p.name.charAt(0)+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">'+p.name+tagHtml+envioAlert+'</div>'
+        +'<div style="font-size:12px;color:var(--text-muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">'
+        +'<span class="phase-badge phase-'+phase+'">F'+phase+'</span>'
+        +'<span>'+(p.plan_type||'\u2014')+'</span>'
+        +'<span>M\u00eas '+(months+1)+'</span>'
+        +'<span class="pill pill-'+(p.modality==='Presencial'?'blue':'purple')+'">'+(p.modality||'\u2014')+'</span>'
+        +'<span>In\u00edcio: '+fmtDate(p.inicio_programa||'')+'</span>'
+        +'<span>Fim: '+endDate+'</span>'
+        +encHtml
+        +'</div></div>'
+        +'<span style="color:var(--text-muted)">\u25be</span>'
+        +'</div>'
+        +'<div class="prog-detail">'
+        +'<div class="grid-2" style="margin-bottom:10px">'
+        +'<div class="card" style="margin:0;padding:12px"><div class="card-title">\u00daltima Consulta</div><div style="font-size:14px;font-weight:600">'+(lastConsult?fmtDate(lastConsult.date_str):'\u2014')+'</div>'+(lastConsult?'<div class="text-sm text-muted">'+(lastConsult.procedimento||'')+'</div>':'')+'</div>'
+        +'<div class="card" style="margin:0;padding:12px"><div class="card-title">\u00daltima Sess\u00e3o Soro</div><div style="font-size:14px;font-weight:600">'+(lastSoro?fmtDate(lastSoro.data_sessao):'\u2014')+'</div>'+(lastSoro?'<div class="text-sm text-muted">'+(lastSoro.tipo_sessao||'')+'</div>':'')+'</div>'
+        +'<div class="card" style="margin:0;padding:12px"><div class="card-title">\u00daltimo Implante</div><div style="font-size:14px;font-weight:600">'+(lastImpl?fmtDate(lastImpl.data_implante):'\u2014')+'</div></div>'
+        +(isOnline&&lastEnvio?'<div class="card" style="margin:0;padding:12px"><div class="card-title">\u00daltimo Envio</div><div style="font-size:14px;font-weight:600">'+fmtDate(lastEnvio.data_envio)+'</div><div class="text-sm text-muted">EV:'+lastEnvio.sessoes_ev+' IM:'+lastEnvio.sessoes_im+'</div></div>':'')
+        +'</div>'
+        +'<button class="btn btn-ghost btn-sm" onclick="openPatient('+p.id+')">Ver Prontu\u00e1rio \u2192</button>'
+        +'</div></div>';
+    });
+    return html;
   }
   window._pf='active';window._ph=0;
   window.rebuildProg=function(){progFilter=window._pf;phaseFilter=window._ph;c.innerHTML=buildProg();};
   c.innerHTML=buildProg();
 }
-function toggleProg(header){const d=header.nextElementSibling;d.classList.toggle('open');header.querySelector('span:last-child').textContent=d.classList.contains('open')?'▴':'▾';}
-
-// ── HELPERS ───────────────────────────────────────────────────
+function toggleProg(header){const d=header.nextElementSibling;d.classList.toggle('open');header.querySelector('span:last-child').textContent=d.classList.contains('open')?'\u25b4':'\u25be';}
 async function loadProfsIntoSelect(selectId){
   const{data:profs}=await sb.from('planos_profissionais').select('id,nome,categoria').order('categoria,nome');
   const sel=document.getElementById(selectId);if(!sel||!profs)return;
   const byCat={};profs.forEach(p=>{if(!byCat[p.categoria])byCat[p.categoria]=[];byCat[p.categoria].push(p);});
-  sel.innerHTML='<option value="">— Profissional —</option>';
+  sel.innerHTML='<option value="">\u2014 Profissional \u2014</option>';
   Object.keys(byCat).sort().forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;byCat[cat].forEach(p=>{const o=document.createElement('option');o.value=p.nome;o.textContent=p.nome;og.appendChild(o);});sel.appendChild(og);});
 }
 async function openFile(bucket,path){const{data}=sb.storage.from(bucket).getPublicUrl(path);if(data.publicUrl)window.open(data.publicUrl,'_blank');}
+// block10 done
 
-// ── CONFIG ────────────────────────────────────────────────────
 async function renderConfig(){
   const{data:cfgs}=await sb.from('planos_config').select('*');
   const cfg={};(cfgs||[]).forEach(c=>cfg[c.key]=c.value);
   let tags=[];try{tags=JSON.parse(cfg.etiquetas||'[]')}catch(e){}
   const c=document.getElementById('main-content');
-  c.innerHTML=`
-  <div class="card">
-    <div class="card-title">🔐 Senhas</div>
-    <div class="field"><label>Nova Senha — Dr. José Carlos</label><input type="password" id="cfg-doc-pass"/></div>
-    <div class="field"><label>Confirmar</label><input type="password" id="cfg-doc-pass2"/></div>
-    <button class="btn btn-primary btn-sm" onclick="savePass('doctor')">Salvar senha do Dr.</button>
-    <div class="divider"></div>
-    <div class="field"><label>Nova Senha — Secretária</label><input type="password" id="cfg-sec-pass"/></div>
-    <div class="field"><label>Confirmar</label><input type="password" id="cfg-sec-pass2"/></div>
-    <button class="btn btn-primary btn-sm" onclick="savePass('secretary')">Salvar senha da Secretária</button>
-  </div>
-  <div class="card">
-    <div class="card-title">🏷️ Etiquetas</div>
-    <div id="tags-list" style="margin-bottom:12px">${tags.map((t,i)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="etiqueta" style="background:${t.color}">${t.name}</span><input type="text" value="${t.name}" style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px" onchange="updateTag(${i},'name',this.value)"/><input type="color" value="${t.color}" style="width:40px;height:34px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer" onchange="updateTag(${i},'color',this.value)"/><button class="btn-icon" onclick="removeTag(${i})">🗑</button></div>`).join('')}</div>
-    <button class="btn btn-ghost btn-sm" onclick="addTag()">+ Nova Etiqueta</button>
-    <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="saveTags()">💾 Salvar Etiquetas</button>
-  </div>
-  <div class="card">
-    <div class="card-title">💉 Tipos de Sessão de Soroterapia</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">${TIPOS_SESSAO.map(t=>`<span style="background:var(--bg);padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--navy)">${t}</span>`).join('')}</div>
-    <div style="font-size:11px;color:var(--text-muted);margin-top:8px">Tipos pré-definidos. Atualizações via nova versão do sistema.</div>
-  </div>
-  <div class="card">
-    <div class="card-title">👥 Profissionais</div>
-    <div id="profs-container"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
-  </div>`;
+  let tagsHtml=tags.map((t,i)=>'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+    +'<span class="etiqueta" style="background:'+t.color+'">'+t.name+'</span>'
+    +'<input type="text" value="'+t.name+'" style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px" onchange="updateTag('+i+',\'name\',this.value)"/>'
+    +'<input type="color" value="'+t.color+'" style="width:40px;height:34px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer" onchange="updateTag('+i+',\'color\',this.value)"/>'
+    +'<button class="btn-icon" onclick="removeTag('+i+')">\ud83d\uddd1</button>'
+    +'</div>').join('');
+  let tiposHtml=TIPOS_SESSAO.map(t=>'<span style="background:var(--bg);padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--navy)">'+t+'</span>').join('');
+  c.innerHTML='<div class="card"><div class="card-title">\ud83d\udd10 Senhas</div>'
+    +'<div class="field"><label>Nova Senha \u2014 Dr. Jos\u00e9 Carlos</label><input type="password" id="cfg-doc-pass"/></div>'
+    +'<div class="field"><label>Confirmar</label><input type="password" id="cfg-doc-pass2"/></div>'
+    +'<button class="btn btn-primary btn-sm" onclick="savePass(\'doctor\')">Salvar senha do Dr.</button>'
+    +'<div class="divider"></div>'
+    +'<div class="field"><label>Nova Senha \u2014 Secret\u00e1ria</label><input type="password" id="cfg-sec-pass"/></div>'
+    +'<div class="field"><label>Confirmar</label><input type="password" id="cfg-sec-pass2"/></div>'
+    +'<button class="btn btn-primary btn-sm" onclick="savePass(\'secretary\')">Salvar senha da Secret\u00e1ria</button>'
+    +'</div>'
+    +'<div class="card"><div class="card-title">\ud83c\udff7\ufe0f Etiquetas</div>'
+    +'<div id="tags-list" style="margin-bottom:12px">'+tagsHtml+'</div>'
+    +'<button class="btn btn-ghost btn-sm" onclick="addTag()">+ Nova Etiqueta</button>'
+    +'<button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="saveTags()">\ud83d\udcbe Salvar Etiquetas</button>'
+    +'</div>'
+    +'<div class="card"><div class="card-title">\ud83d\udc89 Tipos de Sess\u00e3o de Soroterapia</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+tiposHtml+'</div>'
+    +'<div style="font-size:11px;color:var(--text-muted);margin-top:8px">Tipos pr\u00e9-definidos no sistema.</div>'
+    +'</div>'
+    +'<div class="card"><div class="card-title">\ud83d\udc65 Profissionais</div>'
+    +'<div id="profs-container"><div class="loading"><div class="spinner"></div>Carregando...</div></div>'
+    +'</div>';
   window._tags=[...tags];
   const{data:profs}=await sb.from('planos_profissionais').select('*').order('categoria,nome');
   const profsByCat={};(profs||[]).forEach(p=>{if(!profsByCat[p.categoria])profsByCat[p.categoria]=[];profsByCat[p.categoria].push(p);});
-  const cats=['Médico','Nutricionista','Educador Físico','Enfermeira'];
-  document.getElementById('profs-container').innerHTML=cats.map(cat=>`
-    <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${cat}</div>
-      ${(profsByCat[cat]||[]).map(p=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;background:var(--bg);border-radius:8px;padding:10px 12px"><div style="flex:1"><div style="font-weight:600;font-size:13px">${p.nome}</div>${p.telefone?`<div style="font-size:11px;color:var(--text-muted)">${p.telefone}</div>`:''}${p.registro?`<div style="font-size:11px;color:var(--text-muted)">Reg: ${p.registro}</div>`:''}</div><button class="btn btn-ghost btn-sm" data-pid="${p.id}" data-nome="${p.nome}" data-tel="${p.telefone||''}" data-reg="${p.registro||''}" onclick="showEditProfissionalEl(this)">✏️</button><button class="btn-icon" onclick="deleteProfissional(${p.id})">🗑</button></div>`).join('')||'<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Nenhum cadastrado</div>'}
-      <button class="btn btn-ghost btn-sm" onclick="showAddProfissional('${cat}')">+ Novo ${cat}</button>
-    </div>${cat!==cats[cats.length-1]?'<div class="divider"></div>':''}`).join('');
+  const cats=['M\u00e9dico','Nutricionista','Educador F\u00edsico','Enfermeira'];
+  let profsHtml='';
+  cats.forEach((cat,ci)=>{
+    profsHtml+='<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">'+cat+'</div>';
+    if((profsByCat[cat]||[]).length){
+      (profsByCat[cat]||[]).forEach(p=>{
+        profsHtml+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;background:var(--bg);border-radius:8px;padding:10px 12px">'
+          +'<div style="flex:1"><div style="font-weight:600;font-size:13px">'+p.nome+'</div>'
+          +(p.telefone?'<div style="font-size:11px;color:var(--text-muted)">'+p.telefone+'</div>':'')
+          +(p.registro?'<div style="font-size:11px;color:var(--text-muted)">Reg: '+p.registro+'</div>':'')
+          +'</div>'
+          +'<button class="btn btn-ghost btn-sm" data-pid="'+p.id+'" data-nome="'+p.nome+'" data-tel="'+(p.telefone||'')+'" data-reg="'+(p.registro||'')+'" onclick="showEditProfissionalEl(this)">\u270f\ufe0f</button>'
+          +'<button class="btn-icon" onclick="deleteProfissional('+p.id+')">\ud83d\uddd1</button>'
+          +'</div>';
+      });
+    }else{profsHtml+='<div style="font-size:12px;color:var(--text-muted);padding:4px 0">Nenhum cadastrado</div>';}
+    profsHtml+='<button class="btn btn-ghost btn-sm" onclick="showAddProfissional(\''+cat+'\')">+ Novo '+cat+'</button></div>';
+    if(ci<cats.length-1)profsHtml+='<div class="divider"></div>';
+  });
+  document.getElementById('profs-container').innerHTML=profsHtml;
 }
-async function savePass(type){const p1=document.getElementById(`cfg-${type==='doctor'?'doc':'sec'}-pass`).value;const p2=document.getElementById(`cfg-${type==='doctor'?'doc':'sec'}-pass2`).value;if(!p1||p1!==p2){toast('Senhas não coincidem','error');return;}await sb.from('planos_config').upsert({key:type==='doctor'?'doctor_password':'secretary_password',value:p1});toast('Senha alterada!','success');}
+async function savePass(type){
+  const p1=document.getElementById('cfg-'+(type==='doctor'?'doc':'sec')+'-pass').value;
+  const p2=document.getElementById('cfg-'+(type==='doctor'?'doc':'sec')+'-pass2').value;
+  if(!p1||p1!==p2){toast('Senhas n\u00e3o coincidem','error');return;}
+  await sb.from('planos_config').upsert({key:type==='doctor'?'doctor_password':'secretary_password',value:p1});
+  toast('Senha alterada!','success');
+}
 function addTag(){window._tags.push({name:'Nova Etiqueta',color:'#6b7280'});renderConfig();}
 function removeTag(i){window._tags.splice(i,1);renderConfig();}
 function updateTag(i,field,val){window._tags[i][field]=val;if(field==='color'){document.querySelectorAll('#tags-list .etiqueta')[i].style.background=val;}}
 async function saveTags(){await sb.from('planos_config').upsert({key:'etiquetas',value:JSON.stringify(window._tags)});toast('Etiquetas salvas!','success');renderConfig();}
-function showAddProfissional(cat){showGenericModal(`<div class="field"><label>Nome *</label><input id="prof-nome" oninput="this.value=titleCase(this.value)" placeholder="Nome completo"/></div><div class="field"><label>Telefone</label><input id="prof-tel" placeholder="(00) 00000-0000"/></div><div class="field"><label>Registro</label><input id="prof-reg" placeholder="Ex: CRM 12345"/></div><button class="btn btn-primary btn-full" onclick="saveProfissional('${cat}')">Salvar</button>`,'Novo '+cat);}
-async function saveProfissional(cat){const nome=titleCase(document.getElementById('prof-nome').value.trim());if(!nome){toast('Nome obrigatório','error');return;}const{error}=await sb.from('planos_profissionais').insert({categoria:cat,nome,telefone:document.getElementById('prof-tel').value.trim()||null,registro:document.getElementById('prof-reg').value.trim()||null,created_by:currentUser.name,created_at:new Date().toISOString()});if(error){toast('Erro: '+error.message,'error');return;}closeModal('modal-generic');toast(cat+' salvo!','success');renderConfig();}
-function showEditProfissionalEl(btn){showGenericModal(`<div class="field"><label>Nome *</label><input id="prof-edit-nome" oninput="this.value=titleCase(this.value)" value="${btn.dataset.nome}"/></div><div class="field"><label>Telefone</label><input id="prof-edit-tel" value="${btn.dataset.tel}"/></div><div class="field"><label>Registro</label><input id="prof-edit-reg" value="${btn.dataset.reg}"/></div><button class="btn btn-primary btn-full" onclick="updateProfissional(${btn.dataset.pid})">💾 Salvar</button>`,'Editar Profissional');}
-async function updateProfissional(id){const nome=titleCase(document.getElementById('prof-edit-nome').value.trim());if(!nome){toast('Nome obrigatório','error');return;}await sb.from('planos_profissionais').update({nome,telefone:document.getElementById('prof-edit-tel').value.trim()||null,registro:document.getElementById('prof-edit-reg').value.trim()||null}).eq('id',id);closeModal('modal-generic');toast('Atualizado!','success');renderConfig();}
+function showAddProfissional(cat){
+  showGenericModal(
+    '<div class="field"><label>Nome *</label><input id="prof-nome" oninput="this.value=titleCase(this.value)" placeholder="Nome completo"/></div>'
+    +'<div class="field"><label>Telefone</label><input id="prof-tel" placeholder="(00) 00000-0000"/></div>'
+    +'<div class="field"><label>Registro</label><input id="prof-reg" placeholder="Ex: CRM 12345"/></div>'
+    +'<button class="btn btn-primary btn-full" onclick="saveProfissional(\''+cat+'\')">Salvar</button>',
+    'Novo '+cat
+  );
+}
+async function saveProfissional(cat){
+  const nome=titleCase(document.getElementById('prof-nome').value.trim());
+  if(!nome){toast('Nome obrigat\u00f3rio','error');return;}
+  const{error}=await sb.from('planos_profissionais').insert({categoria:cat,nome,telefone:document.getElementById('prof-tel').value.trim()||null,registro:document.getElementById('prof-reg').value.trim()||null,created_by:currentUser.name,created_at:new Date().toISOString()});
+  if(error){toast('Erro: '+error.message,'error');return;}
+  closeModal('modal-generic');toast(cat+' salvo!','success');renderConfig();
+}
+function showEditProfissionalEl(btn){
+  showGenericModal(
+    '<div class="field"><label>Nome *</label><input id="prof-edit-nome" oninput="this.value=titleCase(this.value)" value="'+btn.dataset.nome+'"/></div>'
+    +'<div class="field"><label>Telefone</label><input id="prof-edit-tel" value="'+btn.dataset.tel+'"/></div>'
+    +'<div class="field"><label>Registro</label><input id="prof-edit-reg" value="'+btn.dataset.reg+'"/></div>'
+    +'<button class="btn btn-primary btn-full" onclick="updateProfissional('+btn.dataset.pid+')">\ud83d\udcbe Salvar</button>',
+    'Editar Profissional'
+  );
+}
+async function updateProfissional(id){
+  const nome=titleCase(document.getElementById('prof-edit-nome').value.trim());
+  if(!nome){toast('Nome obrigat\u00f3rio','error');return;}
+  await sb.from('planos_profissionais').update({nome,telefone:document.getElementById('prof-edit-tel').value.trim()||null,registro:document.getElementById('prof-edit-reg').value.trim()||null}).eq('id',id);
+  closeModal('modal-generic');toast('Atualizado!','success');renderConfig();
+}
 async function deleteProfissional(id){if(!confirm('Remover?'))return;await sb.from('planos_profissionais').delete().eq('id',id);toast('Removido','success');renderConfig();}
-
-// ── NEW PATIENT ───────────────────────────────────────────────
 function showNewPatientModal(){
-  document.getElementById('new-patient-form').innerHTML=`
-    <div class="field"><label>Nome Completo *</label><input id="np-name" oninput="this.value=titleCase(this.value)" placeholder="Nome do paciente"/></div>
-    <div class="grid-2"><div class="field"><label>Data de Nascimento</label><input id="np-dob" placeholder="DD/MM/AAAA"/></div><div class="field"><label>CPF</label><input id="np-cpf" placeholder="000.000.000-00"/></div></div>
-    <div class="field"><label>Telefone</label><input id="np-tel" placeholder="(00) 00000-0000"/></div>
-    <div class="grid-2"><div class="field"><label>Tipo de Plano</label><select id="np-plan"><option>Plano 3 meses</option><option>Plano 6 meses</option><option>Consulta Avulsa</option></select></div><div class="field"><label>Modalidade</label><select id="np-modality"><option>Presencial</option><option>Online</option></select></div></div>
-    <div class="field"><label>Data de Início</label><input id="np-inicio" value="${todayStr()}"/></div>
-    <div class="field"><label>Observação</label><textarea id="np-obs" rows="2"></textarea></div>
-    <button class="btn btn-primary btn-full" onclick="saveNewPatient()">Criar Paciente</button>`;
+  document.getElementById('new-patient-form').innerHTML=
+    '<div class="field"><label>Nome Completo *</label><input id="np-name" oninput="this.value=titleCase(this.value)" placeholder="Nome do paciente"/></div>'
+    +'<div class="grid-2"><div class="field"><label>Data de Nascimento</label><input id="np-dob" placeholder="DD/MM/AAAA"/></div><div class="field"><label>CPF</label><input id="np-cpf" placeholder="000.000.000-00"/></div></div>'
+    +'<div class="field"><label>Telefone</label><input id="np-tel" placeholder="(00) 00000-0000"/></div>'
+    +'<div class="grid-2"><div class="field"><label>Tipo de Plano</label><select id="np-plan"><option>Plano 3 meses</option><option>Plano 6 meses</option><option>Consulta Avulsa</option></select></div><div class="field"><label>Modalidade</label><select id="np-modality"><option>Presencial</option><option>Online</option></select></div></div>'
+    +'<div class="field"><label>Data de In\u00edcio</label><input id="np-inicio" value="'+todayStr()+'"/></div>'
+    +'<div class="field"><label>Observa\u00e7\u00e3o</label><textarea id="np-obs" rows="2"></textarea></div>'
+    +'<button class="btn btn-primary btn-full" onclick="saveNewPatient()">Criar Paciente</button>';
   openModal('modal-new-patient');
 }
 async function saveNewPatient(){
   const name=titleCase(document.getElementById('np-name').value.trim());
-  if(!name){toast('Nome obrigatório','error');return;}
+  if(!name){toast('Nome obrigat\u00f3rio','error');return;}
   const planType=document.getElementById('np-plan').value;
   const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
   const{error,data:newPat}=await sb.from('planos_patients').insert({name,dob:displayToISO(document.getElementById('np-dob').value)||null,cpf:document.getElementById('np-cpf').value.trim(),telefone:document.getElementById('np-tel').value.trim(),plan_type:planType,duracao_programa:duracao,modality:document.getElementById('np-modality').value,inicio_programa:displayToISO(document.getElementById('np-inicio').value)||null,observacao:document.getElementById('np-obs').value.trim(),active:true,etiquetas:[],created_by:currentUser.name,created_at:new Date().toISOString()}).select().single();
   if(error){toast('Erro: '+error.message,'error');return;}
   closeModal('modal-new-patient');toast('Paciente criado!','success');await openPatient(newPat.id);
 }
+// block11 done
 
-// ── RELATÓRIOS ────────────────────────────────────────────────
 let relCharts={};
 function destroyRelCharts(){Object.values(relCharts).forEach(c=>{try{c.destroy()}catch(e){}});relCharts={};}
 function getMonthRange(period){
@@ -1307,10 +1408,11 @@ function dateInRange(dateStr,start,end){
   const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
   return d>=start&&d<=end;
 }
-async function renderRelatorios(period='mes'){
+async function renderRelatorios(period){
+  period=period||'mes';
   destroyRelCharts();
   const c=document.getElementById('main-content');
-  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando relatório...</div>';
+  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando relat\u00f3rio...</div>';
   const [{data:patients},{data:fin},{data:sessoes},{data:ciclos}]=await Promise.all([
     sb.from('planos_patients').select('*'),
     sb.from('planos_financeiro').select('*'),
@@ -1326,7 +1428,7 @@ async function renderRelatorios(period='mes'){
   const active=allP.filter(p=>p.active).length,inactive=allP.filter(p=>!p.active).length;
   const plan3=allP.filter(p=>p.plan_type==='Plano 3 meses').length,plan6=allP.filter(p=>p.plan_type==='Plano 6 meses').length,avulsa=allP.filter(p=>p.plan_type==='Consulta Avulsa').length;
   const pres=allP.filter(p=>p.modality==='Presencial').length,online=allP.filter(p=>p.modality==='Online').length;
-  const patC={};allC.forEach(c=>{patC[c.patient_id]=(patC[c.patient_id]||0)+1;});
+  const patC={};allC.forEach(ci=>{patC[ci.patient_id]=(patC[ci.patient_id]||0)+1;});
   const renovados=Object.values(patC).filter(v=>v>1).length;
   const taxaR=allP.length?((renovados/allP.length)*100).toFixed(1):0;
   const dur=allP.filter(p=>p.inicio_programa).map(p=>monthsSince(fmtDate(p.inicio_programa||'')));
@@ -1334,69 +1436,61 @@ async function renderRelatorios(period='mes'){
   const sessP=allS.filter(s=>dateInRange(s.data_sessao,start,end));
   const mLabels=[],mData=[];
   for(let i=11;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);const y=d.getFullYear(),m=d.getMonth();mLabels.push(String(m+1).padStart(2,'0')+'/'+y);mData.push(allP.filter(p=>{if(!p.created_at)return false;const pd=new Date(p.created_at);return pd.getFullYear()===y&&pd.getMonth()===m;}).length);}
-  const fim=allC.filter(c=>c.motivo==='fim').length,des=allC.filter(c=>c.motivo==='desistencia').length;
-  const pL={mes:'Mês Atual',trimestre:'Trimestre',semestre:'Semestre',ano:'Ano'};
-  // Tipo sessao chart
-  const tipoCount={};allS.forEach(s=>{const t=s.tipo_sessao||'Não especificado';tipoCount[t]=(tipoCount[t]||0)+1;});
+  const fimQ=allC.filter(ci=>ci.motivo==='fim').length,desQ=allC.filter(ci=>ci.motivo==='desistencia').length;
+  const tipoCount={};allS.forEach(s=>{const t=s.tipo_sessao||'N\u00e3o especificado';tipoCount[t]=(tipoCount[t]||0)+1;});
   const tipoLabels=Object.keys(tipoCount),tipoData=Object.values(tipoCount);
-
-  c.innerHTML=`
-  <div class="card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    <div style="font-weight:700;font-size:14px">Período:</div>
-    ${['mes','trimestre','semestre','ano'].map(p=>`<button class="btn btn-sm ${period===p?'btn-primary':'btn-ghost'}" onclick="renderRelatorios('${p}')">${pL[p]}</button>`).join('')}
-    <div style="flex:1"></div>
-    <button class="btn btn-sm btn-ghost" onclick="exportRelExcel()">📊 Excel</button>
-  </div>
-  <div class="section-header"><div class="section-title">💰 Financeiro — ${pL[period]}</div></div>
-  <div class="dash-grid-2">
-    <div class="dash-card" style="cursor:default"><div class="dash-card-num">R$ ${totalFat.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="dash-card-label">Faturamento</div><div class="dash-card-sub">${finPeriod.length} pagamento(s)</div></div>
-    <div class="dash-card" style="cursor:default"><div class="dash-card-num">R$ ${avgPat.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="dash-card-label">Média por Paciente</div></div>
-  </div>
-  <div class="section-header"><div class="section-title">📋 Planos</div></div>
-  <div class="dash-grid">
-    <div class="dash-card" style="cursor:default"><div class="dash-card-num">${active}</div><div class="dash-card-label">Ativos</div></div>
-    <div class="dash-card" style="cursor:default"><div class="dash-card-num">${inactive}</div><div class="dash-card-label">Finalizados</div></div>
-    <div class="dash-card" style="cursor:default"><div class="dash-card-num">${sessP.length}</div><div class="dash-card-label">Sessões Soro</div><div class="dash-card-sub">no período</div></div>
-  </div>
-  <div class="dash-grid-2">
-    <div class="dash-card" style="cursor:default"><div class="dash-card-num" style="color:var(--success)">${taxaR}%</div><div class="dash-card-label">Taxa de Renovação</div></div>
-    <div class="dash-card" style="cursor:default"><div class="dash-card-num">${avgP}</div><div class="dash-card-label">Permanência Média (meses)</div></div>
-  </div>
-  <div class="card"><div class="card-title">Novos Pacientes — Últimos 12 Meses</div><div style="position:relative;height:200px"><canvas id="chart-novos"></canvas></div></div>
-  <div class="grid-2">
-    <div class="card"><div class="card-title">Tipo de Plano</div><div style="position:relative;height:180px"><canvas id="chart-tipo"></canvas></div></div>
-    <div class="card"><div class="card-title">Modalidade</div><div style="position:relative;height:180px"><canvas id="chart-modal"></canvas></div></div>
-  </div>
-  ${tipoLabels.length?`<div class="card"><div class="card-title">Sessões de Soro por Tipo (total)</div><div style="position:relative;height:180px"><canvas id="chart-soro-tipo"></canvas></div></div>`:''}
-  <div class="card"><div class="card-title">Encerramentos</div><div style="position:relative;height:140px"><canvas id="chart-enc"></canvas></div></div>`;
-
+  const pL={mes:'M\u00eas Atual',trimestre:'Trimestre',semestre:'Semestre',ano:'Ano'};
+  const periodos=['mes','trimestre','semestre','ano'];
+  let periodBtns=periodos.map(p=>'<button class="btn btn-sm '+(period===p?'btn-primary':'btn-ghost')+'" onclick="renderRelatorios(\''+p+'\')">'+pL[p]+'</button>').join('');
+  c.innerHTML='<div class="card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="font-weight:700;font-size:14px">Per\u00edodo:</div>'+periodBtns+'<div style="flex:1"></div><button class="btn btn-sm btn-ghost" onclick="exportRelExcel()">\ud83d\udcca Excel</button></div>'
+    +'<div class="section-header"><div class="section-title">\ud83d\udcb0 Financeiro \u2014 '+pL[period]+'</div></div>'
+    +'<div class="dash-grid-2">'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">R$ '+totalFat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="dash-card-label">Faturamento</div><div class="dash-card-sub">'+finPeriod.length+' pagamento(s)</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">R$ '+avgPat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="dash-card-label">M\u00e9dia por Paciente</div></div>'
+    +'</div>'
+    +'<div class="section-header"><div class="section-title">\ud83d\udccb Planos</div></div>'
+    +'<div class="dash-grid">'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+active+'</div><div class="dash-card-label">Ativos</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+inactive+'</div><div class="dash-card-label">Finalizados</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+sessP.length+'</div><div class="dash-card-label">Sess\u00f5es Soro</div><div class="dash-card-sub">no per\u00edodo</div></div>'
+    +'</div>'
+    +'<div class="dash-grid-2">'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num" style="color:var(--success)">'+taxaR+'%</div><div class="dash-card-label">Taxa de Renova\u00e7\u00e3o</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+avgP+'</div><div class="dash-card-label">Perman\u00eancia M\u00e9dia (meses)</div></div>'
+    +'</div>'
+    +'<div class="card"><div class="card-title">Novos Pacientes \u2014 \u00daltimos 12 Meses</div><div style="position:relative;height:200px"><canvas id="chart-novos"></canvas></div></div>'
+    +'<div class="grid-2">'
+    +'<div class="card"><div class="card-title">Tipo de Plano</div><div style="position:relative;height:180px"><canvas id="chart-tipo"></canvas></div></div>'
+    +'<div class="card"><div class="card-title">Modalidade</div><div style="position:relative;height:180px"><canvas id="chart-modal"></canvas></div></div>'
+    +'</div>'
+    +(tipoLabels.length?'<div class="card"><div class="card-title">Sess\u00f5es de Soro por Tipo</div><div style="position:relative;height:180px"><canvas id="chart-soro-tipo"></canvas></div></div>':'')
+    +'<div class="card"><div class="card-title">Encerramentos</div><div style="position:relative;height:140px"><canvas id="chart-enc"></canvas></div></div>';
   setTimeout(()=>{
     const bOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{font:{size:10},stepSize:1}}}};
     relCharts['novos']=new Chart(document.getElementById('chart-novos'),{type:'line',data:{labels:mLabels,datasets:[{label:'Novos',data:mData,borderColor:'#1D2846',backgroundColor:'rgba(29,40,70,.1)',fill:true,tension:0.35,pointRadius:4,borderWidth:2}]},options:bOpts});
     relCharts['tipo']=new Chart(document.getElementById('chart-tipo'),{type:'doughnut',data:{labels:['3 meses','6 meses','Avulsa'],datasets:[{data:[plan3,plan6,avulsa],backgroundColor:['#1D2846','#4A90D9','#10b981'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}}}}});
     relCharts['modal']=new Chart(document.getElementById('chart-modal'),{type:'doughnut',data:{labels:['Presencial','Online'],datasets:[{data:[pres,online],backgroundColor:['#3b82f6','#8b5cf6'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}}}}});
-    if(tipoLabels.length){relCharts['soro']=new Chart(document.getElementById('chart-soro-tipo'),{type:'bar',data:{labels:tipoLabels,datasets:[{data:tipoData,backgroundColor:'#4A90D9',borderRadius:6}]},options:{...bOpts,plugins:{legend:{display:false}}}});}
-    relCharts['enc']=new Chart(document.getElementById('chart-enc'),{type:'bar',data:{labels:['Fim do Plano','Desistência'],datasets:[{data:[fim,des],backgroundColor:['#3b82f6','#f97316'],borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{stepSize:1},grid:{color:'rgba(0,0,0,.06)'}}}}});
+    if(tipoLabels.length)relCharts['soro']=new Chart(document.getElementById('chart-soro-tipo'),{type:'bar',data:{labels:tipoLabels,datasets:[{data:tipoData,backgroundColor:'#4A90D9',borderRadius:6}]},options:{...bOpts,plugins:{legend:{display:false}}}});
+    relCharts['enc']=new Chart(document.getElementById('chart-enc'),{type:'bar',data:{labels:['Fim do Plano','Desist\u00eancia'],datasets:[{data:[fimQ,desQ],backgroundColor:['#3b82f6','#f97316'],borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{stepSize:1},grid:{color:'rgba(0,0,0,.06)'}}}}});
   },150);
 }
 async function exportRelExcel(){
   const [{data:patients},{data:fin},{data:sessoes}]=await Promise.all([sb.from('planos_patients').select('*'),sb.from('planos_financeiro').select('*'),sb.from('planos_soro_sessoes').select('*')]);
   const patMap={};(patients||[]).forEach(p=>patMap[p.id]=p.name);
-  let csv='RELATÓRIO CLÍNICA VITTA\n\nPACIENTES\nNome,Tipo de Plano,Modalidade,Início,Status,Motivo Encerramento\n';
-  (patients||[]).forEach(p=>{csv+=`"${p.name}","${p.plan_type||''}","${p.modality||''}","${isoToDisplay(p.inicio_programa||'')}","${p.active?'Ativo':'Encerrado'}","${p.motivo_encerramento||''}"\n`;});
+  let csv='RELAT\u00d3RIO CL\u00cdNICA VITTA\n\nPACIENTES\nNome,Tipo de Plano,Modalidade,In\u00edcio,Status,Motivo Encerramento\n';
+  (patients||[]).forEach(p=>{csv+='"'+p.name+'","'+(p.plan_type||'')+'","'+(p.modality||'')+'","'+isoToDisplay(p.inicio_programa||'')+'","'+(p.active?'Ativo':'Encerrado')+'","'+(p.motivo_encerramento||'')+'"\n';});
   csv+='\nPAGAMENTOS\nPaciente,Data,Forma,Valor,Parcelas\n';
-  (fin||[]).forEach(f=>{csv+=`"${patMap[f.patient_id]||f.patient_id}","${f.data_pagamento||''}","${f.forma||''}","${f.valor||0}","${f.parcelas||''}"\n`;});
-  csv+='\nSESSÕES DE SOROTERAPIA\nPaciente,Tipo,Data,Substâncias\n';
-  (sessoes||[]).forEach(s=>{csv+=`"${patMap[s.patient_id]||s.patient_id}","${s.tipo_sessao||''}","${s.data_sessao||''}","${(s.substancias||'').replace(/"/g,"'")}"\n`;});
-  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  (fin||[]).forEach(f=>{csv+='"'+(patMap[f.patient_id]||f.patient_id)+'","'+(f.data_pagamento||'')+'","'+(f.forma||'')+'","'+(f.valor||0)+'","'+(f.parcelas||'')+'"\n';});
+  csv+='\nSESS\u00d5ES DE SOROTERAPIA\nPaciente,Tipo,Data,Substâncias\n';
+  (sessoes||[]).forEach(s=>{const subsSafe=(s.substancias||'').replace(/"/g,"'");csv+='"'+(patMap[s.patient_id]||s.patient_id)+'","'+(s.tipo_sessao||'')+'","'+(s.data_sessao||'')+'","'+subsSafe+'"\n';});
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='relatorio_vitta_'+todayStr().replace(/\//g,'-')+'.csv';a.click();
   toast('Excel exportado!','success');
 }
-
-// PWA
-const manifest={name:'Clínica Vitta | Alphaville',short_name:'Vitta Planos',start_url:'/',display:'standalone',background_color:'#1D2846',theme_color:'#1D2846',icons:[{src:'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 100 100%22%3E%3Crect width%3D%22100%22 height%3D%22100%22 rx%3D%2220%22 fill%3D%22%231D2846%22%2F%3E%3Ctext x%3D%2250%22 y%3D%2272%22 text-anchor%3D%22middle%22 font-size%3D%2260%22%3E🏥%3C%2Ftext%3E%3C%2Fsvg%3E',sizes:'192x192',type:'image/svg+xml'}]};
+const manifest={name:'Cl\u00ednica Vitta | Alphaville',short_name:'Vitta Planos',start_url:'/',display:'standalone',background_color:'#1D2846',theme_color:'#1D2846',icons:[{src:'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 100 100%22%3E%3Crect width%3D%22100%22 height%3D%22100%22 rx%3D%2220%22 fill%3D%22%231D2846%22%2F%3E%3Ctext x%3D%2250%22 y%3D%2272%22 text-anchor%3D%22middle%22 font-size%3D%2260%22%3E%F0%9F%8F%A5%3C%2Ftext%3E%3C%2Fsvg%3E',sizes:'192x192',type:'image/svg+xml'}]};
 document.getElementById('pwa-manifest').href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
 </script>
 </body>
 </html>
+// DONE
