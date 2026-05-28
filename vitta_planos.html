@@ -183,6 +183,8 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="ntab" id="ntab-patients" onclick="mainNav('patients')">Pacientes</button>
     <button class="ntab" id="ntab-agenda" onclick="mainNav('agenda')">Agenda</button>
     <button class="ntab" id="ntab-programa" onclick="mainNav('programa')">Programa</button>
+    <button class="ntab" id="ntab-implantes" onclick="mainNav('implantes')">Implantes</button>
+    <button class="ntab" id="ntab-avulsas" onclick="mainNav('avulsas')">Consultas Avulsas</button>
     <button class="ntab" id="ntab-config" onclick="mainNav('config')">Configura&#231;&#245;es</button>
     <button class="ntab" id="ntab-relatorios" onclick="mainNav('relatorios')">Relat&#243;rios</button>
   </div>
@@ -279,6 +281,8 @@ function mainNav(section){
   else if(section==='patients')renderPatients();
   else if(section==='agenda')renderAgenda();
   else if(section==='programa')renderPrograma();
+  else if(section==='implantes')renderImplantes();
+  else if(section==='avulsas')renderAvulsas();
   else if(section==='config')renderConfig();
   else if(section==='relatorios')renderRelatorios();
 }
@@ -1191,6 +1195,8 @@ async function renderPrograma(){
   const c=document.getElementById('main-content');
   function buildProg(){
     let filtered=allPatients;
+    // Programa only shows Plano 3/6 meses - Consulta Avulsa has its own tab
+    filtered=filtered.filter(p=>p.plan_type!=='Consulta Avulsa');
     if(progFilter==='active')filtered=filtered.filter(p=>p.active);
     else if(progFilter==='inactive')filtered=filtered.filter(p=>!p.active);
     if(phaseFilter>0)filtered=filtered.filter(p=>p.inicio_programa&&calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3)===phaseFilter);
@@ -1287,6 +1293,310 @@ async function renderPrograma(){
   window.rebuildProg=function(){progFilter=window._pf;phaseFilter=window._ph;progSort=window._sort;c.innerHTML=buildProg();};
   c.innerHTML=buildProg();
 }
+
+async function renderImplantes(){
+  const[{data:patients},{data:implantes}]=await Promise.all([
+    sb.from('planos_patients').select('*').order('name'),
+    sb.from('planos_implantes').select('*').order('created_at')
+  ]);
+  allPatients=patients||[];
+  let implFilter='active';let implSort='ultimo_desc';
+  const c=document.getElementById('main-content');
+
+  function buildImpl(){
+    let filtered=allPatients;
+    if(implFilter==='active')filtered=filtered.filter(p=>p.active);
+    else if(implFilter==='inactive')filtered=filtered.filter(p=>!p.active);
+    else if(implFilter==='com_impl')filtered=filtered.filter(p=>(implantes||[]).some(i=>i.patient_id===p.id));
+    else if(implFilter==='sem_impl')filtered=filtered.filter(p=>!(implantes||[]).some(i=>i.patient_id===p.id));
+
+    // Build map: last implant per patient
+    const lastImplMap={};
+    const allImplMap={};
+    (implantes||[]).forEach(i=>{
+      if(!allImplMap[i.patient_id])allImplMap[i.patient_id]=[];
+      allImplMap[i.patient_id].push(i);
+      const cur=lastImplMap[i.patient_id];
+      if(!cur||parseDateInt(fmtDate(i.data_implante))>parseDateInt(fmtDate(cur.data_implante))){
+        lastImplMap[i.patient_id]=i;
+      }
+    });
+
+    // Sort
+    if(implSort==='ultimo_desc'){
+      filtered=filtered.slice().sort((a,b)=>{
+        const da=lastImplMap[a.id]?parseDateInt(fmtDate(lastImplMap[a.id].data_implante)):0;
+        const db=lastImplMap[b.id]?parseDateInt(fmtDate(lastImplMap[b.id].data_implante)):0;
+        return db-da;
+      });
+    }else if(implSort==='ultimo_asc'){
+      filtered=filtered.slice().sort((a,b)=>{
+        const da=lastImplMap[a.id]?parseDateInt(fmtDate(lastImplMap[a.id].data_implante)):99999999;
+        const db=lastImplMap[b.id]?parseDateInt(fmtDate(lastImplMap[b.id].data_implante)):99999999;
+        return da-db;
+      });
+    }else if(implSort==='alpha'){
+      filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    }else if(implSort==='qtd_desc'){
+      filtered=filtered.slice().sort((a,b)=>{
+        const qa=(allImplMap[a.id]||[]).length;
+        const qb=(allImplMap[b.id]||[]).length;
+        return qb-qa;
+      });
+    }
+
+    // Stats
+    const totalImpl=(implantes||[]).length;
+    const patComImpl=Object.keys(lastImplMap).length;
+
+    let html='<div class="section-header"><div class="section-title">Implantes Hormonais</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+      +'<button class="btn btn-sm '+(implFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="window._if=\'active\';rebuildImpl()">Ativos</button>'
+      +'<button class="btn btn-sm '+(implFilter==='inactive'?'btn-primary':'btn-ghost')+'" onclick="window._if=\'inactive\';rebuildImpl()">Inativos</button>'
+      +'<button class="btn btn-sm '+(implFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="window._if=\'all\';rebuildImpl()">Todos</button>'
+      +'<button class="btn btn-sm '+(implFilter==='com_impl'?'btn-accent':'btn-ghost')+'" onclick="window._if=\'com_impl\';rebuildImpl()">Com Implante</button>'
+      +'<button class="btn btn-sm '+(implFilter==='sem_impl'?'btn-accent':'btn-ghost')+'" onclick="window._if=\'sem_impl\';rebuildImpl()">Sem Implante</button>'
+      +'<div style="height:20px;width:1px;background:var(--border);margin:0 2px"></div>'
+      +'<span style="font-size:11px;color:var(--text-muted);font-weight:600">Ordem:</span>'
+      +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._isort=this.value;rebuildImpl()">'
+      +'<option value="ultimo_desc" '+(implSort==='ultimo_desc'?'selected':'')+'>Mais recente primeiro</option>'
+      +'<option value="ultimo_asc" '+(implSort==='ultimo_asc'?'selected':'')+'>Mais antigo primeiro</option>'
+      +'<option value="alpha" '+(implSort==='alpha'?'selected':'')+'>A\u2013Z (Alfab\u00e9tico)</option>'
+      +'<option value="qtd_desc" '+(implSort==='qtd_desc'?'selected':'')+'>Mais implantes</option>'
+      +'</select>'
+      +'</div></div>';
+
+    // Summary cards
+    html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'
+      +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+totalImpl+'</div><div class="dash-card-label">Total de Implantes</div></div>'
+      +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+patComImpl+'</div><div class="dash-card-label">Pacientes com Implante</div></div>'
+      +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+(allPatients.filter(p=>p.active).length-Object.keys(lastImplMap).filter(id=>allPatients.find(p=>p.id==id&&p.active)).length)+'</div><div class="dash-card-label">Ativos sem Implante</div></div>'
+      +'</div>';
+
+    if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc89</div>Nenhum paciente encontrado</div>';return html;}
+
+    filtered.forEach(p=>{
+      const patImpls=(allImplMap[p.id]||[]).sort((a,b)=>parseDateInt(fmtDate(b.data_implante))-parseDateInt(fmtDate(a.data_implante)));
+      const lastImpl=patImpls[0];
+      const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
+      const months=p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0;
+      const tags=(p.etiquetas||[]);
+
+      // Implant expiry badge (implant lasts 4-6 months, warn when close to 5 months)
+      let diasBadge='';
+      let expiryInfo='';
+      if(lastImpl&&lastImpl.data_implante){
+        const dataImpl=fmtDate(lastImpl.data_implante);
+        const dias=daysAgo(dataImpl);
+        // Estimate: 5 months avg = 150 days. Warn at <30 days to expiry, expired if >150
+        const diasParaVencer=150-(dias||0);
+        let cor,bgCor,label;
+        if(diasParaVencer<0){
+          cor='var(--danger)';bgCor='#fee2e2';
+          label='\u26a0\ufe0f Vencido h\u00e1 '+Math.abs(diasParaVencer)+'d';
+        }else if(diasParaVencer<=30){
+          cor='#c2410c';bgCor='#fff7ed';
+          label='\ud83d\udea9 Vence em '+diasParaVencer+'d';
+        }else if(diasParaVencer<=60){
+          cor='var(--warning)';bgCor='#fef3c7';
+          label='\u26a0\ufe0f Vence em '+diasParaVencer+'d';
+        }else{
+          cor='var(--success)';bgCor='#dcfce7';
+          label='\u2705 Vence em ~'+diasParaVencer+'d';
+        }
+        diasBadge='<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+bgCor+';padding:2px 8px;border-radius:99px">'+label+'</span>';
+        expiryInfo=label;
+      }
+
+      html+='<div class="prog-row"><div class="prog-header" onclick="toggleProgImpl(this)">'
+        +'<div class="patient-avatar" style="width:38px;height:38px;font-size:14px">'+p.name.charAt(0)+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">'+p.name
+        +tags.map(t=>'<span class="etiqueta" style="background:'+(t.color||'#6b7280')+'">'+t.name+'</span>').join('')
+        +'</div>'
+        +'<div style="font-size:12px;color:var(--text-muted);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+        +'<span class="phase-badge phase-'+phase+'">F'+phase+'</span>'
+        +'<span class="pill pill-'+(p.modality==='Presencial'?'blue':'purple')+'">'+(p.modality||'\u2014')+'</span>'
+        +'<span>'+(p.plan_type||'\u2014')+' \u00b7 M\u00eas '+(months+1)+'</span>'
+        +(lastImpl
+          ?'<span style="font-weight:600;color:var(--navy)">\ud83d\udc89 \u00dalt: '+fmtDate(lastImpl.data_implante)+'</span>'+diasBadge
+          :'<span style="color:var(--text-muted);font-style:italic">Sem implante</span>')
+        +'<span style="font-size:11px;background:#f3f4f6;padding:2px 8px;border-radius:99px;color:var(--text-muted)">'+patImpls.length+' implante(s)</span>'
+        +'</div>'
+        +(lastImpl&&lastImpl.observacao?'<div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-style:italic">\ud83d\udcac '+lastImpl.observacao.slice(0,80)+(lastImpl.observacao.length>80?'\u2026':'')+'</div>':'')
+        +'</div>'
+        +'<span style="color:var(--text-muted)">\u25be</span>'
+        +'</div>'
+        +'<div class="prog-detail">'
+        +(patImpls.length
+          ?'<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Hist\u00f3rico de Implantes ('+patImpls.length+')</div>'
+          +patImpls.map((imp,idx)=>{
+            const d=daysAgo(fmtDate(imp.data_implante));
+            return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light)">'
+              +'<div style="font-size:12px;font-weight:700;color:#fff;background:var(--navy);border-radius:5px;padding:2px 8px;flex-shrink:0">#'+(patImpls.length-idx)+'</div>'
+              +'<div style="flex:1">'
+              +'<div style="font-weight:700;font-size:14px">\ud83d\udcc5 '+fmtDate(imp.data_implante)+(d!==null?' <span style="font-size:11px;color:var(--text-muted);font-weight:400">('+d+' dias atr\u00e1s)</span>':'')+'</div>'
+              +(imp.observacao?'<div style="font-size:13px;color:var(--text);margin-top:3px">'+imp.observacao+'</div>':'<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sem descri\u00e7\u00e3o</div>')
+              +'<div style="margin-top:4px"><span class="user-badge">'+(imp.registrado_por||'')+'</span></div>'
+              +'</div>'
+              +(imp.receita_path?'<button class="btn btn-ghost btn-sm" onclick="openFile(\'documents\',\''+imp.receita_path+'\')">\ud83d\udcc4 Receita</button>':'')
+              +'</div>';
+          }).join('')
+          :'<div style="font-size:13px;color:var(--text-muted);font-style:italic">Nenhum implante registrado para este paciente.</div>')
+        +'<div style="margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="openPatient('+p.id+')">Ver Prontu\u00e1rio \u2192</button></div>'
+        +'</div></div>';
+    });
+    return html;
+  }
+
+  window._if='active';window._isort='ultimo_desc';
+  window.rebuildImpl=function(){implFilter=window._if;implSort=window._isort;c.innerHTML=buildImpl();};
+  c.innerHTML=buildImpl();
+}
+
+async function renderAvulsas(){
+  const[{data:patients},{data:appts},{data:fin}]=await Promise.all([
+    sb.from('planos_patients').select('*').order('name'),
+    sb.from('planos_appointments').select('*').order('created_at'),
+    sb.from('planos_financeiro').select('*').order('created_at')
+  ]);
+  allPatients=patients||[];
+  // Consulta Avulsa = plan_type === 'Consulta Avulsa'
+  const avulsas=allPatients.filter(p=>p.plan_type==='Consulta Avulsa');
+  let avSort='alpha';
+  const c=document.getElementById('main-content');
+
+  function buildAvulsas(){
+    let filtered=avulsas;
+    if(avSort==='alpha')filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    else if(avSort==='ultima_asc'){
+      filtered=filtered.slice().sort((a,b)=>{
+        const ua=lastConsultDate(a.id,appts);
+        const ub=lastConsultDate(b.id,appts);
+        return parseDateInt(ua)-parseDateInt(ub);
+      });
+    }else if(avSort==='ultima_desc'){
+      filtered=filtered.slice().sort((a,b)=>{
+        const ua=lastConsultDate(a.id,appts)||'00/00/0000';
+        const ub=lastConsultDate(b.id,appts)||'00/00/0000';
+        return parseDateInt(ub)-parseDateInt(ua);
+      });
+    }else if(avSort==='gasto_desc'){
+      filtered=filtered.slice().sort((a,b)=>{
+        const fa=(fin||[]).filter(f=>f.patient_id===a.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+        const fb=(fin||[]).filter(f=>f.patient_id===b.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+        return fb-fa;
+      });
+    }
+
+    const ativos=avulsas.filter(p=>p.active).length;
+    const inativos=avulsas.filter(p=>!p.active).length;
+    const totalGasto=(fin||[]).filter(f=>avulsas.some(p=>p.id===f.patient_id)).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+
+    let html='<div class="section-header"><div class="section-title">Consultas Avulsas</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+      +'<span style="font-size:11px;color:var(--text-muted);font-weight:600">Ordem:</span>'
+      +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._avsort=this.value;rebuildAvulsas()">'
+      +'<option value="alpha" '+(avSort==='alpha'?'selected':'')+'>A\u2013Z (Alfab\u00e9tico)</option>'
+      +'<option value="ultima_desc" '+(avSort==='ultima_desc'?'selected':'')+'>Consulta mais recente</option>'
+      +'<option value="ultima_asc" '+(avSort==='ultima_asc'?'selected':'')+'>Consulta mais antiga</option>'
+      +'<option value="gasto_desc" '+(avSort==='gasto_desc'?'selected':'')+'>Maior gasto total</option>'
+      +'</select>'
+      +'</div></div>';
+
+    // Summary
+    html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'
+      +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+avulsas.length+'</div><div class="dash-card-label">Total Avulsos</div><div class="dash-card-sub">'+ativos+' ativos \u00b7 '+inativos+' inativos</div></div>'
+      +'<div class="dash-card" style="cursor:default"><div class="dash-card-num" style="font-size:22px;color:var(--success)">R$ '+(totalGasto/1000).toFixed(1)+'k</div><div class="dash-card-label">Total Gerado</div></div>'
+      +'<div class="dash-card" onclick="mainNav(\'patients\')" title="Ver todos os pacientes"><div class="dash-card-num" style="font-size:22px">\ud83d\udc4b</div><div class="dash-card-label">Converter para Plano</div><div class="dash-card-sub">Editar na aba Pacientes</div></div>'
+      +'</div>';
+
+    // Info banner
+    html+='<div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#0369a1">'
+      +'\u2139\ufe0f Pacientes com <strong>Consulta Avulsa</strong> aparecem aqui. Quando fecharem um <strong>Plano 3 ou 6 meses</strong>, migram automaticamente para a aba <strong>Programa</strong>.'
+      +'</div>';
+
+    if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc64</div>Nenhum paciente avulso</div>';return html;}
+
+    filtered.forEach(p=>{
+      const patAppts=(appts||[]).filter(a=>a.patient_id===p.id&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+      const lastConsult=patAppts[0];
+      const totalConsultas=(appts||[]).filter(a=>a.patient_id===p.id&&a.status==='Compareceu'&&!a.origem_tabela).length;
+      const totalPago=(fin||[]).filter(f=>f.patient_id===p.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+      const tags=(p.etiquetas||[]);
+
+      // Time since last consult - alert if >60 days inactive
+      let semContato='';
+      if(lastConsult){
+        const d=daysAgo(fmtDate(lastConsult.date_str));
+        if(d!==null&&d>60){
+          const cor=d>120?'var(--danger)':d>60?'var(--warning)':'var(--text-muted)';
+          const bg=d>120?'#fee2e2':d>60?'#fef3c7':'#f3f4f6';
+          semContato='<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+bg+';padding:2px 8px;border-radius:99px">\ud83d\udd54 '+d+'d sem consulta</span>';
+        }
+      }else{
+        semContato='<span style="font-size:11px;font-weight:700;color:var(--text-muted);background:#f3f4f6;padding:2px 8px;border-radius:99px">Sem hist\u00f3rico</span>';
+      }
+
+      const statusDot=p.active
+        ?'<span style="width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;flex-shrink:0"></span>'
+        :'<span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;flex-shrink:0"></span>';
+
+      html+='<div class="prog-row"><div class="prog-header" onclick="toggleProgImpl(this)">'
+        +'<div class="patient-avatar" style="width:38px;height:38px;font-size:14px">'+p.name.charAt(0)+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">'+statusDot+' '+p.name
+        +tags.map(t=>'<span class="etiqueta" style="background:'+(t.color||'#6b7280')+'">'+t.name+'</span>').join('')
+        +'</div>'
+        +'<div style="font-size:12px;color:var(--text-muted);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+        +(lastConsult?'<span>\ud83d\udcc5 \u00dalt. consulta: <strong>'+fmtDate(lastConsult.date_str)+'</strong></span>':'<span style="font-style:italic">Sem consulta</span>')
+        +'<span style="background:#f3f4f6;padding:2px 8px;border-radius:99px;font-size:11px">'+totalConsultas+' consulta(s)</span>'
+        +'<span style="color:var(--success);font-weight:600">R$ '+totalPago.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>'
+        +semContato
+        +'</div>'
+        +'</div>'
+        +'<span style="color:var(--text-muted)">\u25be</span>'
+        +'</div>'
+        +'<div class="prog-detail">'
+        +'<div class="grid-2" style="margin-bottom:12px">'
+        +'<div class="card" style="margin:0;padding:12px"><div class="card-title">Total de Consultas</div><div style="font-size:24px;font-weight:700;color:var(--navy)">'+totalConsultas+'</div></div>'
+        +'<div class="card" style="margin:0;padding:12px"><div class="card-title">Total Pago</div><div style="font-size:20px;font-weight:700;color:var(--success)">R$ '+totalPago.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>'
+        +'</div>'
+        // Last 5 appointments
+        +(patAppts.length
+          ?'<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">\u00daltimas Consultas</div>'
+          +patAppts.slice(0,5).map(a=>'<div style="padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px;display:flex;justify-content:space-between">'
+            +'<span><strong>'+fmtDate(a.date_str)+'</strong>'+(a.procedimento?' \u00b7 '+a.procedimento:'')+'</span>'
+            +'<span class="pill pill-green">'+a.status+'</span>'
+            +'</div>').join('')
+          :'<div style="font-size:13px;color:var(--text-muted);font-style:italic">Nenhuma consulta registrada.</div>')
+        +'<div style="margin-top:12px;display:flex;gap:8px">'
+        +'<button class="btn btn-ghost btn-sm" onclick="openPatient('+p.id+')">Ver Prontu\u00e1rio \u2192</button>'
+        +'<button class="btn btn-primary btn-sm" onclick="convertToPlano('+p.id+')">&#x1F4CB; Converter para Plano</button>'
+        +'</div>'
+        +'</div></div>';
+    });
+    return html;
+  }
+
+  window._avsort='alpha';
+  window.rebuildAvulsas=function(){avSort=window._avsort;c.innerHTML=buildAvulsas();};
+  c.innerHTML=buildAvulsas();
+}
+
+function lastConsultDate(patientId, appts){
+  const pa=(appts||[]).filter(a=>a.patient_id===patientId&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+  return pa.length?fmtDate(pa[0].date_str):null;
+}
+
+async function convertToPlano(patientId){
+  // Open the patient so user can change plan_type
+  await openPatient(patientId);
+  toast('Altere o Tipo de Plano para Plano 3 ou 6 meses e salve.','info');
+}
+
+function toggleProgImpl(header){const d=header.nextElementSibling;d.classList.toggle('open');header.querySelector('span:last-child').textContent=d.classList.contains('open')?'\u25b4':'\u25be';}
+
 function toggleProg(header){const d=header.nextElementSibling;d.classList.toggle('open');header.querySelector('span:last-child').textContent=d.classList.contains('open')?'\u25b4':'\u25be';}
 async function loadProfsIntoSelect(selectId){
   const{data:profs}=await sb.from('planos_profissionais').select('id,nome,categoria').order('categoria,nome');
