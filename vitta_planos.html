@@ -1187,15 +1187,36 @@ async function renderPrograma(){
     sb.from('planos_soro_envios').select('*')
   ]);
   allPatients=patients||[];
-  let progFilter='active';let phaseFilter=0;
+  let progFilter='active';let phaseFilter=0;let progSort='alpha';
   const c=document.getElementById('main-content');
   function buildProg(){
     let filtered=allPatients;
     if(progFilter==='active')filtered=filtered.filter(p=>p.active);
     else if(progFilter==='inactive')filtered=filtered.filter(p=>!p.active);
     if(phaseFilter>0)filtered=filtered.filter(p=>p.inicio_programa&&calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3)===phaseFilter);
+    // Ordenação
+    if(progSort==='alpha'){
+      filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    }else if(progSort==='fim_asc'){
+      // Mais próximos do fim primeiro
+      filtered=filtered.slice().sort((a,b)=>{
+        const fa=a.inicio_programa?addMonthsToDisplay(fmtDate(a.inicio_programa),a.duracao_programa||3):'99/99/9999';
+        const fb=b.inicio_programa?addMonthsToDisplay(fmtDate(b.inicio_programa),b.duracao_programa||3):'99/99/9999';
+        return parseDateInt(fa)-parseDateInt(fb);
+      });
+    }else if(progSort==='fim_desc'){
+      // Mais distantes do fim primeiro
+      filtered=filtered.slice().sort((a,b)=>{
+        const fa=a.inicio_programa?addMonthsToDisplay(fmtDate(a.inicio_programa),a.duracao_programa||3):'00/00/0000';
+        const fb=b.inicio_programa?addMonthsToDisplay(fmtDate(b.inicio_programa),b.duracao_programa||3):'00/00/0000';
+        return parseDateInt(fb)-parseDateInt(fa);
+      });
+    }else if(progSort==='inicio'){
+      filtered=filtered.slice().sort((a,b)=>parseDateInt(fmtDate(a.inicio_programa||''))-parseDateInt(fmtDate(b.inicio_programa||'')));
+    }
+    const sortLabel={alpha:'A–Z',fim_asc:'Fim ↑',fim_desc:'Fim ↓',inicio:'Mais Recentes'};
     let html='<div class="section-header"><div class="section-title">Programa</div>'
-      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
       +'<button class="btn btn-sm '+(progFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="window._pf=\'active\';rebuildProg()">Ativos</button>'
       +'<button class="btn btn-sm '+(progFilter==='inactive'?'btn-primary':'btn-ghost')+'" onclick="window._pf=\'inactive\';rebuildProg()">Inativos</button>'
       +'<button class="btn btn-sm '+(progFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="window._pf=\'all\';rebuildProg()">Todos</button>'
@@ -1203,6 +1224,14 @@ async function renderPrograma(){
       +'<button class="btn btn-sm '+(phaseFilter===1?'btn-accent':'btn-ghost')+'" onclick="window._ph=1;rebuildProg()">F1</button>'
       +'<button class="btn btn-sm '+(phaseFilter===2?'btn-accent':'btn-ghost')+'" onclick="window._ph=2;rebuildProg()">F2</button>'
       +'<button class="btn btn-sm '+(phaseFilter===3?'btn-accent':'btn-ghost')+'" onclick="window._ph=3;rebuildProg()">F3</button>'
+      +'<div style="height:20px;width:1px;background:var(--border);margin:0 2px"></div>'
+      +'<span style="font-size:11px;color:var(--text-muted);font-weight:600">Ordem:</span>'
+      +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._sort=this.value;rebuildProg()">'
+      +'<option value="alpha" '+(progSort==='alpha'?'selected':'')+'>A–Z (Alfabético)</option>'
+      +'<option value="fim_asc" '+(progSort==='fim_asc'?'selected':'')+'>Fim mais próximo ↑</option>'
+      +'<option value="fim_desc" '+(progSort==='fim_desc'?'selected':'')+'>Fim mais distante ↓</option>'
+      +'<option value="inicio" '+(progSort==='inicio'?'selected':'')+'>Início mais recente</option>'
+      +'</select>'
       +'</div></div>';
     if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc65</div>Sem pacientes</div>';return html;}
     filtered.forEach(p=>{
@@ -1254,8 +1283,8 @@ async function renderPrograma(){
     });
     return html;
   }
-  window._pf='active';window._ph=0;
-  window.rebuildProg=function(){progFilter=window._pf;phaseFilter=window._ph;c.innerHTML=buildProg();};
+  window._pf='active';window._ph=0;window._sort='alpha';
+  window.rebuildProg=function(){progFilter=window._pf;phaseFilter=window._ph;progSort=window._sort;c.innerHTML=buildProg();};
   c.innerHTML=buildProg();
 }
 function toggleProg(header){const d=header.nextElementSibling;d.classList.toggle('open');header.querySelector('span:last-child').textContent=d.classList.contains('open')?'\u25b4':'\u25be';}
