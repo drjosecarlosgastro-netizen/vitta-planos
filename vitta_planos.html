@@ -223,7 +223,7 @@ const SUPABASE_URL='https://tzsamyaobtzswpklxpzx.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6c2FteWFvYnR6c3dwa2x4cHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkxNjEsImV4cCI6MjA5NDg1NTE2MX0.okDoh3yP2HHPQKIUFf64X0UzBp0aWK_5WirprPsL8vM';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let currentUser=null,currentSection='dashboard',currentPatientId=null,currentPatientData=null,allPatients=[];
-const TIPOS_SESSAO=['Soroterapia EV','Soroterapia IM','Soroterapia EV + IM','Vitamina C High Dose','Glutationa','Myers Cocktail','Chelation','Oz\u00f4nio','Outra'];
+const TIPOS_SESSAO=['Soroterapia EV','Soroterapia IM','Soroterapia EV + IM','Outro'];
 const titleCase=s=>s?s.toLowerCase().replace(/(?:^|\s|'|-)[a-z\u00e1\u00e0\u00e3\u00e2\u00e9\u00ea\u00ed\u00f3\u00f4\u00f5\u00fa\u00e7]/g,c=>c.toUpperCase()):'';
 const normStr=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 function parseDateInt(d){if(!d)return 0;const p=d.split('/');if(p.length!==3)return 0;return parseInt(p[2]+p[1]+p[0]);}
@@ -251,7 +251,21 @@ async function logHistorico(tabela,registroId,acao,dadosAntes,dadosNovos){
 async function criarAgendaAutomatica(tipo,data,descricao,registroId,tabelaOrigem){
   try{
     const proc=tipo==='implante'?'Implante Hormonal':'Soroterapia';
-    const {data:appt,error}=await sb.from('planos_appointments').insert({patient_id:currentPatientId,date_str:data,time_str:'09:00',procedimento:proc,tipo:'Injet\u00e1vel',observacao:descricao?(descricao+'').slice(0,80):'',status:'Compareceu',registrado_por:currentUser.name,origem_tabela:tabelaOrigem,origem_id:registroId}).select().single();
+    const {data:existing}=await sb.from('planos_appointments')
+      .select('id').eq('patient_id',currentPatientId)
+      .eq('origem_tabela',tabelaOrigem).eq('origem_id',registroId).maybeSingle();
+    if(existing)return existing.id;
+    const {data:sameDay}=await sb.from('planos_appointments')
+      .select('id,origem_tabela').eq('patient_id',currentPatientId).eq('date_str',data);
+    const dupLinked=(sameDay||[]).find(a=>a.origem_tabela===tabelaOrigem);
+    if(dupLinked)return dupLinked.id;
+    const {data:appt,error}=await sb.from('planos_appointments').insert({
+      patient_id:currentPatientId,date_str:data,time_str:'09:00',
+      procedimento:proc,tipo:'Ijet\u00e1vel',
+      observacao:descricao?(descricao+'').slice(0,80):'',
+      status:'Compareceu',registrado_por:currentUser.name,
+      origem_tabela:tabelaOrigem,origem_id:registroId
+    }).select().single();
     if(!error&&appt)return appt.id;
   }catch(e){console.warn('Auto-agenda falhou:',e);}
   return null;
@@ -1108,6 +1122,41 @@ async function renderHistorico(){
 }
 // block8 done
 
+function goToAgendaDate(dateStr){
+  closeModal('modal-generic');
+  window._agDate=dateStr;
+  window._agView='dia';
+  if(typeof renderAgendaContent==='function')renderAgendaContent();
+  else mainNav('agenda');
+}
+function showOverduePending(){
+  const overdue=window._overdueAppts||[];
+  const patMap=window._overduePatMap||{};
+  if(!overdue.length){toast('Nenhuma pend\u00eancia','info');return;}
+  const sorted=overdue.slice().sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+  let html='<div style="max-height:60vh;overflow-y:auto">';
+  html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Clique em uma consulta para navegar at\u00e9 aquele dia e atualizar o status.</div>';
+  sorted.forEach(a=>{
+    const d=daysAgo(fmtDate(a.date_str));
+    const dStr=fmtDate(a.date_str);
+    html+='<div onclick="goToAgendaDate(\'' + dStr + '\')" '
+      +'style="padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;border:1.5px solid var(--border)">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'
+      +'<div>'
+      +'<div style="font-weight:700;font-size:14px">'+(patMap[a.patient_id]||'Paciente #'+a.patient_id)+'</div>'
+      +'<div style="font-size:12px;color:var(--text-muted);margin-top:3px">\ud83d\udcc5 '+dStr+' \u00b7 '+(a.time_str||'--:--')+' \u00b7 '+(a.procedimento||'')+' \u00b7 '+(a.tipo||'')+'</div>'
+      +(a.profissional_nome?'<div style="font-size:11px;color:var(--navy)">\ud83d\udc64 '+a.profissional_nome+'</div>':'')
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0">'
+      +'<span style="font-size:12px;font-weight:700;color:var(--danger);background:#fee2e2;padding:3px 10px;border-radius:99px">'+(d||0)+'d atr\u00e1s</span>'
+      +'<div style="font-size:11px;color:var(--accent);margin-top:4px">Ir para este dia \u2192</div>'
+      +'</div>'
+      +'</div></div>';
+  });
+  html+='</div>';
+  showGenericModal(html,'\u26a0\ufe0f Consultas Pendentes de Status ('+sorted.length+')');
+}
+
 async function renderAgenda(){
   const[{data:appts},{data:patients}]=await Promise.all([
     sb.from('planos_appointments').select('*').order('created_at'),
@@ -1228,8 +1277,10 @@ async function renderAgenda(){
     if(view!=='mes'){
       const overdue=(appts||[]).filter(a=>parseDateInt(a.date_str)<todayIntLocal&&(!a.status||a.status==='Agendado')&&!a.origem_tabela);
       if(overdue.length&&view==='dia'){
-        html2+='<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#991b1b">';
-        html2+='\u26a0\ufe0f <strong>'+overdue.length+' consulta(s) sem status</strong> em datas passadas.';
+        window._overdueAppts=overdue;window._overduePatMap=patMap;
+        html2+='<div onclick="showOverduePending()" style="background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#991b1b;cursor:pointer;display:flex;align-items:center;justify-content:space-between">';
+        html2+='<span>\u26a0\ufe0f <strong>'+overdue.length+' consulta(s) sem status</strong> em datas passadas.</span>';
+        html2+='<span style="font-weight:700;font-size:12px;background:#fca5a5;color:#991b1b;padding:3px 10px;border-radius:99px">Ver pendentes \u2192</span>';
         html2+='</div>';
       }
     }
