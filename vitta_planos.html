@@ -196,6 +196,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="topbar-back" onclick="backToMain()">&#8249;</button>
     <span class="topbar-logo" id="pd-name-header">Paciente</span>
     <div class="topbar-spacer"></div>
+    <button class="topbar-action" onclick="confirmarDeletePaciente()" style="color:#f87171;font-size:12px" title="Excluir paciente">&#128465; Excluir</button>
   </div>
   <div class="tabs" id="patient-tabs">
     <button class="tab active" onclick="patTab('info')">Info</button>
@@ -389,6 +390,116 @@ async function openPatient(id){
   document.querySelectorAll('#patient-tabs .tab')[0].classList.add('active');
   showScreen('patient-detail');patTab('info');
 }
+function confirmarDeletePaciente(){
+  const p=currentPatientData;
+  if(!p){return;}
+  // Build confirmation modal
+  const html=
+    '<div style="background:#fff5f5;border:1.5px solid #fca5a5;border-radius:10px;padding:16px;margin-bottom:16px">'
+    +'<div style="font-size:28px;text-align:center;margin-bottom:8px">\u26a0\ufe0f</div>'
+    +'<div style="font-weight:700;font-size:15px;color:#991b1b;text-align:center;margin-bottom:8px">Aten\u00e7\u00e3o: Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita diretamente!</div>'
+    +'<div style="font-size:13px;color:#991b1b">'
+    +'<div style="margin-bottom:6px">\ud83d\udc64 <strong>'+p.name+'</strong></div>'
+    +'<div style="margin-bottom:4px">\ud83d\udcbe Todos os dados do paciente ser\u00e3o arquivados (soroterapia, financeiro, agenda, implantes, contratos).</div>'
+    +'<div>\ud83d\udcdc Um backup completo ser\u00e1 salvo e poder\u00e1 ser recuperado pela equipe.</div>'
+    +'</div></div>'
+    +'<div class="field"><label>Digite o nome do paciente para confirmar</label>'
+    +'<input id="delete-confirm-name" placeholder="'+p.name+'" style="border-color:var(--danger)"/></div>'
+    +'<div class="field"><label>Motivo da exclus\u00e3o</label>'
+    +'<select id="delete-motivo">'
+    +'<option value="duplicado">Cadastro duplicado</option>'
+    +'<option value="solicitacao">Solicita\u00e7\u00e3o do paciente</option>'
+    +'<option value="erro">Erro de cadastro</option>'
+    +'<option value="outro">Outro motivo</option>'
+    +'</select></div>'
+    +'<div class="field"><label>Observa\u00e7\u00e3o (opcional)</label>'
+    +'<textarea id="delete-obs" rows="2" placeholder="Descreva o motivo..."></textarea></div>'
+    +'<button class="btn btn-danger btn-full" onclick="executarDeletePaciente()">\ud83d\uddd1 Confirmar Exclus\u00e3o</button>'
+    +'<button class="btn btn-ghost btn-full" onclick="closeModal(\'modal-generic\')" style="margin-top:8px">Cancelar</button>';
+  showGenericModal(html, '\u26a0\ufe0f Excluir Paciente');
+}
+
+async function executarDeletePaciente(){
+  const p=currentPatientData;
+  const confirmName=document.getElementById('delete-confirm-name')?.value.trim();
+  const motivo=document.getElementById('delete-motivo')?.value;
+  const obs=document.getElementById('delete-obs')?.value.trim();
+
+  // Validate name confirmation
+  if(confirmName.toLowerCase()!==p.name.toLowerCase()){
+    toast('Nome n\u00e3o confere. Digite exatamente: '+p.name,'error');
+    return;
+  }
+
+  const btn=document.querySelector('#modal-generic-content .btn-danger');
+  if(btn){btn.disabled=true;btn.textContent='Excluindo...';}
+
+  try{
+    // 1. Fetch all related data for backup
+    const [{data:appts},{data:fin},{data:soro},{data:envios},{data:impl},{data:contratos},{data:ciclos},{data:edicoes}]=await Promise.all([
+      sb.from('planos_appointments').select('*').eq('patient_id',p.id),
+      sb.from('planos_financeiro').select('*').eq('patient_id',p.id),
+      sb.from('planos_soro_sessoes').select('*').eq('patient_id',p.id),
+      sb.from('planos_soro_envios').select('*').eq('patient_id',p.id),
+      sb.from('planos_implantes').select('*').eq('patient_id',p.id),
+      sb.from('planos_contratos').select('*').eq('patient_id',p.id),
+      sb.from('planos_historico_ciclos').select('*').eq('patient_id',p.id),
+      sb.from('planos_historico_edicoes').select('*').eq('patient_id',p.id)
+    ]);
+
+    // 2. Save full backup to planos_pacientes_deletados
+    const backup={
+      paciente_id_original:p.id,
+      dados_paciente:JSON.stringify(p),
+      dados_appointments:JSON.stringify(appts||[]),
+      dados_financeiro:JSON.stringify(fin||[]),
+      dados_soro_sessoes:JSON.stringify(soro||[]),
+      dados_soro_envios:JSON.stringify(envios||[]),
+      dados_implantes:JSON.stringify(impl||[]),
+      dados_contratos:JSON.stringify(contratos||[]),
+      dados_ciclos:JSON.stringify(ciclos||[]),
+      dados_edicoes:JSON.stringify(edicoes||[]),
+      motivo_exclusao:motivo,
+      observacao:obs||null,
+      deletado_por:currentUser.name,
+      deletado_em:new Date().toISOString()
+    };
+
+    const {error:backupErr}=await sb.from('planos_pacientes_deletados').insert(backup);
+    if(backupErr){
+      console.error('Erro no backup:',backupErr);
+      toast('Erro ao fazer backup: '+backupErr.message+'. Exclus\u00e3o cancelada.','error');
+      if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}
+      return;
+    }
+
+    // 3. Delete all related records
+    await Promise.all([
+      sb.from('planos_appointments').delete().eq('patient_id',p.id),
+      sb.from('planos_financeiro').delete().eq('patient_id',p.id),
+      sb.from('planos_soro_sessoes').delete().eq('patient_id',p.id),
+      sb.from('planos_soro_envios').delete().eq('patient_id',p.id),
+      sb.from('planos_implantes').delete().eq('patient_id',p.id),
+      sb.from('planos_contratos').delete().eq('patient_id',p.id),
+      sb.from('planos_historico_ciclos').delete().eq('patient_id',p.id),
+      sb.from('planos_historico_edicoes').delete().eq('patient_id',p.id),
+    ]);
+
+    // 4. Delete patient
+    await sb.from('planos_patients').delete().eq('id',p.id);
+
+    closeModal('modal-generic');
+    toast('Paciente exclu\u00eddo e backup salvo!','success');
+    backToMain();
+    mainNav('patients');
+
+  }catch(e){
+    console.error('Erro na exclus\u00e3o:',e);
+    toast('Erro inesperado: '+e.message,'error');
+    if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}
+  }
+}
+
 function backToMain(){showScreen('app');mainNav(currentSection);}
 function patTab(tab){
   const tabNames=['info','financeiro','soroterapia','implante','agenda','contrato','historico'];
@@ -1922,12 +2033,16 @@ function showNewPatientModal(){
   openModal('modal-new-patient');
 }
 async function saveNewPatient(){
+  // Prevent double submission
+  const btn=document.querySelector('#new-patient-form .btn-primary');
+  if(btn&&btn.disabled)return;
+  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
   const name=titleCase(document.getElementById('np-name').value.trim());
-  if(!name){toast('Nome obrigat\u00f3rio','error');return;}
+  if(!name){toast('Nome obrigat\u00f3rio','error');if(btn){btn.disabled=false;btn.textContent='Criar Paciente';}return;}
   const planType=document.getElementById('np-plan').value;
   const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
   const{error,data:newPat}=await sb.from('planos_patients').insert({name,dob:displayToISO(document.getElementById('np-dob').value)||null,cpf:document.getElementById('np-cpf').value.trim(),telefone:document.getElementById('np-tel').value.trim(),plan_type:planType,duracao_programa:duracao,modality:document.getElementById('np-modality').value,inicio_programa:displayToISO(document.getElementById('np-inicio').value)||null,observacao:document.getElementById('np-obs').value.trim(),active:true,etiquetas:[],created_by:currentUser.name,created_at:new Date().toISOString()}).select().single();
-  if(error){toast('Erro: '+error.message,'error');return;}
+  if(error){toast('Erro: '+error.message,'error');const b=document.querySelector('#new-patient-form .btn-primary');if(b){b.disabled=false;b.textContent='Criar Paciente';}return;}
   closeModal('modal-new-patient');toast('Paciente criado!','success');await openPatient(newPat.id);
 }
 // block11 done
