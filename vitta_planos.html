@@ -1084,7 +1084,8 @@ async function renderPatAgenda(){
 async function excluirAgendamentoPat(id){
   if(!confirm('Excluir este agendamento?\n\nUse apenas para cadastros errados.\nN\u00e3o ficar\u00e1 no hist\u00f3rico do paciente.'))return;
   await sb.from('planos_appointments').delete().eq('id',id);
-  toast('Agendamento exclu\u00eddo','success');patTab('agenda');
+  toast('Agendamento exclu\u00eddo','success');
+  patTab('agenda'); // recarrega a lista automaticamente
 }
 
 function showAddApptPatient(){
@@ -1285,10 +1286,15 @@ function goToAgendaDate(dateStr){
   else mainNav('agenda');
 }
 async function excluirAgendamento(id){
-  if(!confirm('Excluir este agendamento?\n\nUse esta opção apenas para cadastros errados.\nPara cancelamentos ou remarcações, use o seletor de status.\n\nEste registro NÃO ficará no histórico do paciente.'))return;
+  if(!confirm('Excluir este agendamento?\n\nUse apenas para cadastros errados.\nEste registro N\u00c3O ficar\u00e1 no hist\u00f3rico.'))return;
   await sb.from('planos_appointments').delete().eq('id',id);
-  toast('Agendamento excluído','success');
-  renderAgendaContent();
+  toast('Agendamento exclu\u00eddo','success');
+  // Refresh the agenda list immediately
+  if(typeof window.renderAgendaContent==='function'){
+    window.renderAgendaContent();
+  } else {
+    mainNav('agenda');
+  }
 }
 
 async function handleApptStatusChange(id,patientId,newStatus,selectEl){
