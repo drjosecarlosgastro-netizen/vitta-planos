@@ -182,7 +182,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="ntab active" id="ntab-dashboard" onclick="mainNav('dashboard')">Dashboard</button>
     <button class="ntab" id="ntab-patients" onclick="mainNav('patients')">Pacientes</button>
     <button class="ntab" id="ntab-agenda" onclick="mainNav('agenda')">Agenda</button>
-    <button class="ntab" id="ntab-programa" onclick="mainNav('programa')">Programa</button>
+    <button class="ntab" id="ntab-programa" onclick="mainNav('programa')">Programas</button>
     <button class="ntab" id="ntab-implantes" onclick="mainNav('implantes')">Implantes</button>
     <button class="ntab" id="ntab-avulsas" onclick="mainNav('avulsas')">Consultas Avulsas</button>
     <button class="ntab" id="ntab-config" onclick="mainNav('config')">Configura&#231;&#245;es</button>
@@ -1114,45 +1114,196 @@ async function renderAgenda(){
     sb.from('planos_patients').select('id,name')
   ]);
   const patMap={};(patients||[]).forEach(p=>patMap[p.id]=p.name);
+  const patIdMap={};(patients||[]).forEach(p=>patIdMap[p.id]=p.id);
   const todayInt=parseDateInt(todayStr());
-  const byDate={};
-  (appts||[]).forEach(a=>{
-    const di=parseDateInt(a.date_str);
-    if(di>=todayInt||!a.status||a.status==='Agendado'){
-      if(!byDate[a.date_str])byDate[a.date_str]=[];
-      byDate[a.date_str].push(a);
-    }
-  });
-  const dates=Object.keys(byDate).sort((a,b)=>parseDateInt(a)-parseDateInt(b));
   const c=document.getElementById('main-content');
-  let html='<div class="section-header"><div class="section-title">Agenda</div><button class="btn btn-primary btn-sm" onclick="showAddApptGlobal()">+ Add</button></div>';
-  if(dates.length){
-    dates.forEach(date=>{
-      const isPast=parseDateInt(date)<todayInt;
-      const isToday=date===todayStr();
-      html+='<div style="margin-bottom:20px">';
-      html+='<div class="agenda-day-header">'+fmtDate(date)+(isToday?' \u2014 Hoje':'')+'</div>';
-      byDate[date].sort((a,b)=>(a.time_str||'').localeCompare(b.time_str||'')).forEach(a=>{
-        const overdue=isPast&&(!a.status||a.status==='Agendado');
-        const isAuto=!!a.origem_tabela;
-        const statusOpts=['Agendado','Compareceu','Faltou','Cancelou'].map(s=>'<option '+(a.status===s?'selected':'')+'>'+s+'</option>').join('');
-        html+='<div class="appt-item'+(overdue?' overdue':'')+'" style="'+(isAuto?'border-left:3px solid var(--success)':'')+'">'
-          +'<div class="appt-time">'+(a.time_str||'--:--')+'</div>'
-          +'<div class="appt-info">'
-          +'<div class="appt-name" style="cursor:pointer" onclick="openPatient('+a.patient_id+')">'+(patMap[a.patient_id]||'#'+a.patient_id)+'</div>'
-          +'<div class="appt-sub">'+(a.procedimento||'')+' \u00b7 '+(a.tipo||'')+(overdue?'<span style="color:var(--danger);font-weight:700"> '+daysAgo(a.date_str)+'d atr\u00e1s</span>':'')+'</div>'
-          +(isAuto?'<div class="appt-sub" style="color:var(--success);font-weight:600">\ud83d\udd17 '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>':'')
-          +(a.profissional_nome?'<div class="appt-sub" style="color:var(--navy);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>':'')
-          +(a.observacao?'<div class="appt-sub" style="font-style:italic">'+a.observacao+'</div>':'')
-          +'</div>'
-          +'<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="updateApptStatus('+a.id+',this.value)">'+statusOpts+'</select>'
-          +'</div>';
-      });
-      html+='</div>';
+
+  // State
+  if(!window._agView)window._agView='dia';
+  if(!window._agDate)window._agDate=todayStr();
+
+  function getWeekDates(dateStr){
+    const p=dateStr.split('/');
+    const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+    const day=d.getDay();
+    const monday=new Date(d);monday.setDate(d.getDate()-day+(day===0?-6:1));
+    const dates=[];
+    for(let i=0;i<7;i++){const dd=new Date(monday);dd.setDate(monday.getDate()+i);dates.push(String(dd.getDate()).padStart(2,'0')+'/'+String(dd.getMonth()+1).padStart(2,'0')+'/'+dd.getFullYear());}
+    return dates;
+  }
+
+  function getMonthDates(dateStr){
+    const p=dateStr.split('/');
+    const y=parseInt(p[2]),m=parseInt(p[1])-1;
+    const first=new Date(y,m,1),last=new Date(y,m+1,0);
+    const dates=[];
+    for(let d=1;d<=last.getDate();d++){dates.push(String(d).padStart(2,'0')+'/'+String(m+1).padStart(2,'0')+'/'+y);}
+    return dates;
+  }
+
+  function navigateDate(dir){
+    const p=window._agDate.split('/');
+    const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+    if(window._agView==='dia')d.setDate(d.getDate()+dir);
+    else if(window._agView==='semana')d.setDate(d.getDate()+dir*7);
+    else if(window._agView==='mes')d.setMonth(d.getMonth()+dir);
+    window._agDate=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+    renderAgendaContent();
+  }
+
+  function renderAgendaContent(){
+    const view=window._agView;
+    const curDate=window._agDate;
+    const todayStr_=todayStr();
+
+    // Calendar mini
+    const cp=curDate.split('/');
+    const cy=parseInt(cp[2]),cm=parseInt(cp[1])-1;
+    const firstDay=new Date(cy,cm,1).getDay();
+    const daysInMonth=new Date(cy,cm+1,0).getDate();
+    const monthNames=['Janeiro','Fevereiro','Mar\u00e7o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const dayNames=['D','S','T','Q','Q','S','S'];
+
+    // Get dates with appts for highlighting
+    const apptDatesSet=new Set((appts||[]).map(a=>a.date_str));
+
+    let calHtml='<div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px">';
+    calHtml+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+    calHtml+='<button class="btn-icon" onclick="navigateCalMonth(-1)">&#8249;</button>';
+    calHtml+='<span style="font-weight:700;font-size:14px">'+monthNames[cm]+' '+cy+'</span>';
+    calHtml+='<button class="btn-icon" onclick="navigateCalMonth(1)">&#8250;</button>';
+    calHtml+='</div>';
+    calHtml+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">';
+    dayNames.forEach(d=>{calHtml+='<div style="text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);padding:2px">'+d+'</div>';});
+    calHtml+='</div>';
+    calHtml+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">';
+    // Empty cells before first day
+    const startDay=firstDay===0?6:firstDay-1; // Mon=0
+    for(let i=0;i<startDay;i++)calHtml+='<div></div>';
+    for(let d=1;d<=daysInMonth;d++){
+      const dateStr=String(d).padStart(2,'0')+'/'+String(cm+1).padStart(2,'0')+'/'+cy;
+      const isToday=dateStr===todayStr_;
+      const isSelected=view==='dia'?dateStr===curDate:(view==='semana'?getWeekDates(curDate).includes(dateStr):(cp[1]===String(cm+1).padStart(2,'0')&&cp[2]===String(cy)));
+      const hasAppt=apptDatesSet.has(dateStr);
+      const bg=isToday?'var(--navy)':isSelected?'#dbeafe':'transparent';
+      const col=isToday?'#fff':isSelected?'var(--navy)':'var(--text)';
+      calHtml+='<div onclick="window._agDate=\''+dateStr+'\';window._agView=\'dia\';renderAgendaContent()" '
+        +'style="text-align:center;padding:4px 2px;border-radius:6px;cursor:pointer;background:'+bg+';color:'+col+';font-size:12px;font-weight:'+(isToday||isSelected?'700':'400')+';position:relative">'
+        +d
+        +(hasAppt?'<div style="width:4px;height:4px;border-radius:50%;background:'+(isToday?'#fff':'var(--accent)')+';margin:0 auto;margin-top:1px"></div>':'<div style="height:5px"></div>')
+        +'</div>';
+    }
+    calHtml+='</div></div>';
+
+    // View controls + navigation
+    let viewLabel='';
+    if(view==='dia')viewLabel=curDate===(todayStr_)?'Hoje \u2014 '+curDate:fmtDate(curDate);
+    else if(view==='semana'){const w=getWeekDates(curDate);viewLabel='Semana: '+fmtDate(w[0])+' a '+fmtDate(w[6]);}
+    else if(view==='mes'){const mp=curDate.split('/');viewLabel=monthNames[parseInt(mp[1])-1]+' '+mp[2];}
+
+    let html2='';
+    html2+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+    html2+='<button class="btn btn-primary btn-sm" onclick="window._agDate=\''+todayStr_+'\';window._agView=\'dia\';renderAgendaContent()">&#128197; Hoje</button>';
+    html2+='<button class="btn-icon" onclick="navigateDate(-1)">&#8249;</button>';
+    html2+='<button class="btn-icon" onclick="navigateDate(1)">&#8250;</button>';
+    html2+='<span style="font-weight:700;font-size:14px;flex:1">'+viewLabel+'</span>';
+    html2+='<div style="display:flex;gap:4px">';
+    ['dia','semana','mes'].forEach(v=>{
+      const label=v==='dia'?'Dia':v==='semana'?'Semana':'M\u00eas';
+      html2+='<button class="btn btn-sm '+(view===v?'btn-primary':'btn-ghost')+'" onclick="window._agView=\''+v+'\';renderAgendaContent()">'+label+'</button>';
     });
-  }else{html+='<div class="empty"><div class="empty-icon">\ud83d\udcc5</div>Agenda vazia</div>';}
-  c.innerHTML=html;
+    html2+='</div>';
+    html2+='<button class="btn btn-primary btn-sm" onclick="showAddApptGlobal()">+ Add</button>';
+    html2+='</div>';
+
+    // Get dates to show
+    let datesToShow=[];
+    if(view==='dia')datesToShow=[curDate];
+    else if(view==='semana')datesToShow=getWeekDates(curDate);
+    else if(view==='mes')datesToShow=getMonthDates(curDate);
+
+    const todayIntLocal=parseDateInt(todayStr_);
+
+    // Overdue (only in dia/semana view)
+    if(view!=='mes'){
+      const overdue=(appts||[]).filter(a=>parseDateInt(a.date_str)<todayIntLocal&&(!a.status||a.status==='Agendado')&&!a.origem_tabela);
+      if(overdue.length&&view==='dia'){
+        html2+='<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#991b1b">';
+        html2+='\u26a0\ufe0f <strong>'+overdue.length+' consulta(s) sem status</strong> em datas passadas.';
+        html2+='</div>';
+      }
+    }
+
+    // Build agenda list
+    let hasAny=false;
+    datesToShow.forEach(date=>{
+      const dayAppts=(appts||[]).filter(a=>a.date_str===date).sort((a,b)=>(a.time_str||'').localeCompare(b.time_str||''));
+      if(!dayAppts.length&&view!=='semana')return;
+      const isPast=parseDateInt(date)<todayIntLocal;
+      const isToday=date===todayStr_;
+      hasAny=true;
+
+      if(view!=='dia'){
+        html2+='<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;padding:4px 0;border-bottom:1.5px solid var(--border-light)">';
+        html2+=fmtDate(date)+(isToday?' \u2014 Hoje':'')+(dayAppts.length?' ('+dayAppts.length+')':'');
+        html2+='</div>';
+      }
+
+      if(!dayAppts.length){
+        if(view==='semana')html2+='<div style="font-size:12px;color:var(--text-muted);padding:6px 0;font-style:italic">Sem agendamentos</div>';
+        return;
+      }
+
+      html2+='<div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:'+(view==='dia'?'6':'10')+'px;overflow:hidden">';
+      dayAppts.forEach(a=>{
+        const isAuto=!!a.origem_tabela;
+        const isOverdue=isPast&&(!a.status||a.status==='Agendado')&&!isAuto;
+        const statusOpts=['Agendado','Compareceu','Faltou','Cancelou'].map(s=>'<option '+(a.status===s?'selected':'')+'>'+s+'</option>').join('');
+        html2+='<div style="padding:12px 14px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;'+(isAuto?'border-left:3px solid var(--success)':isOverdue?'border-left:3px solid var(--danger);background:#fff9f9':'')+'">'; 
+        html2+='<div style="font-weight:700;font-size:13px;color:var(--navy);min-width:46px">'+(a.time_str||'--:--')+'</div>';
+        html2+='<div style="flex:1;min-width:0">';
+        html2+='<div style="font-weight:600;font-size:14px">'+(patMap[a.patient_id]||'#'+a.patient_id)+'</div>';
+        html2+='<div style="font-size:12px;color:var(--text-muted)">'+(a.procedimento||'')+' \u00b7 '+(a.tipo||'')+(a.observacao?' \u00b7 '+a.observacao:'')+(isOverdue?' <span style="color:var(--danger);font-weight:700">'+daysAgo(a.date_str)+'d atr\u00e1s</span>':'')+'</div>';
+        if(isAuto)html2+='<div style="font-size:11px;color:var(--success);font-weight:600">\ud83d\udd17 '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>';
+        if(a.profissional_nome)html2+='<div style="font-size:12px;color:var(--navy);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>';
+        html2+='</div>';
+        // Prontuário button
+        if(patIdMap[a.patient_id])html2+='<button class="btn btn-ghost btn-sm" onclick="openPatient('+a.patient_id+')" title="Abrir Prontu\u00e1rio" style="flex-shrink:0">\ud83d\udcc2</button>';
+        html2+='<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font);flex-shrink:0" onchange="updateApptStatusAgenda('+a.id+',this.value)">'+statusOpts+'</select>';
+        html2+='</div>';
+      });
+      html2+='</div>';
+    });
+
+    if(!hasAny)html2+='<div class="empty"><div class="empty-icon">\ud83d\udcc5</div>Sem agendamentos neste per\u00edodo</div>';
+
+    // Layout: calendar on left (sticky), agenda on right
+    c.innerHTML='<div style="display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start">'
+      +'<div style="position:sticky;top:70px">'+calHtml+'</div>'
+      +'<div>'+html2+'</div>'
+      +'</div>';
+
+    // Attach navigation helpers to window
+    window.navigateDate=navigateDate;
+    window.navigateCalMonth=function(dir){
+      const p2=window._agDate.split('/');
+      const d2=new Date(parseInt(p2[2]),parseInt(p2[1])-1,parseInt(p2[0]));
+      d2.setMonth(d2.getMonth()+dir);
+      window._agDate=String(d2.getDate()).padStart(2,'0')+'/'+String(d2.getMonth()+1).padStart(2,'0')+'/'+d2.getFullYear();
+      renderAgendaContent();
+    };
+    window.renderAgendaContent=renderAgendaContent;
+  }
+
+  window.navigateDate=navigateDate;
+  window.renderAgendaContent=renderAgendaContent;
+  renderAgendaContent();
 }
+async function updateApptStatusAgenda(id,status){
+  await sb.from('planos_appointments').update({status,updated_by:currentUser.name}).eq('id',id);
+  toast('Status atualizado','success');
+}
+
 function showAddApptGlobal(){
   showGenericModal(
     '<div class="field"><label>Paciente</label><input id="gag-pat-name" placeholder="Digite o nome..." oninput="searchPatForAppt(this.value)"/><div id="gag-pat-results" style="margin-top:4px"></div><input type="hidden" id="gag-pat-id"/></div>'
