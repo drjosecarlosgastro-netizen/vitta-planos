@@ -360,6 +360,11 @@ function patientRowHtml(p){
 }
 let patientsFilter='active';
 async function renderPatients(query){
+  // Preserve current search query if not passed
+  if(query===undefined){
+    const inp=document.getElementById('patient-search-input');
+    query=inp?inp.value:'';
+  }
   query=query||'';
   const{data}=await sb.from('planos_patients').select('*').order('name');
   allPatients=data||[];
@@ -367,9 +372,21 @@ async function renderPatients(query){
   const c=document.getElementById('main-content');
   c.innerHTML='';
   renderPatientList(query);
-  // Restore search input value and focus if came from filter button
+  // Restore search input focus
   const inp=document.getElementById('patient-search-input');
-  if(inp&&query){inp.value=query;inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
+  if(inp&&query){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
+}
+function renderPatientListLocal(){
+  // Re-filter locally without DB reload, preserving search query
+  const inp=document.getElementById('patient-search-input');
+  const q=inp?inp.value:'';
+  // Force full rebuild to update button styles
+  const c=document.getElementById('main-content');
+  c.innerHTML='';
+  renderPatientList(q);
+  // Restore focus
+  const inp2=document.getElementById('patient-search-input');
+  if(inp2){inp2.focus();inp2.setSelectionRange(inp2.value.length,inp2.value.length);}
 }
 function renderPatientList(query){
   query=query||'';
@@ -404,9 +421,9 @@ function renderPatientList(query){
       +'<input type="text" id="patient-search-input" placeholder="Buscar por nome ou CPF..." value="'+query+'" oninput="renderPatientList(this.value)" autocomplete="off"/>'
       +'<button class="btn btn-primary btn-sm" onclick="showNewPatientModal()">+</button></div>'
       +'<div style="display:flex;gap:8px;margin-bottom:14px">'
-      +'<button id="pbtn-todos" class="btn btn-sm '+(patientsFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'all\';renderPatients()">Todos ('+allPatients.length+')</button>'
-      +'<button id="pbtn-ativos" class="btn btn-sm '+(patientsFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'active\';renderPatients()">Ativos ('+allPatients.filter(p=>p.active).length+')</button>'
-      +'<button id="pbtn-enc" class="btn btn-sm '+(patientsFilter==='inactive'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'inactive\';renderPatients()">Encerrados ('+allPatients.filter(p=>!p.active).length+')</button>'
+      +'<button id="pbtn-todos" class="btn btn-sm '+(patientsFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'all\';renderPatientListLocal()">Todos ('+allPatients.length+')</button>'
+      +'<button id="pbtn-ativos" class="btn btn-sm '+(patientsFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'active\';renderPatientListLocal()">Ativos ('+allPatients.filter(p=>p.active).length+')</button>'
+      +'<button id="pbtn-enc" class="btn btn-sm '+(patientsFilter==='inactive'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'inactive\';renderPatientListLocal()">Encerrados ('+allPatients.filter(p=>!p.active).length+')</button>'
       +'</div>'
       +'<div id="patient-list-container">'+listHtml+'</div>';
     // Focus the search input if query exists
