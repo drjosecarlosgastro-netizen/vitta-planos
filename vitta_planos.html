@@ -1014,35 +1014,79 @@ async function deleteImplante(id,apptId){
 // block6 done
 
 async function renderPatAgenda(){
-  const{data:appts}=await sb.from('planos_appointments').select('*').eq('patient_id',currentPatientId).order('created_at');
-  const sorted=(appts||[]).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+  const[{data:appts},{data:histAppts}]=await Promise.all([
+    sb.from('planos_appointments').select('*').eq('patient_id',currentPatientId).order('created_at'),
+    sb.from('planos_appt_historico').select('*').eq('patient_id',currentPatientId)
+  ]);
   const c=document.getElementById('patient-tab-content');
-  let html='<div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#92400e"><strong>\u2139\ufe0f Aten\u00e7\u00e3o:</strong> Agendamentos via Soroterapia/Implante (borda verde) j\u00e1 contabilizam nessas abas. Agendamentos criados aqui n\u00e3o contabilizam como sess\u00e3o de soro.</div>';
-  html+='<div class="section-header"><div class="section-title">Agendamentos</div><button class="btn btn-primary btn-sm" onclick="showAddApptPatient()">+ Add</button></div>';
+  const sorted=(appts||[]).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+  const hist=histAppts||[];
+  const cancelCount=hist.filter(h=>h.tipo==='cancelamento').length;
+  const remarcCount=hist.filter(h=>h.tipo==='remarcacao').length;
+  const cancelFromStatus=(appts||[]).filter(a=>a.status==='Cancelou').length;
+  const totalCanc=Math.max(cancelCount,cancelFromStatus);
+
   function apptHtml(a){
     const isAuto=!!a.origem_tabela;
     const statusOpts=['Agendado','Compareceu','Faltou','Cancelou'].map(s=>'<option '+(a.status===s?'selected':'')+'>'+s+'</option>').join('');
-    return '<div class="appt-item" style="'+(isAuto?'border-left:3px solid var(--success)':'')+'">'
+    const borderLeft=isAuto?'border-left:3px solid var(--success)':a.status==='Cancelou'?'border-left:3px solid var(--danger)':a.status==='Faltou'?'border-left:3px solid var(--warning)':'';
+    return '<div class="appt-item" style="'+borderLeft+'">'
       +'<div class="appt-time">'+(a.time_str||'--:--')+'</div>'
       +'<div class="appt-info">'
       +'<div class="appt-name">'+fmtDate(a.date_str||'')+' \u00b7 '+(a.procedimento||'')+'</div>'
       +'<div class="appt-sub">'+(a.tipo||'')+(a.observacao?' \u00b7 '+a.observacao:'')+'</div>'
-      +(isAuto?'<div class="appt-sub" style="color:var(--success);font-weight:600">\ud83d\udd17 Vinculado via '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>':'')
+      +(isAuto?'<div class="appt-sub" style="color:var(--success);font-weight:600">\ud83d\udd17 '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>':'')
       +(a.profissional_nome?'<div class="appt-sub" style="color:var(--navy);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>':'')
       +'<div style="margin-top:2px"><span class="user-badge">'+(a.registrado_por||'')+'</span></div>'
       +'</div>'
-      +'<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="updateApptStatus('+a.id+',this.value)">'+statusOpts+'</select>'
-      +'<button class="btn-icon" onclick="deleteAppt('+a.id+')">\ud83d\uddd1</button>'
+      +'<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="handleApptStatusChange('+a.id+','+currentPatientId+',this.value,this)">'+statusOpts+'</select>'
+      +'<button class="btn-icon" onclick="excluirAgendamentoPat('+a.id+')" title="Excluir cadastro errado">\ud83d\uddd1</button>'
       +'</div>';
   }
+
+  let html='';
+
+  // Counter badges
+  if(totalCanc>0||remarcCount>0){
+    html+='<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">';
+    if(totalCanc>0)html+='<span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700">\u274c '+totalCanc+' cancelamento(s)</span>';
+    if(remarcCount>0)html+='<span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700">\ud83d\udd04 '+remarcCount+' remarca\u00e7\u00e3o(oes)</span>';
+    html+='</div>';
+  }
+
+  html+='<div class="section-header"><div class="section-title">Agendamentos</div><button class="btn btn-primary btn-sm" onclick="showAddApptPatient()">+ Add</button></div>';
   html+=sorted.slice(0,5).map(a=>apptHtml(a)).join('');
+
   if(sorted.length>5){
     html+='<div id="more-appts" style="display:none">'+sorted.slice(5).map(a=>apptHtml(a)).join('')+'</div>';
     html+='<button class="btn btn-ghost btn-full" onclick="document.getElementById(\'more-appts\').style.display=\'block\';this.style.display=\'none\'">Ver todos ('+sorted.length+') \u2193</button>';
   }
   if(!sorted.length)html+='<div class="empty"><div class="empty-icon">\ud83d\udcc5</div>Sem agendamentos</div>';
+
+  // History of cancellations/reschedules
+  if(hist.length){
+    html+='<div class="card" style="margin-top:12px"><div class="card-title">\ud83d\udcdd Hist\u00f3rico de Cancelamentos e Remarca\u00e7\u00f5es</div>';
+    hist.slice().reverse().forEach(h=>{
+      const cor=h.tipo==='cancelamento'?'var(--danger)':'var(--accent)';
+      const icon=h.tipo==='cancelamento'?'\u274c':'\ud83d\udd04';
+      html+='<div style="padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;display:flex;align-items:flex-start;gap:8px">'
+        +'<span>'+icon+'</span>'
+        +'<div><div style="font-weight:600;color:'+cor+'">'+(h.tipo==='cancelamento'?'Cancelamento':'Remarca\u00e7\u00e3o')+'</div>'
+        +(h.observacao?'<div style="color:var(--text-muted)">'+h.observacao+'</div>':'')
+        +'<div style="font-size:11px;color:var(--text-muted);margin-top:2px">'+isoToDisplay(h.created_at||'')+' \u00b7 <span class="user-badge">'+h.registrado_por+'</span></div>'
+        +'</div></div>';
+    });
+    html+='</div>';
+  }
+
   c.innerHTML=html;
 }
+async function excluirAgendamentoPat(id){
+  if(!confirm('Excluir este agendamento?\n\nUse apenas para cadastros errados.\nN\u00e3o ficar\u00e1 no hist\u00f3rico do paciente.'))return;
+  await sb.from('planos_appointments').delete().eq('id',id);
+  toast('Agendamento exclu\u00eddo','success');patTab('agenda');
+}
+
 function showAddApptPatient(){
   showGenericModal(
     '<div class="grid-2"><div class="field"><label>Data</label><input id="ap-date" value="'+todayStr()+'"/></div><div class="field"><label>Hora</label><input id="ap-time" type="time" value="09:00"/></div></div>'
@@ -1240,6 +1284,54 @@ function goToAgendaDate(dateStr){
   if(typeof renderAgendaContent==='function')renderAgendaContent();
   else mainNav('agenda');
 }
+async function excluirAgendamento(id){
+  if(!confirm('Excluir este agendamento?\n\nUse esta opção apenas para cadastros errados.\nPara cancelamentos ou remarcações, use o seletor de status.\n\nEste registro NÃO ficará no histórico do paciente.'))return;
+  await sb.from('planos_appointments').delete().eq('id',id);
+  toast('Agendamento excluído','success');
+  renderAgendaContent();
+}
+
+async function handleApptStatusChange(id,patientId,newStatus,selectEl){
+  const oldStatus=selectEl.dataset.oldStatus||'Agendado';
+  // If changing to Cancelou or keeping Agendado (remarcação), ask for reason
+  if(newStatus==='Cancelou'){
+    const motivo=prompt('Motivo do cancelamento (opcional):');
+    // Save cancellation log
+    await sb.from('planos_appt_historico').insert({
+      appointment_id:id,
+      patient_id:patientId,
+      tipo:'cancelamento',
+      observacao:motivo||null,
+      registrado_por:currentUser?currentUser.name:'Sistema',
+      created_at:new Date().toISOString()
+    }).then(({error})=>{if(error)console.warn('Log cancelamento falhou:',error);});
+    await sb.from('planos_appointments').update({status:newStatus,updated_by:currentUser?currentUser.name:'Sistema'}).eq('id',id);
+    toast('Cancelamento registrado','success');
+  } else if(newStatus==='Agendado' && (oldStatus==='Cancelou'||oldStatus==='Faltou')){
+    // Remarcação
+    const motivo=prompt('Observação sobre a remarcação (opcional):');
+    await sb.from('planos_appt_historico').insert({
+      appointment_id:id,
+      patient_id:patientId,
+      tipo:'remarcacao',
+      observacao:motivo||null,
+      registrado_por:currentUser?currentUser.name:'Sistema',
+      created_at:new Date().toISOString()
+    }).then(({error})=>{if(error)console.warn('Log remarcação falhou:',error);});
+    await sb.from('planos_appointments').update({status:newStatus,updated_by:currentUser?currentUser.name:'Sistema'}).eq('id',id);
+    toast('Remarcação registrada','success');
+  } else {
+    await sb.from('planos_appointments').update({status:newStatus,updated_by:currentUser?currentUser.name:'Sistema'}).eq('id',id);
+    toast('Status atualizado','success');
+  }
+  selectEl.dataset.oldStatus=newStatus;
+}
+
+async function updateApptStatusAgenda(id,status){
+  await sb.from('planos_appointments').update({status,updated_by:currentUser?currentUser.name:'Sistema'}).eq('id',id);
+  toast('Status atualizado','success');
+}
+
 function showOverduePending(){
   const overdue=window._overdueAppts||[];
   const patMap=window._overduePatMap||{};
@@ -1429,9 +1521,10 @@ async function renderAgenda(){
         if(isAuto)html2+='<div style="font-size:11px;color:var(--success);font-weight:600">\ud83d\udd17 '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>';
         if(a.profissional_nome)html2+='<div style="font-size:12px;color:var(--navy);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>';
         html2+='</div>';
-        // Prontuário button
+        // Prontu\u00e1rio button
         if(patIdMap[a.patient_id])html2+='<button class="btn btn-ghost btn-sm" onclick="openPatient('+a.patient_id+')" title="Abrir Prontu\u00e1rio" style="flex-shrink:0">\ud83d\udcc2</button>';
-        html2+='<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font);flex-shrink:0" onchange="updateApptStatusAgenda('+a.id+',this.value)">'+statusOpts+'</select>';
+        html2+='<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font);flex-shrink:0" onchange="handleApptStatusChange('+a.id+','+a.patient_id+',this.value,this)">'+statusOpts+'</select>';
+        html2+='<button onclick="excluirAgendamento('+a.id+')" title="Excluir (cadastro errado - sem registro)" style="padding:5px 9px;border-radius:7px;background:transparent;border:1.5px solid #fca5a5;color:#ef4444;cursor:pointer;font-size:14px;flex-shrink:0">\ud83d\uddd1</button>';
         html2+='</div>';
       });
       html2+='</div>';
