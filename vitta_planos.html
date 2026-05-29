@@ -362,25 +362,61 @@ let patientsFilter='active';
 async function renderPatients(query){
   query=query||'';
   const{data}=await sb.from('planos_patients').select('*').order('name');
-  allPatients=data||[];renderPatientList(query);
+  allPatients=data||[];
+  // Clear container so full structure rebuilds (needed when switching filters)
+  const c=document.getElementById('main-content');
+  c.innerHTML='';
+  renderPatientList(query);
+  // Restore search input value and focus if came from filter button
+  const inp=document.getElementById('patient-search-input');
+  if(inp&&query){inp.value=query;inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
 }
 function renderPatientList(query){
   query=query||'';
   const c=document.getElementById('main-content');
   const norm=normStr(query);
   let filtered=allPatients;
+  // Apply status filter first
   if(patientsFilter==='active')filtered=filtered.filter(p=>p.active);
   else if(patientsFilter==='inactive')filtered=filtered.filter(p=>!p.active);
+  // Apply search filter - searches name and CPF
   if(norm)filtered=filtered.filter(p=>normStr(p.name).includes(norm)||normStr(p.cpf||'').includes(norm));
-  c.innerHTML=
-    '<div class="search-bar"><span>\ud83d\udd0d</span><input type="text" placeholder="Buscar por nome ou CPF..." value="'+query+'" oninput="renderPatientList(this.value)"/><button class="btn btn-primary btn-sm" onclick="showNewPatientModal()">+</button></div>'
-    +'<div style="display:flex;gap:8px;margin-bottom:14px">'
-    +'<button class="btn btn-sm '+(patientsFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'all\';renderPatients()">Todos ('+allPatients.length+')</button>'
-    +'<button class="btn btn-sm '+(patientsFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'active\';renderPatients()">Ativos ('+allPatients.filter(p=>p.active).length+')</button>'
-    +'<button class="btn btn-sm '+(patientsFilter==='inactive'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'inactive\';renderPatients()">Encerrados ('+allPatients.filter(p=>!p.active).length+')</button>'
-    +'</div>'
-    +(filtered.length?filtered.map(p=>patientRowHtml(p)).join(''):'<div class="empty"><div class="empty-icon">\ud83d\udd0d</div>Nenhum paciente encontrado</div>');
+
+  // Build only the list part - NOT the search bar (to avoid focus loss)
+  const listHtml=(filtered.length?filtered.map(p=>patientRowHtml(p)).join(''):'<div class="empty"><div class="empty-icon">\ud83d\udd0d</div>Nenhum paciente encontrado</div>');
+  
+  // Update counters on filter buttons
+  const btnTodos=document.getElementById('pbtn-todos');
+  const btnAtivos=document.getElementById('pbtn-ativos');
+  const btnEnc=document.getElementById('pbtn-enc');
+  if(btnTodos)btnTodos.textContent='Todos ('+allPatients.length+')';
+  if(btnAtivos)btnAtivos.textContent='Ativos ('+allPatients.filter(p=>p.active).length+')';
+  if(btnEnc)btnEnc.textContent='Encerrados ('+allPatients.filter(p=>!p.active).length+')';
+
+  // Only update the list container, not the whole content (preserves search input focus)
+  const listContainer=document.getElementById('patient-list-container');
+  if(listContainer){
+    listContainer.innerHTML=listHtml;
+  } else {
+    // First render: build full structure including search bar
+    c.innerHTML=
+      '<div class="search-bar"><span>\ud83d\udd0d</span>'
+      +'<input type="text" id="patient-search-input" placeholder="Buscar por nome ou CPF..." value="'+query+'" oninput="renderPatientList(this.value)" autocomplete="off"/>'
+      +'<button class="btn btn-primary btn-sm" onclick="showNewPatientModal()">+</button></div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:14px">'
+      +'<button id="pbtn-todos" class="btn btn-sm '+(patientsFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'all\';renderPatients()">Todos ('+allPatients.length+')</button>'
+      +'<button id="pbtn-ativos" class="btn btn-sm '+(patientsFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'active\';renderPatients()">Ativos ('+allPatients.filter(p=>p.active).length+')</button>'
+      +'<button id="pbtn-enc" class="btn btn-sm '+(patientsFilter==='inactive'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'inactive\';renderPatients()">Encerrados ('+allPatients.filter(p=>!p.active).length+')</button>'
+      +'</div>'
+      +'<div id="patient-list-container">'+listHtml+'</div>';
+    // Focus the search input if query exists
+    if(query){
+      const inp=document.getElementById('patient-search-input');
+      if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
+    }
+  }
 }
+
 async function openPatient(id){
   currentPatientId=id;
   const{data:p}=await sb.from('planos_patients').select('*').eq('id',id).single();
