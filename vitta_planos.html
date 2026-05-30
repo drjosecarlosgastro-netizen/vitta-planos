@@ -393,10 +393,13 @@ function renderPatientList(query){
   const c=document.getElementById('main-content');
   const norm=normStr(query);
   let filtered=allPatients;
-  // Apply status filter first
-  if(patientsFilter==='active')filtered=filtered.filter(p=>p.active);
-  else if(patientsFilter==='inactive')filtered=filtered.filter(p=>!p.active);
-  // Apply search filter - searches name and CPF
+  // When searching, look across ALL patients (active + inactive)
+  // Only apply status filter when there's no search query
+  if(!norm){
+    if(patientsFilter==='active')filtered=filtered.filter(p=>p.active);
+    else if(patientsFilter==='inactive')filtered=filtered.filter(p=>!p.active);
+  }
+  // Apply search filter - searches name and CPF across all
   if(norm)filtered=filtered.filter(p=>normStr(p.name).includes(norm)||normStr(p.cpf||'').includes(norm));
 
   // Build only the list part - NOT the search bar (to avoid focus loss)
