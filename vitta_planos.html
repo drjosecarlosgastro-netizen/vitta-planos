@@ -40,6 +40,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .18s;white-space:nowrap}
 .btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:var(--navy-light)}
 .btn-accent{background:var(--accent);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
 .btn-ghost{background:transparent;color:var(--navy);border:1.5px solid var(--border)}.btn-ghost:hover{border-color:var(--navy)}
 .btn-sm{padding:6px 13px;font-size:12px;border-radius:6px}
 .btn-full{width:100%;justify-content:center;padding:13px}
@@ -60,6 +61,9 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .tabs::-webkit-scrollbar{display:none}
 .tab{padding:11px 13px;border:none;background:transparent;font-family:var(--font);font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s;position:relative;top:1px}
 .tab.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:700}
+.subtabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg);border-radius:10px;padding:4px}
+.subtab{flex:1;padding:9px 12px;border:none;background:transparent;font-family:var(--font);font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border-radius:8px;transition:all .2s;text-align:center}
+.subtab.active{background:var(--white);color:var(--navy);font-weight:700;box-shadow:var(--shadow)}
 .content{flex:1;overflow-y:auto;padding:16px;padding-bottom:40px}
 .card{background:var(--white);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
 .card-title{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
@@ -124,6 +128,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .section-title{font-size:16px;font-weight:700;color:var(--text)}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
 .text-sm{font-size:12px}.text-muted{color:var(--text-muted)}
 .loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);font-size:14px}
 .spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;margin-right:10px}
@@ -149,6 +154,34 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .hist-box-soro{background:#f0f9ff;border:1.5px solid #bae6fd}
 .hist-box-impl{background:#fdf4ff;border:1.5px solid #e9d5ff}
 .hist-box-consult{background:#f0fdf4;border:1.5px solid #bbf7d0}
+.hist-box-trhe{background:#fff7ed;border:1.5px solid #fed7aa}
+.subtabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg);border-radius:10px;padding:4px}
+.subtab{flex:1;padding:9px 12px;border:none;background:transparent;font-family:var(--font);font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border-radius:8px;transition:all .2s;text-align:center}
+.subtab.active{background:var(--white);color:var(--navy);font-weight:700;box-shadow:var(--shadow)}
+.laudo-section{margin-bottom:16px}
+.laudo-section-title{font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--border-light)}
+.laudo-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px}
+.laudo-table th{background:var(--navy);color:#fff;padding:7px 10px;text-align:center;font-weight:600;font-size:12px}
+.laudo-table td{padding:6px 10px;text-align:center;border-bottom:1px solid var(--border-light)}
+.laudo-table tr:nth-child(even){background:#f9fafb}
+.laudo-table td.highlight{background:#fef3c7;font-weight:700;color:#92400e}
+.trhe-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.trhe-stat{background:var(--bg);border-radius:10px;padding:10px 12px;text-align:center}
+.trhe-stat-num{font-size:22px;font-weight:700;color:var(--navy);line-height:1}
+.trhe-stat-label{font-size:10px;color:var(--text-muted);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+.trhe-evolutivo-item{background:var(--white);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;border:1.5px solid transparent;transition:all .18s}
+.trhe-evolutivo-item:hover{border-color:var(--navy)}
+.trhe-evolutivo-item.selected{border-color:var(--accent);background:#f0f7ff}
+.laudo-editavel{width:100%;padding:10px 13px;background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;color:var(--text);outline:none;transition:border-color .2s;resize:vertical;min-height:80px}
+.laudo-editavel:focus{border-color:var(--navy)}
+.sibo-positivo{background:#fee2e2;border:2px solid #fca5a5;border-radius:10px;padding:12px 16px;margin-bottom:12px}
+.sibo-negativo{background:#dcfce7;border:2px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:12px}
+@media print{
+  .topbar,.tabs,.navtabs,.btn,.btn-ghost,.btn-primary,.btn-icon,.subtabs,#toast{display:none!important}
+  .card{box-shadow:none;border:1px solid #ddd}
+  body{background:#fff}
+  .content{padding:0}
+}
 </style>
 </head>
 <body>
@@ -201,6 +234,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
   <div class="tabs" id="patient-tabs">
     <button class="tab active" onclick="patTab('info')">Info</button>
     <button class="tab" onclick="patTab('financeiro')">Financeiro</button>
+    <button class="tab" onclick="patTab('clinica')">&#128200; Cl&#237;nica</button>
     <button class="tab" onclick="patTab('soroterapia')">Soroterapia</button>
     <button class="tab" onclick="patTab('implante')">Implante</button>
     <button class="tab" onclick="patTab('agenda')">Agenda</button>
@@ -360,31 +394,22 @@ function patientRowHtml(p){
 }
 let patientsFilter='active';
 async function renderPatients(query){
-  // Preserve current search query if not passed
-  if(query===undefined){
-    const inp=document.getElementById('patient-search-input');
-    query=inp?inp.value:'';
-  }
+  if(query===undefined){const inp=document.getElementById('patient-search-input');query=inp?inp.value:'';}
   query=query||'';
   const{data}=await sb.from('planos_patients').select('*').order('name');
   allPatients=data||[];
-  // Clear container so full structure rebuilds (needed when switching filters)
   const c=document.getElementById('main-content');
   c.innerHTML='';
   renderPatientList(query);
-  // Restore search input focus
   const inp=document.getElementById('patient-search-input');
   if(inp&&query){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
 }
 function renderPatientListLocal(){
-  // Re-filter locally without DB reload, preserving search query
   const inp=document.getElementById('patient-search-input');
   const q=inp?inp.value:'';
-  // Force full rebuild to update button styles
   const c=document.getElementById('main-content');
   c.innerHTML='';
   renderPatientList(q);
-  // Restore focus
   const inp2=document.getElementById('patient-search-input');
   if(inp2){inp2.focus();inp2.setSelectionRange(inp2.value.length,inp2.value.length);}
 }
@@ -393,32 +418,22 @@ function renderPatientList(query){
   const c=document.getElementById('main-content');
   const norm=normStr(query);
   let filtered=allPatients;
-  // When searching, look across ALL patients (active + inactive)
-  // Only apply status filter when there's no search query
   if(!norm){
     if(patientsFilter==='active')filtered=filtered.filter(p=>p.active);
     else if(patientsFilter==='inactive')filtered=filtered.filter(p=>!p.active);
   }
-  // Apply search filter - searches name and CPF across all
   if(norm)filtered=filtered.filter(p=>normStr(p.name).includes(norm)||normStr(p.cpf||'').includes(norm));
-
-  // Build only the list part - NOT the search bar (to avoid focus loss)
   const listHtml=(filtered.length?filtered.map(p=>patientRowHtml(p)).join(''):'<div class="empty"><div class="empty-icon">\ud83d\udd0d</div>Nenhum paciente encontrado</div>');
-  
-  // Update counters on filter buttons
   const btnTodos=document.getElementById('pbtn-todos');
   const btnAtivos=document.getElementById('pbtn-ativos');
   const btnEnc=document.getElementById('pbtn-enc');
   if(btnTodos)btnTodos.textContent='Todos ('+allPatients.length+')';
   if(btnAtivos)btnAtivos.textContent='Ativos ('+allPatients.filter(p=>p.active).length+')';
   if(btnEnc)btnEnc.textContent='Encerrados ('+allPatients.filter(p=>!p.active).length+')';
-
-  // Only update the list container, not the whole content (preserves search input focus)
   const listContainer=document.getElementById('patient-list-container');
   if(listContainer){
     listContainer.innerHTML=listHtml;
   } else {
-    // First render: build full structure including search bar
     c.innerHTML=
       '<div class="search-bar"><span>\ud83d\udd0d</span>'
       +'<input type="text" id="patient-search-input" placeholder="Buscar por nome ou CPF..." value="'+query+'" oninput="renderPatientList(this.value)" autocomplete="off"/>'
@@ -429,11 +444,7 @@ function renderPatientList(query){
       +'<button id="pbtn-enc" class="btn btn-sm '+(patientsFilter==='inactive'?'btn-primary':'btn-ghost')+'" onclick="patientsFilter=\'inactive\';renderPatientListLocal()">Encerrados ('+allPatients.filter(p=>!p.active).length+')</button>'
       +'</div>'
       +'<div id="patient-list-container">'+listHtml+'</div>';
-    // Focus the search input if query exists
-    if(query){
-      const inp=document.getElementById('patient-search-input');
-      if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
-    }
+    if(query){const inp=document.getElementById('patient-search-input');if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}}
   }
 }
 
@@ -449,15 +460,14 @@ async function openPatient(id){
 function confirmarDeletePaciente(){
   const p=currentPatientData;
   if(!p){return;}
-  // Build confirmation modal
   const html=
     '<div style="background:#fff5f5;border:1.5px solid #fca5a5;border-radius:10px;padding:16px;margin-bottom:16px">'
     +'<div style="font-size:28px;text-align:center;margin-bottom:8px">\u26a0\ufe0f</div>'
     +'<div style="font-weight:700;font-size:15px;color:#991b1b;text-align:center;margin-bottom:8px">Aten\u00e7\u00e3o: Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita diretamente!</div>'
     +'<div style="font-size:13px;color:#991b1b">'
     +'<div style="margin-bottom:6px">\ud83d\udc64 <strong>'+p.name+'</strong></div>'
-    +'<div style="margin-bottom:4px">\ud83d\udcbe Todos os dados do paciente ser\u00e3o arquivados (soroterapia, financeiro, agenda, implantes, contratos).</div>'
-    +'<div>\ud83d\udcdc Um backup completo ser\u00e1 salvo e poder\u00e1 ser recuperado pela equipe.</div>'
+    +'<div style="margin-bottom:4px">\ud83d\udcbe Todos os dados do paciente ser\u00e3o arquivados.</div>'
+    +'<div>\ud83d\udcdc Um backup completo ser\u00e1 salvo.</div>'
     +'</div></div>'
     +'<div class="field"><label>Digite o nome do paciente para confirmar</label>'
     +'<input id="delete-confirm-name" placeholder="'+p.name+'" style="border-color:var(--danger)"/></div>'
@@ -474,24 +484,15 @@ function confirmarDeletePaciente(){
     +'<button class="btn btn-ghost btn-full" onclick="closeModal(\'modal-generic\')" style="margin-top:8px">Cancelar</button>';
   showGenericModal(html, '\u26a0\ufe0f Excluir Paciente');
 }
-
 async function executarDeletePaciente(){
   const p=currentPatientData;
   const confirmName=document.getElementById('delete-confirm-name')?.value.trim();
   const motivo=document.getElementById('delete-motivo')?.value;
   const obs=document.getElementById('delete-obs')?.value.trim();
-
-  // Validate name confirmation
-  if(confirmName.toLowerCase()!==p.name.toLowerCase()){
-    toast('Nome n\u00e3o confere. Digite exatamente: '+p.name,'error');
-    return;
-  }
-
+  if(confirmName.toLowerCase()!==p.name.toLowerCase()){toast('Nome n\u00e3o confere. Digite exatamente: '+p.name,'error');return;}
   const btn=document.querySelector('#modal-generic-content .btn-danger');
   if(btn){btn.disabled=true;btn.textContent='Excluindo...';}
-
   try{
-    // 1. Fetch all related data for backup
     const [{data:appts},{data:fin},{data:soro},{data:envios},{data:impl},{data:contratos},{data:ciclos},{data:edicoes}]=await Promise.all([
       sb.from('planos_appointments').select('*').eq('patient_id',p.id),
       sb.from('planos_financeiro').select('*').eq('patient_id',p.id),
@@ -502,34 +503,9 @@ async function executarDeletePaciente(){
       sb.from('planos_historico_ciclos').select('*').eq('patient_id',p.id),
       sb.from('planos_historico_edicoes').select('*').eq('patient_id',p.id)
     ]);
-
-    // 2. Save full backup to planos_pacientes_deletados
-    const backup={
-      paciente_id_original:p.id,
-      dados_paciente:JSON.stringify(p),
-      dados_appointments:JSON.stringify(appts||[]),
-      dados_financeiro:JSON.stringify(fin||[]),
-      dados_soro_sessoes:JSON.stringify(soro||[]),
-      dados_soro_envios:JSON.stringify(envios||[]),
-      dados_implantes:JSON.stringify(impl||[]),
-      dados_contratos:JSON.stringify(contratos||[]),
-      dados_ciclos:JSON.stringify(ciclos||[]),
-      dados_edicoes:JSON.stringify(edicoes||[]),
-      motivo_exclusao:motivo,
-      observacao:obs||null,
-      deletado_por:currentUser.name,
-      deletado_em:new Date().toISOString()
-    };
-
+    const backup={paciente_id_original:p.id,dados_paciente:JSON.stringify(p),dados_appointments:JSON.stringify(appts||[]),dados_financeiro:JSON.stringify(fin||[]),dados_soro_sessoes:JSON.stringify(soro||[]),dados_soro_envios:JSON.stringify(envios||[]),dados_implantes:JSON.stringify(impl||[]),dados_contratos:JSON.stringify(contratos||[]),dados_ciclos:JSON.stringify(ciclos||[]),dados_edicoes:JSON.stringify(edicoes||[]),motivo_exclusao:motivo,observacao:obs||null,deletado_por:currentUser.name,deletado_em:new Date().toISOString()};
     const {error:backupErr}=await sb.from('planos_pacientes_deletados').insert(backup);
-    if(backupErr){
-      console.error('Erro no backup:',backupErr);
-      toast('Erro ao fazer backup: '+backupErr.message+'. Exclus\u00e3o cancelada.','error');
-      if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}
-      return;
-    }
-
-    // 3. Delete all related records
+    if(backupErr){toast('Erro ao fazer backup: '+backupErr.message,'error');if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}return;}
     await Promise.all([
       sb.from('planos_appointments').delete().eq('patient_id',p.id),
       sb.from('planos_financeiro').delete().eq('patient_id',p.id),
@@ -540,37 +516,26 @@ async function executarDeletePaciente(){
       sb.from('planos_historico_ciclos').delete().eq('patient_id',p.id),
       sb.from('planos_historico_edicoes').delete().eq('patient_id',p.id),
     ]);
-
-    // 4. Delete patient
     await sb.from('planos_patients').delete().eq('id',p.id);
-
-    closeModal('modal-generic');
-    toast('Paciente exclu\u00eddo e backup salvo!','success');
-    backToMain();
-    mainNav('patients');
-
-  }catch(e){
-    console.error('Erro na exclus\u00e3o:',e);
-    toast('Erro inesperado: '+e.message,'error');
-    if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}
-  }
+    closeModal('modal-generic');toast('Paciente exclu\u00eddo e backup salvo!','success');backToMain();mainNav('patients');
+  }catch(e){toast('Erro inesperado: '+e.message,'error');if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}}
 }
-
 function backToMain(){showScreen('app');mainNav(currentSection);}
+
 function patTab(tab){
-  const tabNames=['info','financeiro','soroterapia','implante','agenda','contrato','historico'];
+  const tabNames=['info','financeiro','clinica','soroterapia','implante','agenda','contrato','historico'];
   document.querySelectorAll('#patient-tabs .tab').forEach((t,i)=>t.classList.toggle('active',tabNames[i]===tab));
   const c=document.getElementById('patient-tab-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
   if(tab==='info')renderPatInfo();
   else if(tab==='financeiro')renderFinanceiro();
+  else if(tab==='clinica')renderClinica();
   else if(tab==='soroterapia')renderSoroterapia();
   else if(tab==='implante')renderImplante();
   else if(tab==='agenda')renderPatAgenda();
   else if(tab==='contrato')renderContrato();
   else if(tab==='historico')renderHistorico();
 }
-// block2 done
 
 async function renderPatInfo(){
   const p=currentPatientData;
@@ -690,7 +655,6 @@ async function reativarPlano(){
   currentPatientData.active=true;currentPatientData.motivo_encerramento=null;currentPatientData.data_encerramento=null;
   toast('Plano reativado!','success');patTab('info');
 }
-// block3 done
 
 async function renderFinanceiro(){
   const{data:fin}=await sb.from('planos_financeiro').select('*').eq('patient_id',currentPatientId).order('created_at');
@@ -772,7 +736,543 @@ async function deleteFinanceiro(id){
   await logHistorico('financeiro',id,'exclusao',old,null);
   patTab('financeiro');
 }
-// block4 done
+
+// ========== ABA CLÍNICA ==========
+let clinicaSubTab = 'trhe';
+
+async function renderClinica() {
+  clinicaSubTab = clinicaSubTab || 'trhe';
+  const c = document.getElementById('patient-tab-content');
+  c.innerHTML =
+    '<div class="subtabs">'
+    + '<button class="subtab ' + (clinicaSubTab==='trhe'?'active':'') + '" onclick="clinicaSubTab=\'trhe\';renderClinica()">'
+    + '\ud83e\udeb2 Teste Respirat\u00f3rio</button>'
+    + '<button class="subtab ' + (clinicaSubTab==='bio'?'active':'') + '" onclick="clinicaSubTab=\'bio\';renderClinica()">'
+    + '\ud83e\uddb8 Bioimpedância</button>'
+    + '</div>'
+    + '<div id="clinica-sub-content"><div class="loading"><div class="spinner"></div>Carregando...</div></div>';
+  if (clinicaSubTab === 'trhe') await renderTRHE();
+  else await renderBioimpedancia();
+}
+
+async function renderBioimpedancia() {
+  const c = document.getElementById('clinica-sub-content');
+  c.innerHTML = '<div class="empty"><div class="empty-icon">\ud83e\uddb8</div><div style="font-size:16px;font-weight:700;margin-bottom:8px">Bioimpedância</div><div style="font-size:13px;color:var(--text-muted)">Em construção. Em breve você poderá registrar e acompanhar a evolução da composição corporal.</div></div>';
+}
+
+// ========== TRHE ==========
+async function renderTRHE() {
+  const { data: exames } = await sb.from('planos_trhe').select('*').eq('patient_id', currentPatientId).order('data_exame', { ascending: false });
+  const lista = exames || [];
+  const c = document.getElementById('clinica-sub-content');
+
+  let html = '<div class="section-header"><div class="section-title">\ud83e\udeb2 Teste Respirat\u00f3rio do H\u00e2 (TRHE)</div>'
+    + '<button class="btn btn-primary btn-sm" onclick="showFormTRHE(null)">+ Novo Exame</button></div>';
+
+  if (!lista.length) {
+    html += '<div class="empty"><div class="empty-icon">\ud83e\udeb2</div><div>Nenhum exame registrado</div><div style="font-size:12px;color:var(--text-muted);margin-top:8px">Clique em "+ Novo Exame" para registrar o primeiro TRHE deste paciente.</div></div>';
+    c.innerHTML = html;
+    return;
+  }
+
+  // Evolutivo list
+  html += '<div style="margin-bottom:16px">';
+  lista.forEach((ex, idx) => {
+    const siboLabel = ex.sibo ? '\u2713 SIBO Positivo' : 'SIBO Negativo';
+    const siboCor = ex.sibo ? '#991b1b' : '#166534';
+    const siboBg = ex.sibo ? '#fee2e2' : '#dcfce7';
+    const sgfCls = ex.sgf >= 61 ? '#dc2626' : ex.sgf >= 41 ? '#d97706' : ex.sgf >= 21 ? '#2563eb' : '#6b7280';
+    const sgfBg = ex.sgf >= 61 ? '#fee2e2' : ex.sgf >= 41 ? '#fef3c7' : ex.sgf >= 21 ? '#dbeafe' : '#f3f4f6';
+    html += '<div class="trhe-evolutivo-item" onclick="showLaudoTRHE(' + ex.id + ')">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+      + '<div>'
+      + '<div style="font-weight:700;font-size:14px">\ud83d\udcc5 ' + isoToDisplay(ex.data_exame) + '</div>'
+      + '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">'
+      + 'Delta H\u2082: <strong>' + (ex.delta_h2 || 0) + ' ppm</strong>'
+      + ' \u00b7 IFI: <strong>' + (ex.ifi || 0) + '</strong>'
+      + ' \u00b7 AUC: <strong>' + (ex.auc || 0) + '</strong>'
+      + (ex.preparo_adequado === false ? ' \u00b7 <span style="color:var(--warning)">Preparo inadequado</span>' : '')
+      + '</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+      + '<span style="font-size:11px;font-weight:700;color:' + siboCor + ';background:' + siboBg + ';padding:3px 10px;border-radius:99px">' + siboLabel + '</span>'
+      + '<span style="font-size:11px;font-weight:700;color:' + sgfCls + ';background:' + sgfBg + ';padding:3px 10px;border-radius:99px">SGF: ' + (ex.sgf || 0) + '</span>'
+      + '<span style="font-size:11px;color:var(--accent)">Ver laudo \u2192</span>'
+      + '</div></div></div>';
+  });
+  html += '</div>';
+
+  // Chart evolutivo SGF se tiver 2+ exames
+  if (lista.length >= 2) {
+    html += '<div class="card"><div class="card-title">Evolu\u00e7\u00e3o do SGF (Score Global de Fermenta\u00e7\u00e3o)</div>'
+      + '<div style="position:relative;height:160px"><canvas id="chart-trhe-evolutivo"></canvas></div></div>';
+  }
+
+  c.innerHTML = html;
+
+  if (lista.length >= 2) {
+    setTimeout(() => {
+      const canvas = document.getElementById('chart-trhe-evolutivo');
+      if (!canvas) return;
+      const labels = [...lista].reverse().map(e => isoToDisplay(e.data_exame));
+      const sgfData = [...lista].reverse().map(e => e.sgf || 0);
+      new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'SGF',
+            data: sgfData,
+            borderColor: '#1D2846',
+            backgroundColor: 'rgba(29,40,70,.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            borderWidth: 2,
+            pointBackgroundColor: sgfData.map(v => v >= 61 ? '#dc2626' : v >= 41 ? '#d97706' : '#1D2846')
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { min: 0, max: 100, grid: { color: 'rgba(0,0,0,.06)' }, ticks: { font: { size: 10 }, stepSize: 20 } }
+          }
+        }
+      });
+    }, 150);
+  }
+}
+
+function showFormTRHE(exameId) {
+  const isEdit = !!exameId;
+  const tituloModal = isEdit ? 'Editar TRHE' : 'Novo TRHE \u2014 Registrar Exame';
+  let formHtml =
+    '<div class="card" style="margin-bottom:12px">'
+    + '<div class="card-title">Dados do Exame</div>'
+    + '<div class="grid-2">'
+    + '<div class="field"><label>Data do Exame *</label><input id="trhe-data" value="' + todayStr() + '"/></div>'
+    + '<div class="field"><label>Preparo Adequado</label>'
+    + '<select id="trhe-preparo"><option value="sim">Sim</option><option value="nao">N\u00e3o</option></select>'
+    + '</div></div></div>'
+
+    + '<div class="card" style="margin-bottom:12px">'
+    + '<div class="card-title">Valores de H\u2082 (ppm)</div>'
+    + '<div class="grid-3">'
+    + '<div class="field"><label>Basal</label><input type="number" id="trhe-t0" min="0" value="0"/></div>'
+    + '<div class="field"><label>15 min</label><input type="number" id="trhe-t15" min="0" value="0"/></div>'
+    + '<div class="field"><label>30 min</label><input type="number" id="trhe-t30" min="0" value="0"/></div>'
+    + '<div class="field"><label>45 min</label><input type="number" id="trhe-t45" min="0" value="0"/></div>'
+    + '<div class="field"><label>60 min</label><input type="number" id="trhe-t60" min="0" value="0"/></div>'
+    + '<div class="field"><label>90 min</label><input type="number" id="trhe-t90" min="0" value="0"/></div>'
+    + '<div class="field"><label>120 min</label><input type="number" id="trhe-t120" min="0" value="0"/></div>'
+    + '<div class="field"><label>150 min</label><input type="number" id="trhe-t150" min="0" value="0"/></div>'
+    + '<div class="field"><label>180 min</label><input type="number" id="trhe-t180" min="0" value="0"/></div>'
+    + '</div></div>'
+
+    + '<div class="card" style="margin-bottom:12px">'
+    + '<div class="card-title">Sintomas Durante o Exame</div>'
+    + '<div class="field"><label>Sintomas</label>'
+    + '<input id="trhe-sintomas" placeholder="Ex: Borrulhamento, distens\u00e3o, flatulência, dor abdominal..."/>'
+    + '</div>'
+    + '<div class="field"><label>Intensidade</label>'
+    + '<select id="trhe-intensidade">'
+    + '<option value="sem">Sem sintomas</option>'
+    + '<option value="leve">Leve</option>'
+    + '<option value="moderado">Moderado</option>'
+    + '<option value="intenso">Intenso</option>'
+    + '</select></div></div>'
+
+    + '<div id="trhe-preview" style="margin-bottom:12px"></div>'
+
+    + '<div style="display:flex;gap:8px">'
+    + '<button class="btn btn-ghost btn-sm" onclick="previewTRHE()">&#128202; Pr\u00e9-visualizar C\u00e1lculos</button>'
+    + '<button class="btn btn-primary btn-sm" onclick="salvarTRHE(' + (exameId || 'null') + ')">&#128190; Salvar Exame</button>'
+    + '</div>';
+
+  showGenericModal(formHtml, tituloModal);
+  if (isEdit) carregarDadosTRHE(exameId);
+}
+
+async function carregarDadosTRHE(id) {
+  const { data: ex } = await sb.from('planos_trhe').select('*').eq('id', id).single();
+  if (!ex) return;
+  const vals = ex.valores_h2 || {};
+  document.getElementById('trhe-data').value = isoToDisplay(ex.data_exame || '');
+  document.getElementById('trhe-preparo').value = ex.preparo_adequado === false ? 'nao' : 'sim';
+  document.getElementById('trhe-t0').value = vals.t0 || 0;
+  document.getElementById('trhe-t15').value = vals.t15 || 0;
+  document.getElementById('trhe-t30').value = vals.t30 || 0;
+  document.getElementById('trhe-t45').value = vals.t45 || 0;
+  document.getElementById('trhe-t60').value = vals.t60 || 0;
+  document.getElementById('trhe-t90').value = vals.t90 || 0;
+  document.getElementById('trhe-t120').value = vals.t120 || 0;
+  document.getElementById('trhe-t150').value = vals.t150 || 0;
+  document.getElementById('trhe-t180').value = vals.t180 || 0;
+  document.getElementById('trhe-sintomas').value = ex.sintomas || '';
+  document.getElementById('trhe-intensidade').value = ex.isf === 3 ? 'intenso' : ex.isf === 2 ? 'moderado' : ex.isf === 1 ? 'leve' : 'sem';
+}
+
+function getTRHEInputValues() {
+  const t0 = parseInt(document.getElementById('trhe-t0').value) || 0;
+  const t15 = parseInt(document.getElementById('trhe-t15').value) || 0;
+  const t30 = parseInt(document.getElementById('trhe-t30').value) || 0;
+  const t45 = parseInt(document.getElementById('trhe-t45').value) || 0;
+  const t60 = parseInt(document.getElementById('trhe-t60').value) || 0;
+  const t90 = parseInt(document.getElementById('trhe-t90').value) || 0;
+  const t120 = parseInt(document.getElementById('trhe-t120').value) || 0;
+  const t150 = parseInt(document.getElementById('trhe-t150').value) || 0;
+  const t180 = parseInt(document.getElementById('trhe-t180').value) || 0;
+  return { t0, t15, t30, t45, t60, t90, t120, t150, t180 };
+}
+
+function calcularTRHE(vals, sintomas, intensidade, preparoAdequado) {
+  const { t0, t15, t30, t45, t60, t90, t120, t150, t180 } = vals;
+  const pontos90 = [t15, t30, t45, t60, t90];
+  const pico90 = Math.max(...pontos90);
+  const tempoPico90 = [15, 30, 45, 60, 90][pontos90.indexOf(pico90)];
+  const deltaH2 = pico90 - t0;
+  const sibo = deltaH2 >= 20;
+  const todosValores = [t0, t15, t30, t45, t60, t90, t120, t150, t180];
+  const picoAbsoluto = Math.max(...todosValores);
+  const temposPicoAbs = [0, 15, 30, 45, 60, 90, 120, 150, 180];
+  const tempoPicoAbsoluto = temposPicoAbs[todosValores.indexOf(picoAbsoluto)];
+  const ifi = picoAbsoluto - t0;
+  const basalElevado = t0 > 20;
+  const fermentacaoColonica = t120 > t90 || t150 > t90 || t180 > t90;
+  const baixaProducao = todosValores.every(v => v < 10);
+
+  // AUC trapezoidal
+  const tempos = [0, 15, 30, 45, 60, 90, 120, 150, 180];
+  let auc = 0;
+  for (let i = 1; i < tempos.length; i++) {
+    auc += (tempos[i] - tempos[i-1]) * (todosValores[i-1] + todosValores[i]) / 2;
+  }
+  auc = Math.round(auc);
+
+  // SGF
+  let sgf = 0;
+  sgf += ifi < 20 ? 10 : ifi <= 40 ? 20 : ifi <= 60 ? 30 : 40;
+  sgf += picoAbsoluto < 20 ? 5 : picoAbsoluto <= 40 ? 10 : picoAbsoluto <= 60 ? 15 : 20;
+  sgf += t0 < 10 ? 0 : t0 <= 20 ? 5 : 15;
+  sgf += fermentacaoColonica ? 15 : 0;
+  const isfMap = { 'sem': 0, 'leve': 3, 'moderado': 6, 'intenso': 10 };
+  sgf += isfMap[intensidade] || 0;
+
+  const isf = intensidade === 'intenso' ? 3 : intensidade === 'moderado' ? 2 : intensidade === 'leve' ? 1 : 0;
+
+  const perfilIFI = ifi < 20 ? 'Baixa fermenta\u00e7\u00e3o' : ifi <= 40 ? 'Fermenta\u00e7\u00e3o habitual' : ifi <= 60 ? 'Fermenta\u00e7\u00e3o aumentada' : 'Hiperfermenta\u00e7\u00e3o intestinal';
+  const classSGF = sgf <= 20 ? 'Fermenta\u00e7\u00e3o reduzida' : sgf <= 40 ? 'Fermenta\u00e7\u00e3o habitual' : sgf <= 60 ? 'Fermenta\u00e7\u00e3o aumentada' : sgf <= 80 ? 'Hiperfermenta\u00e7\u00e3o intestinal' : 'Hiperfermenta\u00e7\u00e3o intestinal intensa';
+
+  return {
+    t0, t15, t30, t45, t60, t90, t120, t150, t180,
+    pico90, tempoPico90, deltaH2, sibo,
+    picoAbsoluto, tempoPicoAbsoluto, ifi, basalElevado,
+    fermentacaoColonica, baixaProducao, auc, sgf, isf,
+    perfilIFI, classSGF, sintomas, intensidade, preparoAdequado
+  };
+}
+
+function gerarLaudoTextos(r) {
+  const nomeP = currentPatientData ? currentPatientData.name : 'Paciente';
+
+  const analiseCurva = 'Valor basal de hidrog\u00eanio: ' + r.t0 + ' ppm. '
+    + (r.basalElevado ? 'Observa-se valor basal elevado, sugerindo atividade fermentativa aumentada mesmo em jejum. ' : '')
+    + 'Pico at\u00e9 90 minutos: ' + r.pico90 + ' ppm (aos ' + r.tempoPico90 + ' min). '
+    + 'Delta H\u2082: ' + r.deltaH2 + ' ppm. '
+    + 'Pico m\u00e1ximo absoluto: ' + r.picoAbsoluto + ' ppm (aos ' + r.tempoPicoAbsoluto + ' min). '
+    + (r.fermentacaoColonica ? 'Observa-se eleva\u00e7\u00e3o significativa ap\u00f3s 90 minutos, compat\u00edvel com fermenta\u00e7\u00e3o col\u00f4nica.' : 'N\u00e3o h\u00e1 eleva\u00e7\u00e3o significativa ap\u00f3s 90 minutos.')
+    + (r.baixaProducao ? ' Padr\u00e3o de baixa produ\u00e7\u00e3o de hidrog\u00eanio durante todo o exame.' : '');
+
+  const perfilFermentativo = 'IFI = ' + r.ifi + ' \u2014 ' + r.perfilIFI + '.';
+
+  const impressaoCl = r.sibo
+    ? 'Achado compat\u00edvel com supercrescimento bacteriano do intestino delgado (SIBO) com base no crit\u00e9rio de delta H\u2082 \u2265 20 ppm at\u00e9 90 minutos. '
+      + 'Perfil fermentativo: ' + r.perfilIFI + '. SGF: ' + r.sgf + ' (' + r.classSGF + ').'
+    : 'N\u00e3o foram observados crit\u00e9rios para supercrescimento bacteriano do intestino delgado (delta H\u2082 < 20 ppm at\u00e9 90 minutos). '
+      + 'Perfil fermentativo: ' + r.perfilIFI + '. SGF: ' + r.sgf + ' (' + r.classSGF + ').';
+
+  const interpretacao = (r.basalElevado ? 'Basal elevado (' + r.t0 + ' ppm > 20 ppm): sugere atividade fermentativa em jejum. ' : '')
+    + (r.fermentacaoColonica ? 'Observa-se fermenta\u00e7\u00e3o col\u00f4nica ap\u00f3s progress\u00e3o do substrato para o intestino grosso. ' : '')
+    + (r.baixaProducao ? 'Padr\u00e3o de baixa produ\u00e7\u00e3o de hidrog\u00eanio: pode indicar microbiota com predomin\u00e2ncia metanogênica ou preparo inadequado. ' : '')
+    + (r.isf > 0 ? 'A reprodu\u00e7\u00e3o de sintomas durante o exame sugere relev\u00e2ncia cl\u00ednica da fermenta\u00e7\u00e3o intestinal para o quadro apresentado.' : 'A interpreta\u00e7\u00e3o dos achados deve ser realizada em conjunto com a avalia\u00e7\u00e3o cl\u00ednica.');
+
+  const conclusao = (r.sibo
+    ? 'SIBO: Positivo (Delta H\u2082 = ' + r.deltaH2 + ' ppm, crit\u00e9rio \u2265 20 ppm at\u00e9 90 min). '
+    : 'SIBO: Negativo (Delta H\u2082 = ' + r.deltaH2 + ' ppm, abaixo de 20 ppm). ')
+    + 'Perfil fermentativo: ' + r.perfilIFI + '. '
+    + 'SGF: ' + r.sgf + ' \u2014 ' + r.classSGF + '.'
+    + (r.basalElevado ? ' Basal elevado.' : '')
+    + (r.fermentacaoColonica ? ' Fermenta\u00e7\u00e3o col\u00f4nica presente.' : '');
+
+  return { analiseCurva, perfilFermentativo, impressaoCl, interpretacao, conclusao };
+}
+
+function previewTRHE() {
+  const vals = getTRHEInputValues();
+  const sintomas = document.getElementById('trhe-sintomas').value.trim();
+  const intensidade = document.getElementById('trhe-intensidade').value;
+  const preparo = document.getElementById('trhe-preparo').value === 'sim';
+  const r = calcularTRHE(vals, sintomas, intensidade, preparo);
+  const prev = document.getElementById('trhe-preview');
+  if (!prev) return;
+
+  const sgfCor = r.sgf >= 61 ? '#dc2626' : r.sgf >= 41 ? '#d97706' : r.sgf >= 21 ? '#2563eb' : '#6b7280';
+  const sgfBg = r.sgf >= 61 ? '#fee2e2' : r.sgf >= 41 ? '#fef3c7' : r.sgf >= 21 ? '#dbeafe' : '#f3f4f6';
+
+  prev.innerHTML =
+    '<div class="card" style="border:2px solid var(--accent)">'
+    + '<div class="card-title" style="color:var(--accent)">\ud83d\udcca Pr\u00e9-visualiza\u00e7\u00e3o dos C\u00e1lculos</div>'
+    + (!preparo ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;color:#92400e">\u26a0\ufe0f Preparo inadequado \u2014 interpreta\u00e7\u00e3o limitada.</div>' : '')
+    + '<div class="trhe-stat-grid">'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.deltaH2 + '</div><div class="trhe-stat-label">Delta H\u2082 (ppm)</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.ifi + '</div><div class="trhe-stat-label">IFI</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.sgf + '</div><div class="trhe-stat-label">SGF</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.picoAbsoluto + '</div><div class="trhe-stat-label">Pico M\u00e1x</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.auc + '</div><div class="trhe-stat-label">AUC</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num" style="font-size:14px">' + (r.sibo ? '\u2713 Pos' : 'Neg') + '</div><div class="trhe-stat-label">SIBO</div></div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">'
+    + '<span style="font-size:12px;font-weight:700;color:' + (r.sibo?'#991b1b':'#166534') + ';background:' + (r.sibo?'#fee2e2':'#dcfce7') + ';padding:3px 10px;border-radius:99px">' + (r.sibo?'\u2713 SIBO Positivo':'SIBO Negativo') + '</span>'
+    + '<span style="font-size:12px;font-weight:700;color:' + sgfCor + ';background:' + sgfBg + ';padding:3px 10px;border-radius:99px">SGF: ' + r.sgf + ' \u2014 ' + r.classSGF + '</span>'
+    + '</div>'
+    + '<div style="font-size:12px;color:var(--text-muted);margin-top:8px">' + r.perfilIFI + (r.basalElevado ? ' \u00b7 \u26a0\ufe0f Basal elevado' : '') + (r.fermentacaoColonica ? ' \u00b7 Fermenta\u00e7\u00e3o col\u00f4nica' : '') + (r.baixaProducao ? ' \u00b7 Baixa produ\u00e7\u00e3o H\u2082' : '') + '</div>'
+    + '</div>';
+}
+
+async function salvarTRHE(exameId) {
+  const vals = getTRHEInputValues();
+  const sintomas = document.getElementById('trhe-sintomas').value.trim();
+  const intensidade = document.getElementById('trhe-intensidade').value;
+  const preparo = document.getElementById('trhe-preparo').value === 'sim';
+  const dataExame = displayToISO(document.getElementById('trhe-data').value.trim());
+
+  if (!dataExame) { toast('Informe a data do exame', 'error'); return; }
+
+  const r = calcularTRHE(vals, sintomas, intensidade, preparo);
+  const textos = gerarLaudoTextos(r);
+
+  const payload = {
+    patient_id: currentPatientId,
+    data_exame: dataExame,
+    preparo_adequado: preparo,
+    sintomas: sintomas || null,
+    isf: r.isf,
+    valores_h2: vals,
+    delta_h2: r.deltaH2,
+    pico_h2_90: r.pico90,
+    tempo_pico_90: r.tempoPico90,
+    pico_h2_absoluto: r.picoAbsoluto,
+    tempo_pico_absoluto: r.tempoPicoAbsoluto,
+    ifi: r.ifi,
+    sgf: r.sgf,
+    auc: r.auc,
+    sibo: r.sibo,
+    basal_elevado: r.basalElevado,
+    fermentacao_colonica: r.fermentacaoColonica,
+    baixa_producao_h2: r.baixaProducao,
+    perfil_fermentativo: r.perfilIFI,
+    classificacao_sgf: r.classSGF,
+    laudo_analise_curva: textos.analiseCurva,
+    laudo_perfil: textos.perfilFermentativo,
+    laudo_impressao: textos.impressaoCl,
+    laudo_interpretacao: textos.interpretacao,
+    laudo_conclusao: textos.conclusao,
+    registrado_por: currentUser.name
+  };
+
+  let error;
+  if (exameId) {
+    payload.updated_by = currentUser.name;
+    payload.updated_at = new Date().toISOString();
+    const res = await sb.from('planos_trhe').update(payload).eq('id', exameId);
+    error = res.error;
+  } else {
+    const res = await sb.from('planos_trhe').insert(payload);
+    error = res.error;
+  }
+
+  if (error) { toast('Erro ao salvar: ' + error.message, 'error'); return; }
+  closeModal('modal-generic');
+  toast(exameId ? 'Exame atualizado!' : 'Exame registrado!', 'success');
+  clinicaSubTab = 'trhe';
+  renderClinica();
+}
+
+async function showLaudoTRHE(id) {
+  const { data: ex } = await sb.from('planos_trhe').select('*').eq('id', id).single();
+  if (!ex) { toast('Exame não encontrado', 'error'); return; }
+
+  const vals = ex.valores_h2 || {};
+  const r = calcularTRHE(
+    { t0: vals.t0||0, t15: vals.t15||0, t30: vals.t30||0, t45: vals.t45||0, t60: vals.t60||0, t90: vals.t90||0, t120: vals.t120||0, t150: vals.t150||0, t180: vals.t180||0 },
+    ex.sintomas || '', 
+    ex.isf === 3 ? 'intenso' : ex.isf === 2 ? 'moderado' : ex.isf === 1 ? 'leve' : 'sem',
+    ex.preparo_adequado !== false
+  );
+
+  const siboHtml = ex.sibo
+    ? '<div class="sibo-positivo"><div style="font-weight:700;color:#991b1b;font-size:14px">\u2713 SIBO POSITIVO</div><div style="font-size:12px;color:#991b1b;margin-top:4px">Delta H\u2082 = ' + ex.delta_h2 + ' ppm \u2265 20 ppm at\u00e9 90 minutos.</div></div>'
+    : '<div class="sibo-negativo"><div style="font-weight:700;color:#166534;font-size:14px">SIBO NEGATIVO</div><div style="font-size:12px;color:#166534;margin-top:4px">Delta H\u2082 = ' + ex.delta_h2 + ' ppm &lt; 20 ppm.</div></div>';
+
+  const sgfCor = ex.sgf >= 61 ? '#dc2626' : ex.sgf >= 41 ? '#d97706' : ex.sgf >= 21 ? '#2563eb' : '#6b7280';
+  const sgfBg = ex.sgf >= 61 ? '#fee2e2' : ex.sgf >= 41 ? '#fef3c7' : ex.sgf >= 21 ? '#dbeafe' : '#f3f4f6';
+
+  // Tabela de valores
+  const tempos = ['Basal', '15 min', '30 min', '45 min', '60 min', '90 min', '120 min', '150 min', '180 min'];
+  const tKeys = ['t0','t15','t30','t45','t60','t90','t120','t150','t180'];
+  const todosVals = tKeys.map(k => vals[k] || 0);
+  const picoAbs = Math.max(...todosVals);
+
+  let tabelaRows = '';
+  tKeys.forEach((k, i) => {
+    const v = vals[k] || 0;
+    const isPico = v === picoAbs && v > 0;
+    tabelaRows += '<tr><td>' + tempos[i] + '</td><td class="' + (isPico?'highlight':'') + '">' + v + (isPico?' \u2605':'') + '</td></tr>';
+  });
+
+  const html =
+    '<div style="max-height:75vh;overflow-y:auto">'
+    + '<div style="text-align:center;margin-bottom:14px">'
+    + '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">TESTE RESPIRAT\u00d3RIO DO HIDROG\u00caNIO EXPIRADO</div>'
+    + '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">Lactulose 25g \u00b7 Data: ' + isoToDisplay(ex.data_exame) + '</div>'
+    + (!ex.preparo_adequado ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:8px;margin-top:8px;font-size:12px;color:#92400e">\u26a0\ufe0f Preparo inadequado \u2014 interpreta\u00e7\u00e3o limitada.</div>' : '')
+    + '</div>'
+
+    + siboHtml
+
+    + '<div class="laudo-section">'
+    + '<div class="laudo-section-title">1. Resultados</div>'
+    + '<table class="laudo-table"><thead><tr><th>Tempo</th><th>H\u2082 (ppm)</th></tr></thead><tbody>' + tabelaRows + '</tbody></table>'
+    + '</div>'
+
+    + '<div class="laudo-section">'
+    + '<div class="laudo-section-title">2. Indicadores</div>'
+    + '<div class="trhe-stat-grid">'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.delta_h2 + '</div><div class="trhe-stat-label">Delta H\u2082</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.ifi + '</div><div class="trhe-stat-label">IFI</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.auc + '</div><div class="trhe-stat-label">AUC</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.pico_h2_absoluto + '</div><div class="trhe-stat-label">Pico M\u00e1x</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.tempo_pico_90 + 'min</div><div class="trhe-stat-label">Tempo Pico 90</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num" style="font-size:12px;color:' + sgfCor + '">' + ex.sgf + '</div><div class="trhe-stat-label">SGF</div></div>'
+    + '</div>'
+    + '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
+    + '<span style="font-size:11px;font-weight:700;color:' + sgfCor + ';background:' + sgfBg + ';padding:3px 10px;border-radius:99px">' + ex.classificacao_sgf + '</span>'
+    + '<span style="font-size:11px;font-weight:700;color:var(--navy);background:var(--bg);padding:3px 10px;border-radius:99px">' + ex.perfil_fermentativo + '</span>'
+    + (ex.basal_elevado ? '<span style="font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;padding:3px 10px;border-radius:99px">\u26a0\ufe0f Basal elevado</span>' : '')
+    + (ex.fermentacao_colonica ? '<span style="font-size:11px;font-weight:700;color:#5b21b6;background:#ede9fe;padding:3px 10px;border-radius:99px">Ferment. col\u00f4nica</span>' : '')
+    + (ex.baixa_producao_h2 ? '<span style="font-size:11px;font-weight:700;color:#6b7280;background:#f3f4f6;padding:3px 10px;border-radius:99px">Baixa produ\u00e7\u00e3o H\u2082</span>' : '')
+    + '</div></div>'
+
+    + '<div class="card" style="margin-bottom:12px"><canvas id="chart-trhe-laudo" height="150"></canvas></div>'
+
+    + '<div class="laudo-section">'
+    + '<div class="laudo-section-title">3. An\u00e1lise da Curva</div>'
+    + '<textarea class="laudo-editavel" id="lte-analise">' + (ex.laudo_analise_curva || '') + '</textarea>'
+    + '</div>'
+    + '<div class="laudo-section">'
+    + '<div class="laudo-section-title">4. Perfil Fermentativo</div>'
+    + '<textarea class="laudo-editavel" id="lte-perfil">' + (ex.laudo_perfil || '') + '</textarea>'
+    + '</div>'
+    + '<div class="laudo-section">'
+    + '<div class="laudo-section-title">5. Impress\u00e3o Cl\u00ednica</div>'
+    + '<textarea class="laudo-editavel" id="lte-impressao">' + (ex.laudo_impressao || '') + '</textarea>'
+    + '</div>'
+    + '<div class="laudo-section">'
+    + '<div class="laudo-section-title">6. Interpreta\u00e7\u00e3o Cl\u00ednica</div>'
+    + '<textarea class="laudo-editavel" id="lte-interp">' + (ex.laudo_interpretacao || '') + '</textarea>'
+    + '</div>'
+    + '<div class="laudo-section">'
+    + '<div class="laudo-section-title">7. Sintomas</div>'
+    + '<div style="font-size:13px;padding:10px 13px;background:var(--bg);border-radius:8px">'
+    + (ex.sintomas || 'Sem sintomas relatados')
+    + (ex.isf > 0 ? ' \u00b7 Intensidade: ' + (ex.isf === 3 ? 'Intenso' : ex.isf === 2 ? 'Moderado' : 'Leve') : '')
+    + '</div></div>'
+    + '<div class="laudo-section">'
+    + '<div class="laudo-section-title">8. Conclus\u00e3o</div>'
+    + '<textarea class="laudo-editavel" id="lte-conclusao">' + (ex.laudo_conclusao || '') + '</textarea>'
+    + '</div>'
+
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'
+    + '<button class="btn btn-primary btn-sm" onclick="salvarEdicaoLaudo(' + ex.id + ')">\ud83d\udcbe Salvar Edi\u00e7\u00f5es</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="showFormTRHE(' + ex.id + ')">\u270f\ufe0f Editar Dados</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="imprimirLaudo()">\ud83d\udda8\ufe0f Imprimir Laudo</button>'
+    + '<button class="btn-icon" onclick="deletarTRHE(' + ex.id + ')" style="margin-left:auto">\ud83d\uddd1</button>'
+    + '</div></div>';
+
+  showGenericModal(html, '\ud83e\udeb2 Laudo TRHE');
+
+  // Render chart in modal
+  setTimeout(() => {
+    const canvas = document.getElementById('chart-trhe-laudo');
+    if (!canvas) return;
+    const labels = ['Basal','15','30','45','60','90','120','150','180'];
+    const data = tKeys.map(k => vals[k] || 0);
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'H\u2082 (ppm)',
+          data,
+          borderColor: '#1D2846',
+          backgroundColor: 'rgba(29,40,70,.08)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 5,
+          borderWidth: 2,
+          pointBackgroundColor: data.map((v,i) => v === picoAbs ? '#ef4444' : '#1D2846')
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          annotation: {}
+        },
+        scales: {
+          x: { title: { display: true, text: 'Tempo (min)', font: { size: 11 } }, grid: { display: false } },
+          y: { title: { display: true, text: 'H\u2082 (ppm)', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,.06)' } }
+        }
+      }
+    });
+  }, 200);
+}
+
+async function salvarEdicaoLaudo(id) {
+  const updates = {
+    laudo_analise_curva: document.getElementById('lte-analise')?.value || '',
+    laudo_perfil: document.getElementById('lte-perfil')?.value || '',
+    laudo_impressao: document.getElementById('lte-impressao')?.value || '',
+    laudo_interpretacao: document.getElementById('lte-interp')?.value || '',
+    laudo_conclusao: document.getElementById('lte-conclusao')?.value || '',
+    updated_by: currentUser.name,
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await sb.from('planos_trhe').update(updates).eq('id', id);
+  if (error) { toast('Erro ao salvar: ' + error.message, 'error'); return; }
+  toast('Laudo salvo!', 'success');
+  closeModal('modal-generic');
+  clinicaSubTab = 'trhe';
+  renderClinica();
+}
+
+async function deletarTRHE(id) {
+  if (!confirm('Excluir este exame? Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita.')) return;
+  await sb.from('planos_trhe').delete().eq('id', id);
+  toast('Exame exclu\u00eddo', 'success');
+  closeModal('modal-generic');
+  clinicaSubTab = 'trhe';
+  renderClinica();
+}
+
+function imprimirLaudo() {
+  window.print();
+}
+// ========== FIM ABA CLÍNICA ==========
+
 
 async function renderSoroterapia(){
   const[{data:sessoes},{data:envios},{data:appts}]=await Promise.all([
@@ -785,7 +1285,6 @@ async function renderSoroterapia(){
   const apptMap={};
   (appts||[]).forEach(a=>{if(a.origem_tabela==='soro_sessoes'&&a.origem_id)apptMap[a.origem_id]=a;});
   let html='<div class="alert-info" style="margin-bottom:12px;font-size:12px"><strong>\u2139\ufe0f Fluxo principal:</strong> Registre aqui \u2192 a agenda \u00e9 preenchida automaticamente. Agendamentos diretos n\u00e3o contabilizam sess\u00f5es.</div>';
-  // Alert banner
   if(envios&&envios.length){
     const le=envios[envios.length-1];
     const st=(le.sessoes_ev||0)+(le.sessoes_im||0);
@@ -795,7 +1294,6 @@ async function renderSoroterapia(){
     else if(r===2)html='<div class="alert-banner alert-warning">\u26a0\ufe0f Faltam <strong>2 sess\u00f5es</strong> para acabar o protocolo.</div>'+html;
   }
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">';
-  // LEFT: sessoes
   html+='<div class="card" style="margin:0"><div class="card-header"><div class="card-title" style="margin:0">Sess\u00f5es Realizadas</div><button class="btn btn-primary btn-sm" onclick="showAddSessao()">+ Adicionar</button></div>';
   if((sessoes||[]).length){
     const sessReversed=[...(sessoes||[])].reverse();
@@ -837,7 +1335,6 @@ async function renderSoroterapia(){
     });
   }else{html+='<div class="text-muted text-sm" style="padding:8px 0">Nenhuma sess\u00e3o registrada</div>';}
   html+='</div>';
-  // RIGHT: envios
   const enviosArr=(envios||[]);
   html+='<div class="card" style="margin:0"><div class="card-header"><div class="card-title" style="margin:0">Ijet\u00e1veis Enviados</div><button class="btn btn-primary btn-sm" onclick="showAddEnvio()">+ Adicionar</button></div>';
   if(enviosArr.length){
@@ -977,7 +1474,6 @@ async function saveEnvioEdit(id,oldReceita){
   if(error){toast('Erro ao salvar','error');return;}
   toast('Envio atualizado!','success');patTab('soroterapia');
 }
-// block5 done
 
 async function renderImplante(){
   const[{data:items},{data:appts}]=await Promise.all([
@@ -1067,7 +1563,6 @@ async function deleteImplante(id,apptId){
   await logHistorico('implantes',id,'exclusao',old,null);
   patTab('implante');
 }
-// block6 done
 
 async function renderPatAgenda(){
   const[{data:appts},{data:histAppts}]=await Promise.all([
@@ -1081,7 +1576,6 @@ async function renderPatAgenda(){
   const remarcCount=hist.filter(h=>h.tipo==='remarcacao').length;
   const cancelFromStatus=(appts||[]).filter(a=>a.status==='Cancelou').length;
   const totalCanc=Math.max(cancelCount,cancelFromStatus);
-
   function apptHtml(a){
     const isAuto=!!a.origem_tabela;
     const statusOpts=['Agendado','Compareceu','Faltou','Cancelou'].map(s=>'<option '+(a.status===s?'selected':'')+'>'+s+'</option>').join('');
@@ -1099,27 +1593,20 @@ async function renderPatAgenda(){
       +'<button class="btn-icon" onclick="excluirAgendamentoPat('+a.id+')" title="Excluir cadastro errado">\ud83d\uddd1</button>'
       +'</div>';
   }
-
   let html='';
-
-  // Counter badges
   if(totalCanc>0||remarcCount>0){
     html+='<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">';
     if(totalCanc>0)html+='<span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700">\u274c '+totalCanc+' cancelamento(s)</span>';
     if(remarcCount>0)html+='<span style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700">\ud83d\udd04 '+remarcCount+' remarca\u00e7\u00e3o(oes)</span>';
     html+='</div>';
   }
-
   html+='<div class="section-header"><div class="section-title">Agendamentos</div><button class="btn btn-primary btn-sm" onclick="showAddApptPatient()">+ Add</button></div>';
   html+=sorted.slice(0,5).map(a=>apptHtml(a)).join('');
-
   if(sorted.length>5){
     html+='<div id="more-appts" style="display:none">'+sorted.slice(5).map(a=>apptHtml(a)).join('')+'</div>';
     html+='<button class="btn btn-ghost btn-full" onclick="document.getElementById(\'more-appts\').style.display=\'block\';this.style.display=\'none\'">Ver todos ('+sorted.length+') \u2193</button>';
   }
   if(!sorted.length)html+='<div class="empty"><div class="empty-icon">\ud83d\udcc5</div>Sem agendamentos</div>';
-
-  // History of cancellations/reschedules
   if(hist.length){
     html+='<div class="card" style="margin-top:12px"><div class="card-title">\ud83d\udcdd Hist\u00f3rico de Cancelamentos e Remarca\u00e7\u00f5es</div>';
     hist.slice().reverse().forEach(h=>{
@@ -1134,16 +1621,14 @@ async function renderPatAgenda(){
     });
     html+='</div>';
   }
-
   c.innerHTML=html;
 }
 async function excluirAgendamentoPat(id){
   if(!confirm('Excluir este agendamento?\n\nUse apenas para cadastros errados.\nN\u00e3o ficar\u00e1 no hist\u00f3rico do paciente.'))return;
   await sb.from('planos_appointments').delete().eq('id',id);
   toast('Agendamento exclu\u00eddo','success');
-  patTab('agenda'); // recarrega a lista automaticamente
+  patTab('agenda');
 }
-
 function showAddApptPatient(){
   showGenericModal(
     '<div class="grid-2"><div class="field"><label>Data</label><input id="ap-date" value="'+todayStr()+'"/></div><div class="field"><label>Hora</label><input id="ap-time" type="time" value="09:00"/></div></div>'
@@ -1180,9 +1665,7 @@ async function renderContrato(){
   html+='</div>';
   c.innerHTML=html;
 }
-function showUploadContrato(){
-  showGenericModal('<div class="field"><label>Descri\u00e7\u00e3o</label><input id="cont-label" placeholder="Ex: Contrato Plano 6 meses"/></div><div class="field"><label>Arquivo (PDF/Imagem)</label><input type="file" id="cont-file" accept=".pdf,.jpg,.jpeg,.png"/></div><button class="btn btn-primary btn-full" onclick="saveContrato()">Upload</button>','Upload de Contrato');
-}
+function showUploadContrato(){showGenericModal('<div class="field"><label>Descri\u00e7\u00e3o</label><input id="cont-label" placeholder="Ex: Contrato Plano 6 meses"/></div><div class="field"><label>Arquivo (PDF/Imagem)</label><input type="file" id="cont-file" accept=".pdf,.jpg,.jpeg,.png"/></div><button class="btn btn-primary btn-full" onclick="saveContrato()">Upload</button>','Upload de Contrato');}
 async function saveContrato(){
   const file=document.getElementById('cont-file')?.files[0];
   if(!file){toast('Selecione um arquivo','error');return;}
@@ -1194,7 +1677,6 @@ async function saveContrato(){
   closeModal('modal-generic');toast('Contrato salvo!','success');patTab('contrato');
 }
 async function deleteContrato(id){await sb.from('planos_contratos').delete().eq('id',id);patTab('contrato');}
-// block7 done
 
 async function renderHistorico(){
   const[{data:appts},{data:fin},{data:soro},{data:impl},{data:ciclos},{data:edicoes}]=await Promise.all([
@@ -1210,17 +1692,12 @@ async function renderHistorico(){
   const consultasLista=(appts||[]).filter(a=>a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
   const soroLista=soro||[];
   const implLista=impl||[];
-
   let html='';
-
-  // CONTADORES
   html+='<div class="card"><div class="card-title">Resumo do Plano</div><div class="grid-3">'
     +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+consultasLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Consultas</div></div>'
     +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+soroLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Sess\u00f5es Soro</div></div>'
     +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+implLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Implantes</div></div>'
     +'</div></div>';
-
-  // CONSULTAS
   html+='<div class="card"><div class="card-title" style="margin-bottom:10px">\ud83e\ude7a Consultas ('+consultasLista.length+')</div>';
   if(consultasLista.length){
     consultasLista.forEach(a=>{
@@ -1235,8 +1712,6 @@ async function renderHistorico(){
     });
   }else{html+='<div class="text-muted text-sm">Nenhuma consulta registrada</div>';}
   html+='</div>';
-
-  // SOROTERAPIA
   html+='<div class="card"><div class="card-title" style="margin-bottom:10px">\ud83d\udc89 Sess\u00f5es de Soroterapia ('+soroLista.length+')</div>';
   if(soroLista.length){
     soroLista.forEach((s,i)=>{
@@ -1257,8 +1732,6 @@ async function renderHistorico(){
     });
   }else{html+='<div class="text-muted text-sm">Nenhuma sess\u00e3o de soro registrada</div>';}
   html+='</div>';
-
-  // IMPLANTES
   html+='<div class="card"><div class="card-title" style="margin-bottom:10px">\ud83e\uddec Implantes ('+implLista.length+')</div>';
   if(implLista.length){
     implLista.forEach((imp,i)=>{
@@ -1277,13 +1750,9 @@ async function renderHistorico(){
     });
   }else{html+='<div class="text-muted text-sm">Nenhum implante registrado</div>';}
   html+='</div>';
-
-  // FINANCEIRO
   html+='<div class="card"><div class="card-title">Hist\u00f3rico Financeiro</div>'
     +'<div style="font-size:20px;font-weight:700;color:var(--navy)">R$ '+totalFin.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>'
     +'<div style="font-size:12px;color:var(--text-muted);margin-top:4px">'+(fin||[]).length+' pagamento(s) registrado(s)</div></div>';
-
-  // CICLOS ANTERIORES
   if((ciclos||[]).length){
     html+='<div class="card"><div class="card-title">Ciclos Anteriores</div>';
     [...(ciclos||[])].reverse().forEach(ci=>{
@@ -1299,8 +1768,6 @@ async function renderHistorico(){
     });
     html+='</div>';
   }
-
-  // LOG EDICOES
   if((edicoes||[]).length){
     const tabelaLabel=t=>t==='soro_sessoes'?'Sess\u00e3o Soro':t==='implantes'?'Implante':t==='financeiro'?'Pagamento':'Registro';
     const acaoLabel=a=>a==='edicao'?'Editado':a==='exclusao'?'Exclu\u00eddo':'Criado';
@@ -1329,10 +1796,8 @@ async function renderHistorico(){
     });
     html+='</div>';
   }
-
   c.innerHTML=html;
 }
-// block8 done
 
 function goToAgendaDate(dateStr){
   closeModal('modal-generic');
@@ -1345,55 +1810,30 @@ async function excluirAgendamento(id){
   if(!confirm('Excluir este agendamento?\n\nUse apenas para cadastros errados.\nEste registro N\u00c3O ficar\u00e1 no hist\u00f3rico.'))return;
   await sb.from('planos_appointments').delete().eq('id',id);
   toast('Agendamento exclu\u00eddo','success');
-  // Refresh the agenda list immediately
-  if(typeof window.renderAgendaContent==='function'){
-    window.renderAgendaContent();
-  } else {
-    mainNav('agenda');
-  }
+  if(typeof window.renderAgendaContent==='function'){window.renderAgendaContent();}else{mainNav('agenda');}
 }
-
 async function handleApptStatusChange(id,patientId,newStatus,selectEl){
   const oldStatus=selectEl.dataset.oldStatus||'Agendado';
-  // If changing to Cancelou or keeping Agendado (remarcação), ask for reason
   if(newStatus==='Cancelou'){
     const motivo=prompt('Motivo do cancelamento (opcional):');
-    // Save cancellation log
-    await sb.from('planos_appt_historico').insert({
-      appointment_id:id,
-      patient_id:patientId,
-      tipo:'cancelamento',
-      observacao:motivo||null,
-      registrado_por:currentUser?currentUser.name:'Sistema',
-      created_at:new Date().toISOString()
-    }).then(({error})=>{if(error)console.warn('Log cancelamento falhou:',error);});
+    await sb.from('planos_appt_historico').insert({appointment_id:id,patient_id:patientId,tipo:'cancelamento',observacao:motivo||null,registrado_por:currentUser?currentUser.name:'Sistema',created_at:new Date().toISOString()});
     await sb.from('planos_appointments').update({status:newStatus,updated_by:currentUser?currentUser.name:'Sistema'}).eq('id',id);
     toast('Cancelamento registrado','success');
-  } else if(newStatus==='Agendado' && (oldStatus==='Cancelou'||oldStatus==='Faltou')){
-    // Remarcação
-    const motivo=prompt('Observação sobre a remarcação (opcional):');
-    await sb.from('planos_appt_historico').insert({
-      appointment_id:id,
-      patient_id:patientId,
-      tipo:'remarcacao',
-      observacao:motivo||null,
-      registrado_por:currentUser?currentUser.name:'Sistema',
-      created_at:new Date().toISOString()
-    }).then(({error})=>{if(error)console.warn('Log remarcação falhou:',error);});
+  } else if(newStatus==='Agendado'&&(oldStatus==='Cancelou'||oldStatus==='Faltou')){
+    const motivo=prompt('Observa\u00e7\u00e3o sobre a remarca\u00e7\u00e3o (opcional):');
+    await sb.from('planos_appt_historico').insert({appointment_id:id,patient_id:patientId,tipo:'remarcacao',observacao:motivo||null,registrado_por:currentUser?currentUser.name:'Sistema',created_at:new Date().toISOString()});
     await sb.from('planos_appointments').update({status:newStatus,updated_by:currentUser?currentUser.name:'Sistema'}).eq('id',id);
-    toast('Remarcação registrada','success');
+    toast('Remarca\u00e7\u00e3o registrada','success');
   } else {
     await sb.from('planos_appointments').update({status:newStatus,updated_by:currentUser?currentUser.name:'Sistema'}).eq('id',id);
     toast('Status atualizado','success');
   }
   selectEl.dataset.oldStatus=newStatus;
 }
-
 async function updateApptStatusAgenda(id,status){
   await sb.from('planos_appointments').update({status,updated_by:currentUser?currentUser.name:'Sistema'}).eq('id',id);
   toast('Status atualizado','success');
 }
-
 function showOverduePending(){
   const overdue=window._overdueAppts||[];
   const patMap=window._overduePatMap||{};
@@ -1404,8 +1844,7 @@ function showOverduePending(){
   sorted.forEach(a=>{
     const d=daysAgo(fmtDate(a.date_str));
     const dStr=fmtDate(a.date_str);
-    html+='<div onclick="goToAgendaDate(\'' + dStr + '\')" '
-      +'style="padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;border:1.5px solid var(--border)">'
+    html+='<div onclick="goToAgendaDate(\''+dStr+'\')" style="padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;border:1.5px solid var(--border)">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'
       +'<div>'
       +'<div style="font-weight:700;font-size:14px">'+(patMap[a.patient_id]||'Paciente #'+a.patient_id)+'</div>'
@@ -1429,58 +1868,33 @@ async function renderAgenda(){
   ]);
   const patMap={};(patients||[]).forEach(p=>patMap[p.id]=p.name);
   const patIdMap={};(patients||[]).forEach(p=>patIdMap[p.id]=p.id);
-  const todayInt=parseDateInt(todayStr());
   const c=document.getElementById('main-content');
-
-  // State
   if(!window._agView)window._agView='dia';
   if(!window._agDate)window._agDate=todayStr();
-
   function getWeekDates(dateStr){
-    const p=dateStr.split('/');
-    const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
-    const day=d.getDay();
-    const monday=new Date(d);monday.setDate(d.getDate()-day+(day===0?-6:1));
-    const dates=[];
-    for(let i=0;i<7;i++){const dd=new Date(monday);dd.setDate(monday.getDate()+i);dates.push(String(dd.getDate()).padStart(2,'0')+'/'+String(dd.getMonth()+1).padStart(2,'0')+'/'+dd.getFullYear());}
-    return dates;
+    const p=dateStr.split('/');const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+    const day=d.getDay();const monday=new Date(d);monday.setDate(d.getDate()-day+(day===0?-6:1));
+    const dates=[];for(let i=0;i<7;i++){const dd=new Date(monday);dd.setDate(monday.getDate()+i);dates.push(String(dd.getDate()).padStart(2,'0')+'/'+String(dd.getMonth()+1).padStart(2,'0')+'/'+dd.getFullYear());}return dates;
   }
-
   function getMonthDates(dateStr){
-    const p=dateStr.split('/');
-    const y=parseInt(p[2]),m=parseInt(p[1])-1;
-    const first=new Date(y,m,1),last=new Date(y,m+1,0);
-    const dates=[];
-    for(let d=1;d<=last.getDate();d++){dates.push(String(d).padStart(2,'0')+'/'+String(m+1).padStart(2,'0')+'/'+y);}
-    return dates;
+    const p=dateStr.split('/');const y=parseInt(p[2]),m=parseInt(p[1])-1;const last=new Date(y,m+1,0);
+    const dates=[];for(let d=1;d<=last.getDate();d++){dates.push(String(d).padStart(2,'0')+'/'+String(m+1).padStart(2,'0')+'/'+y);}return dates;
   }
-
   function navigateDate(dir){
-    const p=window._agDate.split('/');
-    const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+    const p=window._agDate.split('/');const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
     if(window._agView==='dia')d.setDate(d.getDate()+dir);
     else if(window._agView==='semana')d.setDate(d.getDate()+dir*7);
     else if(window._agView==='mes')d.setMonth(d.getMonth()+dir);
     window._agDate=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
     renderAgendaContent();
   }
-
   function renderAgendaContent(){
-    const view=window._agView;
-    const curDate=window._agDate;
-    const todayStr_=todayStr();
-
-    // Calendar mini
-    const cp=curDate.split('/');
-    const cy=parseInt(cp[2]),cm=parseInt(cp[1])-1;
-    const firstDay=new Date(cy,cm,1).getDay();
-    const daysInMonth=new Date(cy,cm+1,0).getDate();
+    const view=window._agView;const curDate=window._agDate;const todayStr_=todayStr();
+    const cp=curDate.split('/');const cy=parseInt(cp[2]),cm=parseInt(cp[1])-1;
+    const firstDay=new Date(cy,cm,1).getDay();const daysInMonth=new Date(cy,cm+1,0).getDate();
     const monthNames=['Janeiro','Fevereiro','Mar\u00e7o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     const dayNames=['D','S','T','Q','Q','S','S'];
-
-    // Get dates with appts for highlighting
     const apptDatesSet=new Set((appts||[]).map(a=>a.date_str));
-
     let calHtml='<div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px">';
     calHtml+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
     calHtml+='<button class="btn-icon" onclick="navigateCalMonth(-1)">&#8249;</button>';
@@ -1489,10 +1903,8 @@ async function renderAgenda(){
     calHtml+='</div>';
     calHtml+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">';
     dayNames.forEach(d=>{calHtml+='<div style="text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);padding:2px">'+d+'</div>';});
-    calHtml+='</div>';
-    calHtml+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">';
-    // Empty cells before first day
-    const startDay=firstDay===0?6:firstDay-1; // Mon=0
+    calHtml+='</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">';
+    const startDay=firstDay===0?6:firstDay-1;
     for(let i=0;i<startDay;i++)calHtml+='<div></div>';
     for(let d=1;d<=daysInMonth;d++){
       const dateStr=String(d).padStart(2,'0')+'/'+String(cm+1).padStart(2,'0')+'/'+cy;
@@ -1501,44 +1913,28 @@ async function renderAgenda(){
       const hasAppt=apptDatesSet.has(dateStr);
       const bg=isToday?'var(--navy)':isSelected?'#dbeafe':'transparent';
       const col=isToday?'#fff':isSelected?'var(--navy)':'var(--text)';
-      calHtml+='<div onclick="window._agDate=\''+dateStr+'\';window._agView=\'dia\';renderAgendaContent()" '
-        +'style="text-align:center;padding:4px 2px;border-radius:6px;cursor:pointer;background:'+bg+';color:'+col+';font-size:12px;font-weight:'+(isToday||isSelected?'700':'400')+';position:relative">'
-        +d
-        +(hasAppt?'<div style="width:4px;height:4px;border-radius:50%;background:'+(isToday?'#fff':'var(--accent)')+';margin:0 auto;margin-top:1px"></div>':'<div style="height:5px"></div>')
-        +'</div>';
+      calHtml+='<div onclick="window._agDate=\''+dateStr+'\';window._agView=\'dia\';renderAgendaContent()" style="text-align:center;padding:4px 2px;border-radius:6px;cursor:pointer;background:'+bg+';color:'+col+';font-size:12px;font-weight:'+(isToday||isSelected?'700':'400')+';position:relative">'+d+(hasAppt?'<div style="width:4px;height:4px;border-radius:50%;background:'+(isToday?'#fff':'var(--accent)')+';margin:0 auto;margin-top:1px"></div>':'<div style="height:5px"></div>')+'</div>';
     }
     calHtml+='</div></div>';
-
-    // View controls + navigation
     let viewLabel='';
     if(view==='dia')viewLabel=curDate===(todayStr_)?'Hoje \u2014 '+curDate:fmtDate(curDate);
     else if(view==='semana'){const w=getWeekDates(curDate);viewLabel='Semana: '+fmtDate(w[0])+' a '+fmtDate(w[6]);}
     else if(view==='mes'){const mp=curDate.split('/');viewLabel=monthNames[parseInt(mp[1])-1]+' '+mp[2];}
-
-    let html2='';
-    html2+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
+    let html2='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">';
     html2+='<button class="btn btn-primary btn-sm" onclick="window._agDate=\''+todayStr_+'\';window._agView=\'dia\';renderAgendaContent()">&#128197; Hoje</button>';
     html2+='<button class="btn-icon" onclick="navigateDate(-1)">&#8249;</button>';
     html2+='<button class="btn-icon" onclick="navigateDate(1)">&#8250;</button>';
     html2+='<span style="font-weight:700;font-size:14px;flex:1">'+viewLabel+'</span>';
     html2+='<div style="display:flex;gap:4px">';
-    ['dia','semana','mes'].forEach(v=>{
-      const label=v==='dia'?'Dia':v==='semana'?'Semana':'M\u00eas';
-      html2+='<button class="btn btn-sm '+(view===v?'btn-primary':'btn-ghost')+'" onclick="window._agView=\''+v+'\';renderAgendaContent()">'+label+'</button>';
-    });
+    ['dia','semana','mes'].forEach(v=>{const label=v==='dia'?'Dia':v==='semana'?'Semana':'M\u00eas';html2+='<button class="btn btn-sm '+(view===v?'btn-primary':'btn-ghost')+'" onclick="window._agView=\''+v+'\';renderAgendaContent()">'+label+'</button>';});
     html2+='</div>';
     html2+='<button class="btn btn-primary btn-sm" onclick="showAddApptGlobal()">+ Add</button>';
     html2+='</div>';
-
-    // Get dates to show
     let datesToShow=[];
     if(view==='dia')datesToShow=[curDate];
     else if(view==='semana')datesToShow=getWeekDates(curDate);
     else if(view==='mes')datesToShow=getMonthDates(curDate);
-
     const todayIntLocal=parseDateInt(todayStr_);
-
-    // Overdue (only in dia/semana view)
     if(view!=='mes'){
       const overdue=(appts||[]).filter(a=>parseDateInt(a.date_str)<todayIntLocal&&(!a.status||a.status==='Agendado')&&!a.origem_tabela);
       if(overdue.length&&view==='dia'){
@@ -1549,33 +1945,23 @@ async function renderAgenda(){
         html2+='</div>';
       }
     }
-
-    // Build agenda list
     let hasAny=false;
     datesToShow.forEach(date=>{
       const dayAppts=(appts||[]).filter(a=>a.date_str===date).sort((a,b)=>(a.time_str||'').localeCompare(b.time_str||''));
       if(!dayAppts.length&&view!=='semana')return;
-      const isPast=parseDateInt(date)<todayIntLocal;
-      const isToday=date===todayStr_;
+      const isPast=parseDateInt(date)<todayIntLocal;const isToday=date===todayStr_;
       hasAny=true;
-
       if(view!=='dia'){
         html2+='<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;padding:4px 0;border-bottom:1.5px solid var(--border-light)">';
         html2+=fmtDate(date)+(isToday?' \u2014 Hoje':'')+(dayAppts.length?' ('+dayAppts.length+')':'');
         html2+='</div>';
       }
-
-      if(!dayAppts.length){
-        if(view==='semana')html2+='<div style="font-size:12px;color:var(--text-muted);padding:6px 0;font-style:italic">Sem agendamentos</div>';
-        return;
-      }
-
+      if(!dayAppts.length){if(view==='semana')html2+='<div style="font-size:12px;color:var(--text-muted);padding:6px 0;font-style:italic">Sem agendamentos</div>';return;}
       html2+='<div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:'+(view==='dia'?'6':'10')+'px;overflow:hidden">';
       dayAppts.forEach(a=>{
-        const isAuto=!!a.origem_tabela;
-        const isOverdue=isPast&&(!a.status||a.status==='Agendado')&&!isAuto;
+        const isAuto=!!a.origem_tabela;const isOverdue=isPast&&(!a.status||a.status==='Agendado')&&!isAuto;
         const statusOpts=['Agendado','Compareceu','Faltou','Cancelou'].map(s=>'<option '+(a.status===s?'selected':'')+'>'+s+'</option>').join('');
-        html2+='<div style="padding:12px 14px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;'+(isAuto?'border-left:3px solid var(--success)':isOverdue?'border-left:3px solid var(--danger);background:#fff9f9':'')+'">'; 
+        html2+='<div style="padding:12px 14px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;'+(isAuto?'border-left:3px solid var(--success)':isOverdue?'border-left:3px solid var(--danger);background:#fff9f9':'')+'">';
         html2+='<div style="font-weight:700;font-size:13px;color:var(--navy);min-width:46px">'+(a.time_str||'--:--')+'</div>';
         html2+='<div style="flex:1;min-width:0">';
         html2+='<div style="font-weight:600;font-size:14px">'+(patMap[a.patient_id]||'#'+a.patient_id)+'</div>';
@@ -1583,42 +1969,30 @@ async function renderAgenda(){
         if(isAuto)html2+='<div style="font-size:11px;color:var(--success);font-weight:600">\ud83d\udd17 '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>';
         if(a.profissional_nome)html2+='<div style="font-size:12px;color:var(--navy);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>';
         html2+='</div>';
-        // Prontu\u00e1rio button
-        if(patIdMap[a.patient_id])html2+='<button class="btn btn-ghost btn-sm" onclick="openPatient('+a.patient_id+')" title="Abrir Prontu\u00e1rio" style="flex-shrink:0">\ud83d\udcc2</button>';
+        if(patIdMap[a.patient_id])html2+='<button class="btn btn-ghost btn-sm" onclick="openPatient('+a.patient_id+')" style="flex-shrink:0">\ud83d\udcc2</button>';
         html2+='<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font);flex-shrink:0" onchange="handleApptStatusChange('+a.id+','+a.patient_id+',this.value,this)">'+statusOpts+'</select>';
-        html2+='<button onclick="excluirAgendamento('+a.id+')" title="Excluir (cadastro errado - sem registro)" style="padding:5px 9px;border-radius:7px;background:transparent;border:1.5px solid #fca5a5;color:#ef4444;cursor:pointer;font-size:14px;flex-shrink:0">\ud83d\uddd1</button>';
+        html2+='<button onclick="excluirAgendamento('+a.id+')" style="padding:5px 9px;border-radius:7px;background:transparent;border:1.5px solid #fca5a5;color:#ef4444;cursor:pointer;font-size:14px;flex-shrink:0">\ud83d\uddd1</button>';
         html2+='</div>';
       });
       html2+='</div>';
     });
-
     if(!hasAny)html2+='<div class="empty"><div class="empty-icon">\ud83d\udcc5</div>Sem agendamentos neste per\u00edodo</div>';
-
-    // Layout: calendar on left (sticky), agenda on right
     c.innerHTML='<div style="display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start">'
       +'<div style="position:sticky;top:70px">'+calHtml+'</div>'
       +'<div>'+html2+'</div>'
       +'</div>';
-
-    // Attach navigation helpers to window
     window.navigateDate=navigateDate;
     window.navigateCalMonth=function(dir){
-      const p2=window._agDate.split('/');
-      const d2=new Date(parseInt(p2[2]),parseInt(p2[1])-1,parseInt(p2[0]));
+      const p2=window._agDate.split('/');const d2=new Date(parseInt(p2[2]),parseInt(p2[1])-1,parseInt(p2[0]));
       d2.setMonth(d2.getMonth()+dir);
       window._agDate=String(d2.getDate()).padStart(2,'0')+'/'+String(d2.getMonth()+1).padStart(2,'0')+'/'+d2.getFullYear();
       renderAgendaContent();
     };
     window.renderAgendaContent=renderAgendaContent;
   }
-
   window.navigateDate=navigateDate;
   window.renderAgendaContent=renderAgendaContent;
   renderAgendaContent();
-}
-async function updateApptStatusAgenda(id,status){
-  await sb.from('planos_appointments').update({status,updated_by:currentUser.name}).eq('id',id);
-  toast('Status atualizado','success');
 }
 
 function showAddApptGlobal(){
@@ -1635,11 +2009,10 @@ function showAddApptGlobal(){
   loadProfsIntoSelect('gag-prof');
 }
 function searchPatForAppt(q){
-  const norm=normStr(q);
-  const matches=allPatients.filter(p=>normStr(p.name).includes(norm)).slice(0,5);
+  const norm=normStr(q);const matches=allPatients.filter(p=>normStr(p.name).includes(norm)).slice(0,5);
   const res=document.getElementById('gag-pat-results');
   if(!res||!q)return;
-  res.innerHTML=matches.map(p=>'<div style="padding:6px 10px;cursor:pointer;background:var(--bg);border-radius:6px;margin-bottom:3px;font-size:13px" onclick="selectPatAppt('+p.id+',\''+p.name.replace(/'/g,"\\'")+'\')">' +p.name+'</div>').join('');
+  res.innerHTML=matches.map(p=>'<div style="padding:6px 10px;cursor:pointer;background:var(--bg);border-radius:6px;margin-bottom:3px;font-size:13px" onclick="selectPatAppt('+p.id+',\''+p.name.replace(/'/g,"\\'")+'\')">'+p.name+'</div>').join('');
 }
 function selectPatAppt(id,name){document.getElementById('gag-pat-id').value=id;document.getElementById('gag-pat-name').value=name;document.getElementById('gag-pat-results').innerHTML='';}
 async function saveApptGlobal(){
@@ -1648,7 +2021,6 @@ async function saveApptGlobal(){
   await sb.from('planos_appointments').insert({patient_id:parseInt(patId),date_str:document.getElementById('gag-date').value,time_str:document.getElementById('gag-time').value,procedimento:document.getElementById('gag-proc').value,tipo:document.getElementById('gag-tipo').value,observacao:document.getElementById('gag-obs').value.trim(),profissional_nome:document.getElementById('gag-prof')?.value||null,status:'Agendado',registrado_por:currentUser.name});
   closeModal('modal-generic');toast('Agendamento salvo','success');renderAgenda();
 }
-// block9 done
 
 async function renderPrograma(){
   const[{data:patients},{data:appts},{data:sessoes},{data:implantes},{data:envios}]=await Promise.all([
@@ -1662,33 +2034,14 @@ async function renderPrograma(){
   let progFilter='active';let phaseFilter=0;let progSort='alpha';
   const c=document.getElementById('main-content');
   function buildProg(){
-    let filtered=allPatients;
-    // Programa only shows Plano 3/6 meses - Consulta Avulsa has its own tab
-    filtered=filtered.filter(p=>p.plan_type!=='Consulta Avulsa');
+    let filtered=allPatients.filter(p=>p.plan_type!=='Consulta Avulsa');
     if(progFilter==='active')filtered=filtered.filter(p=>p.active);
     else if(progFilter==='inactive')filtered=filtered.filter(p=>!p.active);
     if(phaseFilter>0)filtered=filtered.filter(p=>p.inicio_programa&&calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3)===phaseFilter);
-    // Ordenação
-    if(progSort==='alpha'){
-      filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));
-    }else if(progSort==='fim_asc'){
-      // Mais próximos do fim primeiro
-      filtered=filtered.slice().sort((a,b)=>{
-        const fa=a.inicio_programa?addMonthsToDisplay(fmtDate(a.inicio_programa),a.duracao_programa||3):'99/99/9999';
-        const fb=b.inicio_programa?addMonthsToDisplay(fmtDate(b.inicio_programa),b.duracao_programa||3):'99/99/9999';
-        return parseDateInt(fa)-parseDateInt(fb);
-      });
-    }else if(progSort==='fim_desc'){
-      // Mais distantes do fim primeiro
-      filtered=filtered.slice().sort((a,b)=>{
-        const fa=a.inicio_programa?addMonthsToDisplay(fmtDate(a.inicio_programa),a.duracao_programa||3):'00/00/0000';
-        const fb=b.inicio_programa?addMonthsToDisplay(fmtDate(b.inicio_programa),b.duracao_programa||3):'00/00/0000';
-        return parseDateInt(fb)-parseDateInt(fa);
-      });
-    }else if(progSort==='inicio'){
-      filtered=filtered.slice().sort((a,b)=>parseDateInt(fmtDate(a.inicio_programa||''))-parseDateInt(fmtDate(b.inicio_programa||'')));
-    }
-    const sortLabel={alpha:'A–Z',fim_asc:'Fim ↑',fim_desc:'Fim ↓',inicio:'Mais Recentes'};
+    if(progSort==='alpha'){filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));}
+    else if(progSort==='fim_asc'){filtered=filtered.slice().sort((a,b)=>{const fa=a.inicio_programa?addMonthsToDisplay(fmtDate(a.inicio_programa),a.duracao_programa||3):'99/99/9999';const fb=b.inicio_programa?addMonthsToDisplay(fmtDate(b.inicio_programa),b.duracao_programa||3):'99/99/9999';return parseDateInt(fa)-parseDateInt(fb);});}
+    else if(progSort==='fim_desc'){filtered=filtered.slice().sort((a,b)=>{const fa=a.inicio_programa?addMonthsToDisplay(fmtDate(a.inicio_programa),a.duracao_programa||3):'00/00/0000';const fb=b.inicio_programa?addMonthsToDisplay(fmtDate(b.inicio_programa),b.duracao_programa||3):'00/00/0000';return parseDateInt(fb)-parseDateInt(fa);});}
+    else if(progSort==='inicio'){filtered=filtered.slice().sort((a,b)=>parseDateInt(fmtDate(a.inicio_programa||''))-parseDateInt(fmtDate(b.inicio_programa||'')));}
     let html='<div class="section-header"><div class="section-title">Programa</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
       +'<button class="btn btn-sm '+(progFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="window._pf=\'active\';rebuildProg()">Ativos</button>'
@@ -1698,13 +2051,11 @@ async function renderPrograma(){
       +'<button class="btn btn-sm '+(phaseFilter===1?'btn-accent':'btn-ghost')+'" onclick="window._ph=1;rebuildProg()">F1</button>'
       +'<button class="btn btn-sm '+(phaseFilter===2?'btn-accent':'btn-ghost')+'" onclick="window._ph=2;rebuildProg()">F2</button>'
       +'<button class="btn btn-sm '+(phaseFilter===3?'btn-accent':'btn-ghost')+'" onclick="window._ph=3;rebuildProg()">F3</button>'
-      +'<div style="height:20px;width:1px;background:var(--border);margin:0 2px"></div>'
-      +'<span style="font-size:11px;color:var(--text-muted);font-weight:600">Ordem:</span>'
       +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._sort=this.value;rebuildProg()">'
-      +'<option value="alpha" '+(progSort==='alpha'?'selected':'')+'>A–Z (Alfabético)</option>'
-      +'<option value="fim_asc" '+(progSort==='fim_asc'?'selected':'')+'>Fim mais próximo ↑</option>'
-      +'<option value="fim_desc" '+(progSort==='fim_desc'?'selected':'')+'>Fim mais distante ↓</option>'
-      +'<option value="inicio" '+(progSort==='inicio'?'selected':'')+'>Início mais recente</option>'
+      +'<option value="alpha" '+(progSort==='alpha'?'selected':'')+'>A\u2013Z</option>'
+      +'<option value="fim_asc" '+(progSort==='fim_asc'?'selected':'')+'>Fim mais pr\u00f3ximo \u2191</option>'
+      +'<option value="fim_desc" '+(progSort==='fim_desc'?'selected':'')+'>Fim mais distante \u2193</option>'
+      +'<option value="inicio" '+(progSort==='inicio'?'selected':'')+'>In\u00edcio mais recente</option>'
       +'</select>'
       +'</div></div>';
     if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc65</div>Sem pacientes</div>';return html;}
@@ -1720,31 +2071,18 @@ async function renderPrograma(){
       const lastEnvio=(envios||[]).filter(e=>e.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_envio)-parseDateInt(a.data_envio))[0];
       const isOnline=p.modality==='Online';
       let envioAlert='';
-      if(isOnline&&lastEnvio){
-        const total=(lastEnvio.sessoes_ev||0)+(lastEnvio.sessoes_im||0);
-        const feitas=(sessoes||[]).filter(s=>s.patient_id===p.id&&s.envio_id===lastEnvio.id).length;
-        const rest=total-feitas;
-        if(rest<=1)envioAlert='<span style="color:var(--danger);font-weight:700">\ud83d\udea9 Enviar!</span>';
-        else if(rest<=2)envioAlert='<span style="color:var(--warning);font-weight:700">\u26a0\ufe0f Preparar</span>';
-      }
+      if(isOnline&&lastEnvio){const total=(lastEnvio.sessoes_ev||0)+(lastEnvio.sessoes_im||0);const feitas=(sessoes||[]).filter(s=>s.patient_id===p.id&&s.envio_id===lastEnvio.id).length;const rest=total-feitas;if(rest<=1)envioAlert='<span style="color:var(--danger);font-weight:700">\ud83d\udea9 Enviar!</span>';else if(rest<=2)envioAlert='<span style="color:var(--warning);font-weight:700">\u26a0\ufe0f Preparar</span>';}
       const tagHtml=tags.map(t=>'<span class="etiqueta" style="background:'+(t.color||'#6b7280')+'">'+t.name+'</span>').join('');
       const encHtml=p.motivo_encerramento?'<span style="font-weight:700;color:'+(p.motivo_encerramento==='fim'?'#3b82f6':'#f97316')+'">Encerrado: '+isoToDisplay(p.data_encerramento||'')+' \u2014 '+(p.motivo_encerramento==='fim'?'Fim do Plano':'Desist\u00eancia')+'</span>':'';
-      html+='<div class="prog-row">'
-        +'<div class="prog-header" onclick="toggleProg(this)">'
+      html+='<div class="prog-row"><div class="prog-header" onclick="toggleProg(this)">'
         +'<div class="patient-avatar" style="width:38px;height:38px;font-size:14px">'+p.name.charAt(0)+'</div>'
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">'+p.name+tagHtml+envioAlert+'</div>'
         +'<div style="font-size:12px;color:var(--text-muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">'
-        +'<span class="phase-badge phase-'+phase+'">F'+phase+'</span>'
-        +'<span>'+(p.plan_type||'\u2014')+'</span>'
-        +'<span>M\u00eas '+(months+1)+'</span>'
+        +'<span class="phase-badge phase-'+phase+'">F'+phase+'</span><span>'+(p.plan_type||'\u2014')+'</span><span>M\u00eas '+(months+1)+'</span>'
         +'<span class="pill pill-'+(p.modality==='Presencial'?'blue':'purple')+'">'+(p.modality||'\u2014')+'</span>'
-        +'<span>In\u00edcio: '+fmtDate(p.inicio_programa||'')+'</span>'
-        +'<span>Fim: '+endDate+'</span>'
-        +encHtml
-        +'</div></div>'
-        +'<span style="color:var(--text-muted)">\u25be</span>'
-        +'</div>'
+        +'<span>In\u00edcio: '+fmtDate(p.inicio_programa||'')+'</span><span>Fim: '+endDate+'</span>'+encHtml
+        +'</div></div><span style="color:var(--text-muted)">\u25be</span></div>'
         +'<div class="prog-detail">'
         +'<div class="grid-2" style="margin-bottom:10px">'
         +'<div class="card" style="margin:0;padding:12px"><div class="card-title">\u00daltima Consulta</div><div style="font-size:14px;font-weight:600">'+(lastConsult?fmtDate(lastConsult.date_str):'\u2014')+'</div>'+(lastConsult?'<div class="text-sm text-muted">'+(lastConsult.procedimento||'')+'</div>':'')+'</div>'
@@ -1770,53 +2108,24 @@ async function renderImplantes(){
   allPatients=patients||[];
   let implFilter='active';let implSort='ultimo_desc';
   const c=document.getElementById('main-content');
-
   function buildImpl(){
     let filtered=allPatients;
     if(implFilter==='active')filtered=filtered.filter(p=>p.active);
     else if(implFilter==='inactive')filtered=filtered.filter(p=>!p.active);
     else if(implFilter==='com_impl')filtered=filtered.filter(p=>(implantes||[]).some(i=>i.patient_id===p.id));
     else if(implFilter==='sem_impl')filtered=filtered.filter(p=>!(implantes||[]).some(i=>i.patient_id===p.id));
-
-    // Build map: last implant per patient
-    const lastImplMap={};
-    const allImplMap={};
+    const lastImplMap={};const allImplMap={};
     (implantes||[]).forEach(i=>{
       if(!allImplMap[i.patient_id])allImplMap[i.patient_id]=[];
       allImplMap[i.patient_id].push(i);
       const cur=lastImplMap[i.patient_id];
-      if(!cur||parseDateInt(fmtDate(i.data_implante))>parseDateInt(fmtDate(cur.data_implante))){
-        lastImplMap[i.patient_id]=i;
-      }
+      if(!cur||parseDateInt(fmtDate(i.data_implante))>parseDateInt(fmtDate(cur.data_implante))){lastImplMap[i.patient_id]=i;}
     });
-
-    // Sort
-    if(implSort==='ultimo_desc'){
-      filtered=filtered.slice().sort((a,b)=>{
-        const da=lastImplMap[a.id]?parseDateInt(fmtDate(lastImplMap[a.id].data_implante)):0;
-        const db=lastImplMap[b.id]?parseDateInt(fmtDate(lastImplMap[b.id].data_implante)):0;
-        return db-da;
-      });
-    }else if(implSort==='ultimo_asc'){
-      filtered=filtered.slice().sort((a,b)=>{
-        const da=lastImplMap[a.id]?parseDateInt(fmtDate(lastImplMap[a.id].data_implante)):99999999;
-        const db=lastImplMap[b.id]?parseDateInt(fmtDate(lastImplMap[b.id].data_implante)):99999999;
-        return da-db;
-      });
-    }else if(implSort==='alpha'){
-      filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));
-    }else if(implSort==='qtd_desc'){
-      filtered=filtered.slice().sort((a,b)=>{
-        const qa=(allImplMap[a.id]||[]).length;
-        const qb=(allImplMap[b.id]||[]).length;
-        return qb-qa;
-      });
-    }
-
-    // Stats
-    const totalImpl=(implantes||[]).length;
-    const patComImpl=Object.keys(lastImplMap).length;
-
+    if(implSort==='ultimo_desc'){filtered=filtered.slice().sort((a,b)=>{const da=lastImplMap[a.id]?parseDateInt(fmtDate(lastImplMap[a.id].data_implante)):0;const db=lastImplMap[b.id]?parseDateInt(fmtDate(lastImplMap[b.id].data_implante)):0;return db-da;});}
+    else if(implSort==='ultimo_asc'){filtered=filtered.slice().sort((a,b)=>{const da=lastImplMap[a.id]?parseDateInt(fmtDate(lastImplMap[a.id].data_implante)):99999999;const db=lastImplMap[b.id]?parseDateInt(fmtDate(lastImplMap[b.id].data_implante)):99999999;return da-db;});}
+    else if(implSort==='alpha'){filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));}
+    else if(implSort==='qtd_desc'){filtered=filtered.slice().sort((a,b)=>{const qa=(allImplMap[a.id]||[]).length;const qb=(allImplMap[b.id]||[]).length;return qb-qa;});}
+    const totalImpl=(implantes||[]).length;const patComImpl=Object.keys(lastImplMap).length;
     let html='<div class="section-header"><div class="section-title">Implantes Hormonais</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
       +'<button class="btn btn-sm '+(implFilter==='active'?'btn-primary':'btn-ghost')+'" onclick="window._if=\'active\';rebuildImpl()">Ativos</button>'
@@ -1824,77 +2133,48 @@ async function renderImplantes(){
       +'<button class="btn btn-sm '+(implFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="window._if=\'all\';rebuildImpl()">Todos</button>'
       +'<button class="btn btn-sm '+(implFilter==='com_impl'?'btn-accent':'btn-ghost')+'" onclick="window._if=\'com_impl\';rebuildImpl()">Com Implante</button>'
       +'<button class="btn btn-sm '+(implFilter==='sem_impl'?'btn-accent':'btn-ghost')+'" onclick="window._if=\'sem_impl\';rebuildImpl()">Sem Implante</button>'
-      +'<div style="height:20px;width:1px;background:var(--border);margin:0 2px"></div>'
-      +'<span style="font-size:11px;color:var(--text-muted);font-weight:600">Ordem:</span>'
       +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._isort=this.value;rebuildImpl()">'
       +'<option value="ultimo_desc" '+(implSort==='ultimo_desc'?'selected':'')+'>Mais recente primeiro</option>'
       +'<option value="ultimo_asc" '+(implSort==='ultimo_asc'?'selected':'')+'>Mais antigo primeiro</option>'
-      +'<option value="alpha" '+(implSort==='alpha'?'selected':'')+'>A\u2013Z (Alfab\u00e9tico)</option>'
+      +'<option value="alpha" '+(implSort==='alpha'?'selected':'')+'>A\u2013Z</option>'
       +'<option value="qtd_desc" '+(implSort==='qtd_desc'?'selected':'')+'>Mais implantes</option>'
-      +'</select>'
-      +'</div></div>';
-
-    // Summary cards
+      +'</select></div></div>';
     html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'
       +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+totalImpl+'</div><div class="dash-card-label">Total de Implantes</div></div>'
       +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+patComImpl+'</div><div class="dash-card-label">Pacientes com Implante</div></div>'
       +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+(allPatients.filter(p=>p.active).length-Object.keys(lastImplMap).filter(id=>allPatients.find(p=>p.id==id&&p.active)).length)+'</div><div class="dash-card-label">Ativos sem Implante</div></div>'
       +'</div>';
-
     if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc89</div>Nenhum paciente encontrado</div>';return html;}
-
     filtered.forEach(p=>{
       const patImpls=(allImplMap[p.id]||[]).sort((a,b)=>parseDateInt(fmtDate(b.data_implante))-parseDateInt(fmtDate(a.data_implante)));
       const lastImpl=patImpls[0];
       const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
       const months=p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0;
       const tags=(p.etiquetas||[]);
-
-      // Implant expiry badge (implant lasts 4-6 months, warn when close to 5 months)
       let diasBadge='';
-      let expiryInfo='';
       if(lastImpl&&lastImpl.data_implante){
-        const dataImpl=fmtDate(lastImpl.data_implante);
-        const dias=daysAgo(dataImpl);
-        // Estimate: 5 months avg = 150 days. Warn at <30 days to expiry, expired if >150
+        const dataImpl=fmtDate(lastImpl.data_implante);const dias=daysAgo(dataImpl);
         const diasParaVencer=150-(dias||0);
         let cor,bgCor,label;
-        if(diasParaVencer<0){
-          cor='var(--danger)';bgCor='#fee2e2';
-          label='\u26a0\ufe0f Vencido h\u00e1 '+Math.abs(diasParaVencer)+'d';
-        }else if(diasParaVencer<=30){
-          cor='#c2410c';bgCor='#fff7ed';
-          label='\ud83d\udea9 Vence em '+diasParaVencer+'d';
-        }else if(diasParaVencer<=60){
-          cor='var(--warning)';bgCor='#fef3c7';
-          label='\u26a0\ufe0f Vence em '+diasParaVencer+'d';
-        }else{
-          cor='var(--success)';bgCor='#dcfce7';
-          label='\u2705 Vence em ~'+diasParaVencer+'d';
-        }
+        if(diasParaVencer<0){cor='var(--danger)';bgCor='#fee2e2';label='\u26a0\ufe0f Vencido h\u00e1 '+Math.abs(diasParaVencer)+'d';}
+        else if(diasParaVencer<=30){cor='#c2410c';bgCor='#fff7ed';label='\ud83d\udea9 Vence em '+diasParaVencer+'d';}
+        else if(diasParaVencer<=60){cor='var(--warning)';bgCor='#fef3c7';label='\u26a0\ufe0f Vence em '+diasParaVencer+'d';}
+        else{cor='var(--success)';bgCor='#dcfce7';label='\u2705 Vence em ~'+diasParaVencer+'d';}
         diasBadge='<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+bgCor+';padding:2px 8px;border-radius:99px">'+label+'</span>';
-        expiryInfo=label;
       }
-
       html+='<div class="prog-row"><div class="prog-header" onclick="toggleProgImpl(this)">'
         +'<div class="patient-avatar" style="width:38px;height:38px;font-size:14px">'+p.name.charAt(0)+'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">'+p.name
-        +tags.map(t=>'<span class="etiqueta" style="background:'+(t.color||'#6b7280')+'">'+t.name+'</span>').join('')
-        +'</div>'
+        +'<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">'+p.name+tags.map(t=>'<span class="etiqueta" style="background:'+(t.color||'#6b7280')+'">'+t.name+'</span>').join('')+'</div>'
         +'<div style="font-size:12px;color:var(--text-muted);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
         +'<span class="phase-badge phase-'+phase+'">F'+phase+'</span>'
         +'<span class="pill pill-'+(p.modality==='Presencial'?'blue':'purple')+'">'+(p.modality||'\u2014')+'</span>'
         +'<span>'+(p.plan_type||'\u2014')+' \u00b7 M\u00eas '+(months+1)+'</span>'
-        +(lastImpl
-          ?'<span style="font-weight:600;color:var(--navy)">\ud83d\udc89 \u00dalt: '+fmtDate(lastImpl.data_implante)+'</span>'+diasBadge
-          :'<span style="color:var(--text-muted);font-style:italic">Sem implante</span>')
+        +(lastImpl?'<span style="font-weight:600;color:var(--navy)">\ud83d\udc89 \u00dalt: '+fmtDate(lastImpl.data_implante)+'</span>'+diasBadge:'<span style="color:var(--text-muted);font-style:italic">Sem implante</span>')
         +'<span style="font-size:11px;background:#f3f4f6;padding:2px 8px;border-radius:99px;color:var(--text-muted)">'+patImpls.length+' implante(s)</span>'
         +'</div>'
         +(lastImpl&&lastImpl.observacao?'<div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-style:italic">\ud83d\udcac '+lastImpl.observacao.slice(0,80)+(lastImpl.observacao.length>80?'\u2026':'')+'</div>':'')
-        +'</div>'
-        +'<span style="color:var(--text-muted)">\u25be</span>'
-        +'</div>'
+        +'</div><span style="color:var(--text-muted)">\u25be</span></div>'
         +'<div class="prog-detail">'
         +(patImpls.length
           ?'<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Hist\u00f3rico de Implantes ('+patImpls.length+')</div>'
@@ -1916,7 +2196,6 @@ async function renderImplantes(){
     });
     return html;
   }
-
   window._if='active';window._isort='ultimo_desc';
   window.rebuildImpl=function(){implFilter=window._if;implSort=window._isort;c.innerHTML=buildImpl();};
   c.innerHTML=buildImpl();
@@ -1929,142 +2208,71 @@ async function renderAvulsas(){
     sb.from('planos_financeiro').select('*').order('created_at')
   ]);
   allPatients=patients||[];
-  // Consulta Avulsa = plan_type === 'Consulta Avulsa'
   const avulsas=allPatients.filter(p=>p.plan_type==='Consulta Avulsa');
   let avSort='alpha';
   const c=document.getElementById('main-content');
-
+  function lastConsultDate(patientId,appts){const pa=(appts||[]).filter(a=>a.patient_id===patientId&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));return pa.length?fmtDate(pa[0].date_str):null;}
   function buildAvulsas(){
     let filtered=avulsas;
     if(avSort==='alpha')filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));
-    else if(avSort==='ultima_asc'){
-      filtered=filtered.slice().sort((a,b)=>{
-        const ua=lastConsultDate(a.id,appts);
-        const ub=lastConsultDate(b.id,appts);
-        return parseDateInt(ua)-parseDateInt(ub);
-      });
-    }else if(avSort==='ultima_desc'){
-      filtered=filtered.slice().sort((a,b)=>{
-        const ua=lastConsultDate(a.id,appts)||'00/00/0000';
-        const ub=lastConsultDate(b.id,appts)||'00/00/0000';
-        return parseDateInt(ub)-parseDateInt(ua);
-      });
-    }else if(avSort==='gasto_desc'){
-      filtered=filtered.slice().sort((a,b)=>{
-        const fa=(fin||[]).filter(f=>f.patient_id===a.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
-        const fb=(fin||[]).filter(f=>f.patient_id===b.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
-        return fb-fa;
-      });
-    }
-
-    const ativos=avulsas.filter(p=>p.active).length;
-    const inativos=avulsas.filter(p=>!p.active).length;
+    else if(avSort==='ultima_asc'){filtered=filtered.slice().sort((a,b)=>{const ua=lastConsultDate(a.id,appts);const ub=lastConsultDate(b.id,appts);return parseDateInt(ua)-parseDateInt(ub);});}
+    else if(avSort==='ultima_desc'){filtered=filtered.slice().sort((a,b)=>{const ua=lastConsultDate(a.id,appts)||'00/00/0000';const ub=lastConsultDate(b.id,appts)||'00/00/0000';return parseDateInt(ub)-parseDateInt(ua);});}
+    else if(avSort==='gasto_desc'){filtered=filtered.slice().sort((a,b)=>{const fa=(fin||[]).filter(f=>f.patient_id===a.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);const fb=(fin||[]).filter(f=>f.patient_id===b.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);return fb-fa;});}
+    const ativos=avulsas.filter(p=>p.active).length;const inativos=avulsas.filter(p=>!p.active).length;
     const totalGasto=(fin||[]).filter(f=>avulsas.some(p=>p.id===f.patient_id)).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
-
     let html='<div class="section-header"><div class="section-title">Consultas Avulsas</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-      +'<span style="font-size:11px;color:var(--text-muted);font-weight:600">Ordem:</span>'
       +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._avsort=this.value;rebuildAvulsas()">'
-      +'<option value="alpha" '+(avSort==='alpha'?'selected':'')+'>A\u2013Z (Alfab\u00e9tico)</option>'
+      +'<option value="alpha" '+(avSort==='alpha'?'selected':'')+'>A\u2013Z</option>'
       +'<option value="ultima_desc" '+(avSort==='ultima_desc'?'selected':'')+'>Consulta mais recente</option>'
       +'<option value="ultima_asc" '+(avSort==='ultima_asc'?'selected':'')+'>Consulta mais antiga</option>'
       +'<option value="gasto_desc" '+(avSort==='gasto_desc'?'selected':'')+'>Maior gasto total</option>'
       +'</select>'
       +'</div></div>';
-
-    // Summary
     html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'
       +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+avulsas.length+'</div><div class="dash-card-label">Total Avulsos</div><div class="dash-card-sub">'+ativos+' ativos \u00b7 '+inativos+' inativos</div></div>'
       +'<div class="dash-card" style="cursor:default"><div class="dash-card-num" style="font-size:22px;color:var(--success)">R$ '+(totalGasto/1000).toFixed(1)+'k</div><div class="dash-card-label">Total Gerado</div></div>'
       +'<div class="dash-card" onclick="mainNav(\'patients\')" title="Ver todos os pacientes"><div class="dash-card-num" style="font-size:22px">\ud83d\udc4b</div><div class="dash-card-label">Converter para Plano</div><div class="dash-card-sub">Editar na aba Pacientes</div></div>'
       +'</div>';
-
-    // Info banner
     html+='<div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#0369a1">'
       +'\u2139\ufe0f Pacientes com <strong>Consulta Avulsa</strong> aparecem aqui. Quando fecharem um <strong>Plano 3 ou 6 meses</strong>, migram automaticamente para a aba <strong>Programa</strong>.'
       +'</div>';
-
     if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc64</div>Nenhum paciente avulso</div>';return html;}
-
     filtered.forEach(p=>{
       const patAppts=(appts||[]).filter(a=>a.patient_id===p.id&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
-      const lastConsult=patAppts[0];
-      const totalConsultas=(appts||[]).filter(a=>a.patient_id===p.id&&a.status==='Compareceu'&&!a.origem_tabela).length;
+      const lastConsult=patAppts[0];const totalConsultas=patAppts.length;
       const totalPago=(fin||[]).filter(f=>f.patient_id===p.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
       const tags=(p.etiquetas||[]);
-
-      // Time since last consult - alert if >60 days inactive
       let semContato='';
-      if(lastConsult){
-        const d=daysAgo(fmtDate(lastConsult.date_str));
-        if(d!==null&&d>60){
-          const cor=d>120?'var(--danger)':d>60?'var(--warning)':'var(--text-muted)';
-          const bg=d>120?'#fee2e2':d>60?'#fef3c7':'#f3f4f6';
-          semContato='<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+bg+';padding:2px 8px;border-radius:99px">\ud83d\udd54 '+d+'d sem consulta</span>';
-        }
-      }else{
-        semContato='<span style="font-size:11px;font-weight:700;color:var(--text-muted);background:#f3f4f6;padding:2px 8px;border-radius:99px">Sem hist\u00f3rico</span>';
-      }
-
-      const statusDot=p.active
-        ?'<span style="width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;flex-shrink:0"></span>'
-        :'<span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;flex-shrink:0"></span>';
-
+      if(lastConsult){const d=daysAgo(fmtDate(lastConsult.date_str));if(d!==null&&d>60){const cor=d>120?'var(--danger)':d>60?'var(--warning)':'var(--text-muted)';const bg=d>120?'#fee2e2':d>60?'#fef3c7':'#f3f4f6';semContato='<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+bg+';padding:2px 8px;border-radius:99px">\ud83d\udd54 '+d+'d sem consulta</span>';}}
+      else{semContato='<span style="font-size:11px;font-weight:700;color:var(--text-muted);background:#f3f4f6;padding:2px 8px;border-radius:99px">Sem hist\u00f3rico</span>';}
+      const statusDot=p.active?'<span style="width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;flex-shrink:0"></span>':'<span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;flex-shrink:0"></span>';
       html+='<div class="prog-row"><div class="prog-header" onclick="toggleProgImpl(this)">'
         +'<div class="patient-avatar" style="width:38px;height:38px;font-size:14px">'+p.name.charAt(0)+'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">'+statusDot+' '+p.name
-        +tags.map(t=>'<span class="etiqueta" style="background:'+(t.color||'#6b7280')+'">'+t.name+'</span>').join('')
-        +'</div>'
+        +'<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">'+statusDot+' '+p.name+tags.map(t=>'<span class="etiqueta" style="background:'+(t.color||'#6b7280')+'">'+t.name+'</span>').join('')+'</div>'
         +'<div style="font-size:12px;color:var(--text-muted);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
         +(lastConsult?'<span>\ud83d\udcc5 \u00dalt. consulta: <strong>'+fmtDate(lastConsult.date_str)+'</strong></span>':'<span style="font-style:italic">Sem consulta</span>')
         +'<span style="background:#f3f4f6;padding:2px 8px;border-radius:99px;font-size:11px">'+totalConsultas+' consulta(s)</span>'
-        +'<span style="color:var(--success);font-weight:600">R$ '+totalPago.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>'
-        +semContato
-        +'</div>'
-        +'</div>'
-        +'<span style="color:var(--text-muted)">\u25be</span>'
-        +'</div>'
+        +'<span style="color:var(--success);font-weight:600">R$ '+totalPago.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>'+semContato+'</div></div>'
+        +'<span style="color:var(--text-muted)">\u25be</span></div>'
         +'<div class="prog-detail">'
         +'<div class="grid-2" style="margin-bottom:12px">'
         +'<div class="card" style="margin:0;padding:12px"><div class="card-title">Total de Consultas</div><div style="font-size:24px;font-weight:700;color:var(--navy)">'+totalConsultas+'</div></div>'
         +'<div class="card" style="margin:0;padding:12px"><div class="card-title">Total Pago</div><div style="font-size:20px;font-weight:700;color:var(--success)">R$ '+totalPago.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>'
         +'</div>'
-        // Last 5 appointments
-        +(patAppts.length
-          ?'<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">\u00daltimas Consultas</div>'
-          +patAppts.slice(0,5).map(a=>'<div style="padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px;display:flex;justify-content:space-between">'
-            +'<span><strong>'+fmtDate(a.date_str)+'</strong>'+(a.procedimento?' \u00b7 '+a.procedimento:'')+'</span>'
-            +'<span class="pill pill-green">'+a.status+'</span>'
-            +'</div>').join('')
-          :'<div style="font-size:13px;color:var(--text-muted);font-style:italic">Nenhuma consulta registrada.</div>')
+        +(patAppts.length?'<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">\u00daltimas Consultas</div>'+patAppts.slice(0,5).map(a=>'<div style="padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px;display:flex;justify-content:space-between"><span><strong>'+fmtDate(a.date_str)+'</strong>'+(a.procedimento?' \u00b7 '+a.procedimento:'')+'</span><span class="pill pill-green">'+a.status+'</span></div>').join(''):'<div style="font-size:13px;color:var(--text-muted);font-style:italic">Nenhuma consulta registrada.</div>')
         +'<div style="margin-top:12px;display:flex;gap:8px">'
         +'<button class="btn btn-ghost btn-sm" onclick="openPatient('+p.id+')">Ver Prontu\u00e1rio \u2192</button>'
-        +'<button class="btn btn-primary btn-sm" onclick="convertToPlano('+p.id+')">&#x1F4CB; Converter para Plano</button>'
-        +'</div>'
-        +'</div></div>';
+        +'</div></div></div>';
     });
     return html;
   }
-
   window._avsort='alpha';
   window.rebuildAvulsas=function(){avSort=window._avsort;c.innerHTML=buildAvulsas();};
   c.innerHTML=buildAvulsas();
 }
-
-function lastConsultDate(patientId, appts){
-  const pa=(appts||[]).filter(a=>a.patient_id===patientId&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
-  return pa.length?fmtDate(pa[0].date_str):null;
-}
-
-async function convertToPlano(patientId){
-  // Open the patient so user can change plan_type
-  await openPatient(patientId);
-  toast('Altere o Tipo de Plano para Plano 3 ou 6 meses e salve.','info');
-}
-
 function toggleProgImpl(header){const d=header.nextElementSibling;d.classList.toggle('open');header.querySelector('span:last-child').textContent=d.classList.contains('open')?'\u25b4':'\u25be';}
-
 function toggleProg(header){const d=header.nextElementSibling;d.classList.toggle('open');header.querySelector('span:last-child').textContent=d.classList.contains('open')?'\u25b4':'\u25be';}
 async function loadProfsIntoSelect(selectId){
   const{data:profs}=await sb.from('planos_profissionais').select('id,nome,categoria').order('categoria,nome');
@@ -2074,7 +2282,7 @@ async function loadProfsIntoSelect(selectId){
   Object.keys(byCat).sort().forEach(cat=>{const og=document.createElement('optgroup');og.label=cat;byCat[cat].forEach(p=>{const o=document.createElement('option');o.value=p.nome;o.textContent=p.nome;og.appendChild(o);});sel.appendChild(og);});
 }
 async function openFile(bucket,path){const{data}=sb.storage.from(bucket).getPublicUrl(path);if(data.publicUrl)window.open(data.publicUrl,'_blank');}
-// block10 done
+async function convertToPlano(patientId){await openPatient(patientId);toast('Altere o Tipo de Plano para Plano 3 ou 6 meses e salve.','info');}
 
 async function renderConfig(){
   const{data:cfgs}=await sb.from('planos_config').select('*');
@@ -2188,7 +2396,6 @@ function showNewPatientModal(){
   openModal('modal-new-patient');
 }
 async function saveNewPatient(){
-  // Prevent double submission
   const btn=document.querySelector('#new-patient-form .btn-primary');
   if(btn&&btn.disabled)return;
   if(btn){btn.disabled=true;btn.textContent='Salvando...';}
@@ -2200,7 +2407,6 @@ async function saveNewPatient(){
   if(error){toast('Erro: '+error.message,'error');const b=document.querySelector('#new-patient-form .btn-primary');if(b){b.disabled=false;b.textContent='Criar Paciente';}return;}
   closeModal('modal-new-patient');toast('Paciente criado!','success');await openPatient(newPat.id);
 }
-// block11 done
 
 let relCharts={};
 function destroyRelCharts(){Object.values(relCharts).forEach(c=>{try{c.destroy()}catch(e){}});relCharts={};}
@@ -2216,12 +2422,10 @@ function dateInRange(dateStr,start,end){
   if(!dateStr)return false;
   const p=(dateStr.includes('/')?dateStr:isoToDisplay(dateStr)).split('/');
   if(p.length!==3)return false;
-  const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
-  return d>=start&&d<=end;
+  const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));return d>=start&&d<=end;
 }
 async function renderRelatorios(period){
-  period=period||'mes';
-  destroyRelCharts();
+  period=period||'mes';destroyRelCharts();
   const c=document.getElementById('main-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando relat\u00f3rio...</div>';
   const [{data:patients},{data:fin},{data:sessoes},{data:ciclos}]=await Promise.all([
@@ -2260,20 +2464,14 @@ async function renderRelatorios(period){
     +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">R$ '+avgPat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="dash-card-label">M\u00e9dia por Paciente</div></div>'
     +'</div>'
     +'<div class="section-header"><div class="section-title">\ud83d\udccb Planos</div></div>'
-    +'<div class="dash-grid">'
-    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+active+'</div><div class="dash-card-label">Ativos</div></div>'
+    +'<div class="dash-grid"><div class="dash-card" style="cursor:default"><div class="dash-card-num">'+active+'</div><div class="dash-card-label">Ativos</div></div>'
     +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+inactive+'</div><div class="dash-card-label">Finalizados</div></div>'
-    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+sessP.length+'</div><div class="dash-card-label">Sess\u00f5es Soro</div><div class="dash-card-sub">no per\u00edodo</div></div>'
-    +'</div>'
-    +'<div class="dash-grid-2">'
-    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num" style="color:var(--success)">'+taxaR+'%</div><div class="dash-card-label">Taxa de Renova\u00e7\u00e3o</div></div>'
-    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+avgP+'</div><div class="dash-card-label">Perman\u00eancia M\u00e9dia (meses)</div></div>'
-    +'</div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+sessP.length+'</div><div class="dash-card-label">Sess\u00f5es Soro</div><div class="dash-card-sub">no per\u00edodo</div></div></div>'
+    +'<div class="dash-grid-2"><div class="dash-card" style="cursor:default"><div class="dash-card-num" style="color:var(--success)">'+taxaR+'%</div><div class="dash-card-label">Taxa de Renova\u00e7\u00e3o</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+avgP+'</div><div class="dash-card-label">Perman\u00eancia M\u00e9dia (meses)</div></div></div>'
     +'<div class="card"><div class="card-title">Novos Pacientes \u2014 \u00daltimos 12 Meses</div><div style="position:relative;height:200px"><canvas id="chart-novos"></canvas></div></div>'
-    +'<div class="grid-2">'
-    +'<div class="card"><div class="card-title">Tipo de Plano</div><div style="position:relative;height:180px"><canvas id="chart-tipo"></canvas></div></div>'
-    +'<div class="card"><div class="card-title">Modalidade</div><div style="position:relative;height:180px"><canvas id="chart-modal"></canvas></div></div>'
-    +'</div>'
+    +'<div class="grid-2"><div class="card"><div class="card-title">Tipo de Plano</div><div style="position:relative;height:180px"><canvas id="chart-tipo"></canvas></div></div>'
+    +'<div class="card"><div class="card-title">Modalidade</div><div style="position:relative;height:180px"><canvas id="chart-modal"></canvas></div></div></div>'
     +(tipoLabels.length?'<div class="card"><div class="card-title">Sess\u00f5es de Soro por Tipo</div><div style="position:relative;height:180px"><canvas id="chart-soro-tipo"></canvas></div></div>':'')
     +'<div class="card"><div class="card-title">Encerramentos</div><div style="position:relative;height:140px"><canvas id="chart-enc"></canvas></div></div>';
   setTimeout(()=>{
@@ -2304,4 +2502,3 @@ document.getElementById('pwa-manifest').href=URL.createObjectURL(new Blob([JSON.
 </script>
 </body>
 </html>
-// DONE
