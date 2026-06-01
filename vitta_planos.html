@@ -177,10 +177,10 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .sibo-positivo{background:#fee2e2;border:2px solid #fca5a5;border-radius:10px;padding:12px 16px;margin-bottom:12px}
 .sibo-negativo{background:#dcfce7;border:2px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:12px}
 @media print{
-  .topbar,.tabs,.navtabs,.btn,.btn-ghost,.btn-primary,.btn-icon,.subtabs,#toast{display:none!important}
-  .card{box-shadow:none;border:1px solid #ddd}
-  body{background:#fff}
-  .content{padding:0}
+  body > *:not(#laudo-print-overlay){display:none!important}
+  #laudo-print-overlay{display:block!important;position:static!important;background:#fff!important;padding:0!important}
+  #laudo-print-page{box-shadow:none!important;margin:0!important;padding:10mm 14mm!important;max-width:none!important;width:100%!important}
+  @page{size:A4 portrait;margin:0}
 }
 </style>
 </head>
@@ -1103,144 +1103,327 @@ async function salvarTRHE(exameId) {
 
 async function showLaudoTRHE(id) {
   const { data: ex } = await sb.from('planos_trhe').select('*').eq('id', id).single();
-  if (!ex) { toast('Exame não encontrado', 'error'); return; }
+  if (!ex) { toast('Exame n\u00e3o encontrado', 'error'); return; }
 
   const vals = ex.valores_h2 || {};
+  const tKeys = ['t0','t15','t30','t45','t60','t90','t120','t150','t180'];
+  const vArr = tKeys.map(k => vals[k] || 0);
+  const intensMap = { 3: 'intenso', 2: 'moderado', 1: 'leve', 0: 'sem' };
   const r = calcularTRHE(
-    { t0: vals.t0||0, t15: vals.t15||0, t30: vals.t30||0, t45: vals.t45||0, t60: vals.t60||0, t90: vals.t90||0, t120: vals.t120||0, t150: vals.t150||0, t180: vals.t180||0 },
-    ex.sintomas || '', 
-    ex.isf === 3 ? 'intenso' : ex.isf === 2 ? 'moderado' : ex.isf === 1 ? 'leve' : 'sem',
+    { t0:vArr[0],t15:vArr[1],t30:vArr[2],t45:vArr[3],t60:vArr[4],t90:vArr[5],t120:vArr[6],t150:vArr[7],t180:vArr[8] },
+    ex.sintomas || '',
+    intensMap[ex.isf] || 'sem',
     ex.preparo_adequado !== false
   );
 
-  // Sempre usa valores recalculados (r), nunca os salvos no banco
-  const siboHtml = r.sibo
-    ? '<div class="sibo-positivo"><div style="font-weight:700;color:#991b1b;font-size:14px">\u2713 SIBO POSITIVO</div><div style="font-size:12px;color:#991b1b;margin-top:4px">Delta H\u2082 = ' + r.deltaH2 + ' ppm \u2265 20 ppm at\u00e9 90 minutos.</div></div>'
-    : '<div class="sibo-negativo"><div style="font-weight:700;color:#166534;font-size:14px">SIBO NEGATIVO</div><div style="font-size:12px;color:#166534;margin-top:4px">Delta H\u2082 = ' + r.deltaH2 + ' ppm &lt; 20 ppm.</div></div>';
-
+  const picoAbs = Math.max(...vArr);
+  const patName = currentPatientData ? currentPatientData.name : 'Paciente';
+  const dataFmt = isoToDisplay(ex.data_exame || '');
+  const intensLabel = ex.isf === 3 ? 'Intenso' : ex.isf === 2 ? 'Moderado' : ex.isf === 1 ? 'Leve' : 'Sem sintomas';
+  const siboPos = r.sibo;
   const sgfCor = r.sgf >= 61 ? '#dc2626' : r.sgf >= 41 ? '#d97706' : r.sgf >= 21 ? '#2563eb' : '#6b7280';
-  const sgfBg = r.sgf >= 61 ? '#fee2e2' : r.sgf >= 41 ? '#fef3c7' : r.sgf >= 21 ? '#dbeafe' : '#f3f4f6';
+  const sgfBg  = r.sgf >= 61 ? '#fee2e2' : r.sgf >= 41 ? '#fef3c7' : r.sgf >= 21 ? '#dbeafe' : '#f3f4f6';
 
   // Tabela de valores
-  const tempos = ['Basal', '15 min', '30 min', '45 min', '60 min', '90 min', '120 min', '150 min', '180 min'];
-  const tKeys = ['t0','t15','t30','t45','t60','t90','t120','t150','t180'];
-  const todosVals = tKeys.map(k => vals[k] || 0);
-  const picoAbs = Math.max(...todosVals);
-
-  let tabelaRows = '';
-  tKeys.forEach((k, i) => {
-    const v = vals[k] || 0;
+  const obsArr = ['Ref: < 20 ppm','Dentro do esperado','Dentro do esperado','Ascens\u00e3o progressiva','Ascens\u00e3o progressiva','Pico \u2014 intestino delgado','In\u00edcio fase col\u00f4nica','Ascens\u00e3o col\u00f4nica','Pico m\u00e1ximo \u2014 fase col\u00f4nica'];
+  const tempoLabels = ['Basal','15 min','30 min','45 min','60 min','90 min','120 min','150 min','180 min'];
+  let valRows = '';
+  vArr.forEach((v, i) => {
+    const delta = v - vArr[0];
     const isPico = v === picoAbs && v > 0;
-    tabelaRows += '<tr><td>' + tempos[i] + '</td><td class="' + (isPico?'highlight':'') + '">' + v + (isPico?' \u2605':'') + '</td></tr>';
+    const acima = v >= 20 && i > 0;
+    valRows += '<tr style="' + (isPico ? 'background:#fef3c7;font-weight:700' : '') + '">'
+      + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;font-weight:' + (isPico ? '700' : '400') + '">' + tempoLabels[i] + '</td>'
+      + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;color:' + (isPico ? '#d97706' : acima ? '#d97706' : '#1a1a1a') + ';font-weight:' + (isPico ? '700' : '400') + '">' + v + ' ppm' + (isPico ? ' \u2605' : '') + '</td>'
+      + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px">' + (i === 0 ? '\u2014' : (delta >= 0 ? '+' : '') + delta + ' ppm') + '</td>'
+      + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;color:#666">' + obsArr[i] + '</td>'
+      + '</tr>';
   });
 
-  const html =
-    '<div style="max-height:75vh;overflow-y:auto">'
-    + '<div style="text-align:center;margin-bottom:14px">'
-    + '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">TESTE RESPIRAT\u00d3RIO DO HIDROG\u00caNIO EXPIRADO</div>'
-    + '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">Lactulose 25g \u00b7 Data: ' + isoToDisplay(ex.data_exame) + '</div>'
-    + (!ex.preparo_adequado ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:8px;margin-top:8px;font-size:12px;color:#92400e">\u26a0\ufe0f Preparo inadequado \u2014 interpreta\u00e7\u00e3o limitada.</div>' : '')
+  // Badges
+  const badgeSibo = siboPos
+    ? '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#fee2e2;color:#991b1b">SIBO Positivo</span>'
+    : '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">SIBO Negativo</span>';
+  const badgeSgf = '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:' + sgfBg + ';color:' + sgfCor + '">SGF: ' + r.sgf + ' \u2014 ' + r.classSGF + '</span>';
+  const badgeIfi = '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e">IFI: ' + r.ifi + ' \u2014 ' + r.perfilIFI + '</span>';
+  const badgeFC = r.fermentacaoColonica ? '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#ede9fe;color:#5b21b6">Fermenta\u00e7\u00e3o col\u00f4nica presente</span>' : '';
+  const badgeBasal = !r.basalElevado ? '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">Basal normal (' + vArr[0] + ' ppm)</span>' : '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e">\u26a0\ufe0f Basal elevado (' + vArr[0] + ' ppm)</span>';
+
+  // Caixa de diagnóstico
+  const diagHtml = siboPos
+    ? '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:7px;padding:8px 12px;display:flex;align-items:flex-start;gap:10px;margin-bottom:0">'
+      + '<div style="font-size:16px;color:#991b1b;line-height:1;margin-top:1px">\u2717</div>'
+      + '<div><div style="font-size:12px;font-weight:700;color:#991b1b">SIBO Positivo</div>'
+      + '<div style="font-size:10px;color:#991b1b;margin-top:2px">Delta H\u2082 = ' + r.deltaH2 + ' ppm \u2014 igual ou acima do crit\u00e9rio diagn\u00f3stico de \u2265 20 ppm at\u00e9 90 min (North American Consensus, 2017)</div>'
+      + '</div></div>'
+    : '<div style="background:#dcfce7;border:1px solid #86efac;border-radius:7px;padding:8px 12px;display:flex;align-items:flex-start;gap:10px;margin-bottom:0">'
+      + '<div style="font-size:16px;color:#166534;line-height:1;margin-top:1px">\u2713</div>'
+      + '<div><div style="font-size:12px;font-weight:700;color:#166534">SIBO Negativo</div>'
+      + '<div style="font-size:10px;color:#166534;margin-top:2px">Delta H\u2082 = ' + r.deltaH2 + ' ppm \u2014 abaixo do crit\u00e9rio diagn\u00f3stico de \u2265 20 ppm at\u00e9 90 min (North American Consensus, 2017)</div>'
+      + '</div></div>';
+
+  // Resultado na tabela de critérios
+  const siboTblRes = siboPos
+    ? '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#fee2e2;color:#991b1b">' + r.deltaH2 + ' ppm \u2014 Pos</span>'
+    : '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">' + r.deltaH2 + ' ppm \u2014 Neg</span>';
+  const basalTblRes = r.basalElevado
+    ? '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e">' + vArr[0] + ' ppm \u2014 Elevado</span>'
+    : '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">' + vArr[0] + ' ppm \u2014 Normal</span>';
+
+  // Linha IFI/ISF destacada
+  const ifiRow = r.ifi < 20 ? 0 : r.ifi <= 40 ? 1 : r.ifi <= 60 ? 2 : 3;
+  const isfRow = ex.isf === 0 ? 0 : ex.isf === 1 ? 1 : ex.isf === 2 ? 2 : 3;
+  const ifiLabels = ['< 20 | Baixa fermenta\u00e7\u00e3o','20 \u2013 40 | Fermenta\u00e7\u00e3o habitual','41 \u2013 60 | Fermenta\u00e7\u00e3o aumentada','> 60 | Hiperfermenta\u00e7\u00e3o intestinal'];
+  const sgfRows = [
+    { range:'0 \u2013 20', label:'Fermenta\u00e7\u00e3o reduzida', dot:'#6b7280' },
+    { range:'21 \u2013 40', label:'Fermenta\u00e7\u00e3o habitual', dot:'#3b82f6' },
+    { range:'41 \u2013 60', label:'Fermenta\u00e7\u00e3o aumentada', dot:'#d97706' },
+    { range:'61 \u2013 80', label:'Hiperfermenta\u00e7\u00e3o', dot:'#dc2626' },
+    { range:'81 \u2013 100', label:'Hiperfermenta\u00e7\u00e3o intensa', dot:'#7f1d1d' }
+  ];
+  const activeSgf = r.sgf <= 20 ? 0 : r.sgf <= 40 ? 1 : r.sgf <= 60 ? 2 : r.sgf <= 80 ? 3 : 4;
+  const sgfTblRows = sgfRows.map((row, i) =>
+    '<tr' + (i === activeSgf ? ' style="background:#fef3c7"' : '') + '>'
+    + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;font-weight:' + (i === activeSgf ? '700' : '400') + '">' + row.range + '</td>'
+    + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;font-weight:' + (i === activeSgf ? '700' : '400') + '"><span style="width:7px;height:7px;border-radius:50%;background:' + row.dot + ';display:inline-block;margin-right:4px;vertical-align:middle"></span>' + row.label + (i === activeSgf ? ' \u2190' : '') + '</td>'
+    + '</tr>'
+  ).join('');
+  const ifiFull = [
+    { range:'< 20', label:'Baixa fermenta\u00e7\u00e3o' },
+    { range:'20 \u2013 40', label:'Fermenta\u00e7\u00e3o habitual' },
+    { range:'41 \u2013 60', label:'Fermenta\u00e7\u00e3o aumentada' },
+    { range:'> 60', label:'Hiperfermenta\u00e7\u00e3o intestinal' }
+  ];
+  const ifiTblRows = ifiFull.map((row, i) =>
+    '<tr' + (i === ifiRow ? ' style="background:#fef3c7"' : '') + '>'
+    + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;font-weight:' + (i === ifiRow ? '700' : '400') + '">' + row.range + '</td>'
+    + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;font-weight:' + (i === ifiRow ? '700' : '400') + '">' + row.label + (i === ifiRow ? ' \u2190' : '') + '</td>'
+    + '</tr>'
+  ).join('');
+  const isfFull = [
+    { label:'Sem sintomas', pts:'0 pontos' },
+    { label:'Leve', pts:'3 pontos' },
+    { label:'Moderado', pts:'6 pontos' },
+    { label:'Intenso', pts:'10 pontos' }
+  ];
+  const isfTblRows = isfFull.map((row, i) =>
+    '<tr' + (i === isfRow ? ' style="background:#f0fdf4"' : '') + '>'
+    + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;font-weight:' + (i === isfRow ? '700' : '400') + '">' + row.label + (i === isfRow ? ' \u2190' : '') + '</td>'
+    + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;font-weight:' + (i === isfRow ? '700' : '400') + '">' + row.pts + '</td>'
+    + '</tr>'
+  ).join('');
+
+  // CSS do laudo A4
+  const css = '<style id="laudo-print-style">'
+    + '@media print{'
+    + ' body > *:not(#laudo-print-overlay){display:none!important}'
+    + ' #laudo-print-overlay{display:block!important;position:static!important;background:#fff!important}'
+    + ' #laudo-print-page{margin:0!important;padding:10mm 14mm!important;max-width:none!important;box-shadow:none!important}'
+    + ' @page{size:A4 portrait;margin:0}'
+    + '}'
+    + '#laudo-print-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;overflow-y:auto;padding:20px}'
+    + '#laudo-print-page{'
+    + ' background:#fff;font-family:Georgia,"Times New Roman",serif;font-size:11px;color:#1a1a1a;'
+    + ' width:210mm;min-height:297mm;margin:0 auto;padding:14mm 16mm 12mm;box-shadow:0 4px 24px rgba(0,0,0,.25);'
+    + ' box-sizing:border-box;line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact'
+    + '}'
+    + '.lp-hdr{border-bottom:2px solid #1D2846;padding-bottom:7px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:flex-end}'
+    + '.lp-clinic{font-size:13px;font-weight:700;color:#1D2846}'
+    + '.lp-sub{font-size:10px;color:#555;margin-top:1px}'
+    + '.lp-hdr-r{text-align:right;font-size:9px;color:#555;line-height:1.5}'
+    + '.lp-pat{display:flex;justify-content:space-between;margin-bottom:9px;padding-bottom:7px;border-bottom:0.5px solid #ddd}'
+    + '.lp-lbl{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}'
+    + '.lp-val{font-size:12px;font-weight:700;color:#1D2846}'
+    + '.lp-sec{margin-bottom:9px}'
+    + '.lp-sec-ttl{font-size:8px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.6px;border-bottom:1.5px solid #1D2846;padding-bottom:3px;margin-bottom:6px}'
+    + '.lp-chart{height:160px;position:relative;margin-bottom:3px}'
+    + '.lp-chart-leg{font-size:8px;color:#555;margin-bottom:6px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}'
+    + '.lp-ind{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:7px}'
+    + '.lp-ind-box{background:#f5f7fa;border-radius:4px;padding:5px 3px;text-align:center;border:0.5px solid #ddd}'
+    + '.lp-ind-n{font-size:14px;font-weight:700;color:#1D2846;line-height:1}'
+    + '.lp-ind-l{font-size:7px;color:#888;text-transform:uppercase;letter-spacing:.2px;margin-top:2px}'
+    + '.lp-gloss{background:#EBF4FF;border:0.5px solid #BFDBFE;border-radius:4px;padding:5px 8px;margin-bottom:6px;display:grid;grid-template-columns:1fr 1fr;gap:1px 12px}'
+    + '.lp-gi{font-size:8px;color:#1a1a1a;padding:1.5px 0;border-bottom:0.5px solid rgba(0,0,0,.05)}'
+    + '.lp-gi strong{color:#1D2846}'
+    + '.lp-badges{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px}'
+    + '.lp-ldblk{margin-bottom:5px}'
+    + '.lp-ldlbl{font-size:8px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}'
+    + '.lp-ldtxt{font-size:9px;line-height:1.5;color:#222;background:#f9f9f9;border-left:2.5px solid #1D2846;padding:4px 7px;border-radius:0 3px 3px 0}'
+    + '.lp-strip{background:#f5f7fa;border:0.5px solid #ddd;border-radius:4px;padding:5px 8px;margin-bottom:6px;display:flex;gap:16px;flex-wrap:wrap}'
+    + '.lp-si-l{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.3px}'
+    + '.lp-si-v{font-size:9px;font-weight:700;color:#222}'
+    + '.lp-two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px}'
+    + '.lp-tbl{width:100%;border-collapse:collapse}'
+    + '.lp-tbl-cap{font-size:7.5px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.4px;padding-bottom:2px;display:block}'
+    + '.lp-tbl th{background:#1D2846;color:#fff;padding:4px 6px;text-align:left;font-size:8px}'
+    + '.lp-tbl td{padding:3px 6px;border-bottom:0.5px solid #e5e7eb;font-size:9px}'
+    + '.lp-tbl tr:nth-child(even) td{background:#f9fafb}'
+    + '.lp-vtbl{width:100%;border-collapse:collapse;margin-bottom:8px}'
+    + '.lp-vtbl th{background:#1D2846;color:#fff;padding:4px 7px;text-align:left;font-size:8px}'
+    + '.lp-vtbl tr:nth-child(even) td{background:#f9fafb}'
+    + '.lp-ftr{border-top:1px solid #ddd;padding-top:7px;margin-top:9px;display:flex;justify-content:space-between;align-items:flex-end}'
+    + '.lp-ftr-info{font-size:8px;color:#aaa}'
+    + '.lp-sig{border-top:1px solid #1D2846;padding-top:3px;margin-top:20px;width:200px;text-align:center;margin-left:auto;margin-right:auto}'
+    + '.lp-sig-name{font-size:10px;font-weight:700;color:#1D2846}'
+    + '.lp-sig-crm{font-size:8px;color:#555}'
+    + '</style>';
+
+  const laudoHtml = css
+    + '<div id="laudo-print-overlay" onclick="if(event.target===this)fecharLaudoPrint()">'
+    + '<div id="laudo-print-page">'
+
+    // Cabeçalho
+    + '<div class="lp-hdr"><div><div class="lp-clinic">Cl\u00ednica Vitta | Alphaville</div><div class="lp-sub">Teste Respirat\u00f3rio do Hidrog\u00eanio Expirado (TRHE)</div></div><div class="lp-hdr-r">Substrato: Lactulose 20g<br>Protocolo de 180 minutos</div></div>'
+
+    // Paciente | Data
+    + '<div class="lp-pat"><div><div class="lp-lbl">Paciente</div><div class="lp-val">' + patName + '</div></div><div style="text-align:right"><div class="lp-lbl">Data do exame</div><div class="lp-val">' + dataFmt + '</div></div></div>'
+
+    // 1. Curva
+    + '<div class="lp-sec"><div class="lp-sec-ttl">1. Curva de hidrog\u00eanio expirado</div>'
+    + '<div class="lp-chart"><canvas id="chart-laudo-a4"></canvas></div>'
+    + '<div class="lp-chart-leg">'
+    + '<span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:16px;height:2px;background:#1D2846;vertical-align:middle"></span>H\u2082 medido</span>'
+    + '<span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:16px;border-top:2px dashed #10b981;vertical-align:middle"></span>Limite SIBO (20 ppm)</span>'
+    + '<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:7px;height:7px;background:#ef4444;border-radius:50%;display:inline-block"></span>Pico m\u00e1ximo</span>'
+    + '</div>'
+    + '<table class="lp-vtbl"><thead><tr><th>Tempo</th><th>H\u2082 (ppm)</th><th>\u0394 vs basal</th><th>Observa\u00e7\u00e3o</th></tr></thead><tbody>' + valRows + '</tbody></table>'
     + '</div>'
 
-    + siboHtml
-
-    + '<div class="laudo-section">'
-    + '<div class="laudo-section-title">1. Resultados</div>'
-    + '<table class="laudo-table"><thead><tr><th>Tempo</th><th>H\u2082 (ppm)</th></tr></thead><tbody>' + tabelaRows + '</tbody></table>'
+    // 2. Indicadores
+    + '<div class="lp-sec"><div class="lp-sec-ttl">2. Indicadores calculados</div>'
+    + '<div class="lp-ind">'
+    + '<div class="lp-ind-box"><div class="lp-ind-n">' + vArr[0] + '</div><div class="lp-ind-l">Basal (ppm)</div></div>'
+    + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.deltaH2 + '</div><div class="lp-ind-l">Delta H\u2082</div></div>'
+    + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.ifi + '</div><div class="lp-ind-l">IFI</div></div>'
+    + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.picoAbsoluto + '</div><div class="lp-ind-l">Pico m\u00e1x</div></div>'
+    + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.tempoPico90 + '</div><div class="lp-ind-l">Tempo pico</div></div>'
+    + '<div class="lp-ind-box"><div class="lp-ind-n" style="color:' + sgfCor + '">' + r.sgf + '</div><div class="lp-ind-l">AUC/SGF</div></div>'
+    + '</div>'
+    + '<div class="lp-gloss">'
+    + '<div class="lp-gi"><strong>SIBO</strong> \u2014 Supercrescimento Bacteriano do Intestino Delgado (Small Intestinal Bacterial Overgrowth)</div>'
+    + '<div class="lp-gi"><strong>Delta H\u2082</strong> \u2014 Diferen\u00e7a entre o pico de H\u2082 at\u00e9 90 min e o valor basal. Crit\u00e9rio diagn\u00f3stico SIBO: \u2265 20 ppm</div>'
+    + '<div class="lp-gi"><strong>IFI</strong> \u2014 \u00cdndice de Fermenta\u00e7\u00e3o Intestinal. Diferen\u00e7a entre o pico m\u00e1ximo absoluto e o basal</div>'
+    + '<div class="lp-gi"><strong>Pico m\u00e1x</strong> \u2014 Maior valor de H\u2082 registrado em qualquer ponto do exame (incluindo fase col\u00f4nica)</div>'
+    + '<div class="lp-gi"><strong>AUC</strong> \u2014 \u00c1rea Sob a Curva: produ\u00e7\u00e3o total de H\u2082 pelo m\u00e9todo trapezoidal</div>'
+    + '<div class="lp-gi"><strong>SGF</strong> \u2014 Score Global de Fermenta\u00e7\u00e3o (0\u2013100): integra IFI, pico, basal, fermenta\u00e7\u00e3o col\u00f4nica e sintomas</div>'
+    + '<div class="lp-gi"><strong>ISF</strong> \u2014 \u00cdndice de Sintomas de Fermenta\u00e7\u00e3o: pontua\u00e7\u00e3o por intensidade dos sintomas reproduzidos</div>'
+    + '<div class="lp-gi"><strong>H\u2082</strong> \u2014 Hidrog\u00eanio molecular (ppm = partes por milh\u00e3o): produzido por bact\u00e9rias ao fermentar carboidratos</div>'
+    + '</div>'
+    + '<div class="lp-badges">' + badgeSibo + '&nbsp;' + badgeSgf + '&nbsp;' + badgeIfi + '&nbsp;' + badgeFC + '&nbsp;' + badgeBasal + '</div>'
     + '</div>'
 
-    + '<div class="laudo-section">'
-    + '<div class="laudo-section-title">2. Indicadores</div>'
-    + '<div class="trhe-stat-grid">'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.deltaH2 + '</div><div class="trhe-stat-label">Delta H\u2082</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.ifi + '</div><div class="trhe-stat-label">IFI</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.auc + '</div><div class="trhe-stat-label">AUC</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.picoAbsoluto + '</div><div class="trhe-stat-label">Pico M\u00e1x</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.tempoPico90 + 'min</div><div class="trhe-stat-label">Tempo Pico 90</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num" style="font-size:12px;color:' + sgfCor + '">' + r.sgf + '</div><div class="trhe-stat-label">SGF</div></div>'
+    // 3. Laudo
+    + '<div class="lp-sec"><div class="lp-sec-ttl">3. Laudo m\u00e9dico</div>'
+    + '<div class="lp-strip">'
+    + '<div><div class="lp-si-l">Preparo adequado</div><div class="lp-si-v" style="color:' + (ex.preparo_adequado !== false ? '#166534' : '#991b1b') + '">' + (ex.preparo_adequado !== false ? 'Sim' : 'N\u00e3o \u2014 interpreta\u00e7\u00e3o limitada') + '</div></div>'
+    + '<div><div class="lp-si-l">Sintomas</div><div class="lp-si-v">' + (ex.sintomas || 'Sem sintomas') + '</div></div>'
+    + '<div><div class="lp-si-l">Intensidade</div><div class="lp-si-v">' + intensLabel + '</div></div>'
     + '</div>'
-    + '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
-    + '<span style="font-size:11px;font-weight:700;color:' + sgfCor + ';background:' + sgfBg + ';padding:3px 10px;border-radius:99px">' + r.classSGF + '</span>'
-    + '<span style="font-size:11px;font-weight:700;color:var(--navy);background:var(--bg);padding:3px 10px;border-radius:99px">' + r.perfilIFI + '</span>'
-    + (r.basalElevado ? '<span style="font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;padding:3px 10px;border-radius:99px">\u26a0\ufe0f Basal elevado</span>' : '')
-    + (r.fermentacaoColonica ? '<span style="font-size:11px;font-weight:700;color:#5b21b6;background:#ede9fe;padding:3px 10px;border-radius:99px">Ferment. col\u00f4nica</span>' : '')
-    + (r.baixaProducao ? '<span style="font-size:11px;font-weight:700;color:#6b7280;background:#f3f4f6;padding:3px 10px;border-radius:99px">Baixa produ\u00e7\u00e3o H\u2082</span>' : '')
-    + '</div></div>'
-
-    + '<div class="card" style="margin-bottom:12px"><canvas id="chart-trhe-laudo" height="150"></canvas></div>'
-
-    + '<div class="laudo-section">'
-    + '<div class="laudo-section-title">3. An\u00e1lise da Curva</div>'
-    + '<textarea class="laudo-editavel" id="lte-analise">' + (ex.laudo_analise_curva || '') + '</textarea>'
-    + '</div>'
-    + '<div class="laudo-section">'
-    + '<div class="laudo-section-title">4. Perfil Fermentativo</div>'
-    + '<textarea class="laudo-editavel" id="lte-perfil">' + (ex.laudo_perfil || '') + '</textarea>'
-    + '</div>'
-    + '<div class="laudo-section">'
-    + '<div class="laudo-section-title">5. Impress\u00e3o Cl\u00ednica</div>'
-    + '<textarea class="laudo-editavel" id="lte-impressao">' + (ex.laudo_impressao || '') + '</textarea>'
-    + '</div>'
-    + '<div class="laudo-section">'
-    + '<div class="laudo-section-title">6. Interpreta\u00e7\u00e3o Cl\u00ednica</div>'
-    + '<textarea class="laudo-editavel" id="lte-interp">' + (ex.laudo_interpretacao || '') + '</textarea>'
-    + '</div>'
-    + '<div class="laudo-section">'
-    + '<div class="laudo-section-title">7. Sintomas</div>'
-    + '<div style="font-size:13px;padding:10px 13px;background:var(--bg);border-radius:8px">'
-    + (ex.sintomas || 'Sem sintomas relatados')
-    + (ex.isf > 0 ? ' \u00b7 Intensidade: ' + (ex.isf === 3 ? 'Intenso' : ex.isf === 2 ? 'Moderado' : 'Leve') : '')
-    + '</div></div>'
-    + '<div class="laudo-section">'
-    + '<div class="laudo-section-title">8. Conclus\u00e3o</div>'
-    + '<textarea class="laudo-editavel" id="lte-conclusao">' + (ex.laudo_conclusao || '') + '</textarea>'
+    + '<div class="lp-ldblk"><div class="lp-ldlbl">An\u00e1lise da curva</div><div class="lp-ldtxt">' + (ex.laudo_analise_curva || '') + '</div></div>'
+    + '<div class="lp-ldblk"><div class="lp-ldlbl">Perfil fermentativo</div><div class="lp-ldtxt">' + (ex.laudo_perfil || '') + '</div></div>'
+    + '<div class="lp-ldblk"><div class="lp-ldlbl">Impress\u00e3o cl\u00ednica</div><div class="lp-ldtxt">' + (ex.laudo_impressao || '') + '</div></div>'
+    + '<div class="lp-ldblk"><div class="lp-ldlbl">Interpreta\u00e7\u00e3o cl\u00ednica</div><div class="lp-ldtxt">' + (ex.laudo_interpretacao || '') + '</div></div>'
+    + '<div class="lp-ldblk"><div class="lp-ldlbl">Conclus\u00e3o</div><div class="lp-ldtxt">' + (ex.laudo_conclusao || '') + '</div></div>'
     + '</div>'
 
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'
+    // 4. Diagnóstico
+    + '<div class="lp-sec"><div class="lp-sec-ttl">4. Diagn\u00f3stico</div>' + diagHtml + '</div>'
+
+    // 5. Tabelas
+    + '<div class="lp-sec"><div class="lp-sec-ttl">5. Tabelas de refer\u00eancia</div>'
+    + '<div class="lp-two">'
+    + '<div><span class="lp-tbl-cap">Crit\u00e9rios diagn\u00f3sticos SIBO (North American Consensus, 2017)</span><table class="lp-tbl"><thead><tr><th>Crit\u00e9rio</th><th>Refer\u00eancia</th><th>Este exame</th></tr></thead><tbody>'
+    + '<tr><td>Delta H\u2082 at\u00e9 90 min</td><td>\u2265 20 ppm = SIBO</td><td>' + siboTblRes + '</td></tr>'
+    + '<tr><td>Basal elevado</td><td>&gt; 20 ppm</td><td>' + basalTblRes + '</td></tr>'
+    + '<tr><td>Preparo</td><td>Adequado</td><td><span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">\u2713 ' + (ex.preparo_adequado !== false ? 'Adequado' : 'N\u00e3o adequado') + '</span></td></tr>'
+    + '</tbody></table></div>'
+    + '<div><span class="lp-tbl-cap">SGF \u2014 Score Global de Fermenta\u00e7\u00e3o (0\u2013100)</span><table class="lp-tbl"><thead><tr><th>Faixa</th><th>Classifica\u00e7\u00e3o</th></tr></thead><tbody>' + sgfTblRows + '</tbody></table></div>'
+    + '</div>'
+    + '<div class="lp-two">'
+    + '<div><span class="lp-tbl-cap">IFI \u2014 \u00cdndice de Fermenta\u00e7\u00e3o Intestinal</span><table class="lp-tbl"><thead><tr><th>Faixa IFI</th><th>Perfil fermentativo</th></tr></thead><tbody>' + ifiTblRows + '</tbody></table></div>'
+    + '<div><span class="lp-tbl-cap">ISF \u2014 \u00cdndice de Sintomas de Fermenta\u00e7\u00e3o</span><table class="lp-tbl"><thead><tr><th>Intensidade relatada</th><th>Pontua\u00e7\u00e3o ISF</th></tr></thead><tbody>' + isfTblRows + '</tbody></table></div>'
+    + '</div>'
+    + '</div>'
+
+    // Rodapé + assinatura
+    + '<div class="lp-ftr">'
+    + '<div class="lp-ftr-info">Cl\u00ednica Vitta | Alphaville &nbsp;\u00b7&nbsp; Emiss\u00e3o: ' + todayStr() + '</div>'
+    + '<div><div class="lp-sig"><div class="lp-sig-name">Dr. Jos\u00e9 Carlos Pinheiro J\u00fanior</div><div class="lp-sig-crm">M\u00e9dico &nbsp;|&nbsp; CRMSP: 166.182</div></div></div>'
+    + '</div>'
+
+    + '</div></div>';  // fecha laudo-print-page e laudo-print-overlay
+
+  // Botões no modal (fora da página de impressão)
+  const botoesHtml =
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
     + '<button class="btn btn-primary btn-sm" onclick="salvarEdicaoLaudo(' + ex.id + ')">\ud83d\udcbe Salvar Edi\u00e7\u00f5es</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="showFormTRHE(' + ex.id + ')">\u270f\ufe0f Editar Dados</button>'
-    + '<button class="btn btn-ghost btn-sm" onclick="imprimirLaudo()">\ud83d\udda8\ufe0f Imprimir Laudo</button>'
+    + '<button class="btn btn-accent btn-sm" onclick="abrirLaudoImpressao()">\ud83d\udda8\ufe0f Imprimir / Salvar PDF</button>'
     + '<button class="btn-icon" onclick="deletarTRHE(' + ex.id + ')" style="margin-left:auto">\ud83d\uddd1</button>'
-    + '</div></div>';
+    + '</div>'
+    + '<div id="laudo-edit-area">'
+    // Áreas de edição rápida
+    + _buildEditSection('An\u00e1lise da curva', 'lte-analise', ex.laudo_analise_curva)
+    + _buildEditSection('Perfil fermentativo', 'lte-perfil', ex.laudo_perfil)
+    + _buildEditSection('Impress\u00e3o cl\u00ednica', 'lte-impressao', ex.laudo_impressao)
+    + _buildEditSection('Interpreta\u00e7\u00e3o cl\u00ednica', 'lte-interp', ex.laudo_interpretacao)
+    + _buildEditSection('Conclus\u00e3o', 'lte-conclusao', ex.laudo_conclusao)
+    + '</div>'
+    + laudoHtml;
 
-  showGenericModal(html, '\ud83e\udeb2 Laudo TRHE');
+  showGenericModal(botoesHtml, '\ud83e\udeb2 Laudo TRHE \u2014 ' + patName);
 
-  // Render chart in modal
+  window.abrirLaudoImpressao = function() {
+    const overlay = document.getElementById('laudo-print-overlay');
+    if (overlay) {
+      overlay.style.display = 'block';
+      setTimeout(() => window.print(), 400);
+    }
+  };
+  window.fecharLaudoPrint = function() {
+    const overlay = document.getElementById('laudo-print-overlay');
+    if (overlay) overlay.style.display = 'none';
+  };
+
   setTimeout(() => {
-    const canvas = document.getElementById('chart-trhe-laudo');
+    const canvas = document.getElementById('chart-laudo-a4');
     if (!canvas) return;
-    const labels = ['Basal','15','30','45','60','90','120','150','180'];
-    const data = tKeys.map(k => vals[k] || 0);
+    const grad = canvas.getContext('2d').createLinearGradient(0, 0, 0, 160);
+    grad.addColorStop(0, 'rgba(29,40,70,0.15)');
+    grad.addColorStop(1, 'rgba(29,40,70,0.01)');
     new Chart(canvas, {
       type: 'line',
       data: {
-        labels,
-        datasets: [{
-          label: 'H\u2082 (ppm)',
-          data,
-          borderColor: '#1D2846',
-          backgroundColor: 'rgba(29,40,70,.08)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 5,
-          borderWidth: 2,
-          pointBackgroundColor: data.map((v,i) => v === picoAbs ? '#ef4444' : '#1D2846')
-        }]
+        labels: ['Basal','15','30','45','60','90','120','150','180'],
+        datasets: [
+          { label: 'H\u2082', data: vArr, borderColor: '#1D2846', backgroundColor: grad, fill: true, tension: 0.3,
+            pointRadius: vArr.map(v => v === picoAbs ? 7 : 4),
+            pointBackgroundColor: vArr.map(v => v === picoAbs ? '#ef4444' : '#1D2846'),
+            pointBorderColor: vArr.map(v => v === picoAbs ? '#ef4444' : '#1D2846'),
+            borderWidth: 2, order: 1 },
+          { label: 'Limite', data: Array(9).fill(20), borderColor: '#10b981', backgroundColor: 'transparent',
+            borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, fill: false, order: 2 }
+        ]
       },
       options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          annotation: {}
-        },
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + ' ppm' } } },
         scales: {
-          x: { title: { display: true, text: 'Tempo (min)', font: { size: 11 } }, grid: { display: false } },
-          y: { title: { display: true, text: 'H\u2082 (ppm)', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,.06)' } }
+          x: { title: { display: true, text: 'Tempo (min)', font: { size: 9 }, color: '#666' }, grid: { display: false }, ticks: { font: { size: 9 }, color: '#555' } },
+          y: { title: { display: true, text: 'H\u2082 (ppm)', font: { size: 9 }, color: '#666' }, grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { size: 9 }, color: '#555' }, min: 0 }
         }
       }
     });
-  }, 200);
+  }, 250);
 }
+
+function _buildEditSection(label, id, value) {
+  return '<div style="margin-bottom:8px">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">' + label + '</div>'
+    + '<textarea id="' + id + '" style="width:100%;padding:8px 10px;background:var(--white);border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;color:var(--text);resize:vertical;min-height:56px">' + (value || '') + '</textarea>'
+    + '</div>';
+}
+
 
 async function salvarEdicaoLaudo(id) {
   const updates = {
