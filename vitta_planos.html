@@ -2410,7 +2410,11 @@ async function saveNewPatient(){
 
 let relCharts={};
 function destroyRelCharts(){Object.values(relCharts).forEach(c=>{try{c.destroy()}catch(e){}});relCharts={};}
-function getMonthRange(period){
+function getMonthRange(period,customStart,customEnd){
+  if(period==='custom'&&customStart&&customEnd){
+    const ps=customStart.split('-');const pe=customEnd.split('-');
+    return{start:new Date(parseInt(ps[0]),parseInt(ps[1])-1,parseInt(ps[2])),end:new Date(parseInt(pe[0]),parseInt(pe[1])-1,parseInt(pe[2]),23,59,59)};
+  }
   const now=new Date();let start,end;
   if(period==='mes'){start=new Date(now.getFullYear(),now.getMonth(),1);end=new Date(now.getFullYear(),now.getMonth()+1,0);}
   else if(period==='trimestre'){const q=Math.floor(now.getMonth()/3);start=new Date(now.getFullYear(),q*3,1);end=new Date(now.getFullYear(),q*3+3,0);}
@@ -2424,17 +2428,53 @@ function dateInRange(dateStr,start,end){
   if(p.length!==3)return false;
   const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));return d>=start&&d<=end;
 }
-async function renderRelatorios(period){
-  period=period||'mes';destroyRelCharts();
+
+let _relTab='financeiro';
+function renderRelatorios(period){
+  _relTab=_relTab||'financeiro';
+  period=period||'mes';
+  destroyRelCharts();
   const c=document.getElementById('main-content');
-  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando relat\u00f3rio...</div>';
+  const pL={mes:'M\u00eas',trimestre:'Trimestre',semestre:'Semestre',ano:'Ano',custom:'Per\u00edodo'};
+  const periodos=['mes','trimestre','semestre','ano'];
+  const periodBtns=periodos.map(p=>'<button class="btn btn-sm '+(period===p?'btn-primary':'btn-ghost')+'" onclick="window._relPeriod=\''+p+'\';renderRelatorios(\''+p+'\')">'+pL[p]+'</button>').join('');
+  const customBlock='<div id="rel-custom-wrap" style="display:'+(period==='custom'?'flex':'none')+';gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">'
+    +'<span style="font-size:12px;font-weight:600;color:var(--text-muted)">De</span>'
+    +'<input type="date" id="rel-custom-start" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px" value="'+(window._relCStart||'')+'" onchange="window._relCStart=this.value"/>'
+    +'<span style="font-size:12px;font-weight:600;color:var(--text-muted)">at\u00e9</span>'
+    +'<input type="date" id="rel-custom-end" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px" value="'+(window._relCEnd||'')+'" onchange="window._relCEnd=this.value"/>'
+    +'<button class="btn btn-accent btn-sm" onclick="window._relPeriod=\'custom\';renderRelatorios(\'custom\')">Aplicar</button>'
+    +'</div>';
+  c.innerHTML='<div class="card" style="margin-bottom:0">'
+    +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+    +'<div style="font-weight:700;font-size:13px;color:var(--text-muted)">Per\u00edodo:</div>'
+    +periodBtns
+    +'<button class="btn btn-sm '+(period==='custom'?'btn-primary':'btn-ghost')+'" onclick="document.getElementById(\'rel-custom-wrap\').style.display=\'flex\';window._relPeriod=\'custom\'">Per\u00edodo livre</button>'
+    +'</div>'
+    +customBlock
+    +'</div>'
+    +'<div class="subtabs" style="margin-top:12px">'
+    +'<button class="subtab '+(_relTab==='financeiro'?'active':'')+'" onclick="_relTab=\'financeiro\';renderRelatorios(window._relPeriod||\'mes\')">\ud83d\udcb0 Financeiro</button>'
+    +'<button class="subtab '+(_relTab==='injetaveis'?'active':'')+'" onclick="_relTab=\'injetaveis\';renderRelatorios(window._relPeriod||\'mes\')">\ud83d\udc89 Ijet\u00e1veis Enviados</button>'
+    +'</div>'
+    +'<div id="rel-sub-content"><div class="loading"><div class="spinner"></div>Carregando...</div></div>';
+  window._relPeriod=period;
+  if(_relTab==='financeiro')_renderRelFinanceiro(period);
+  else _renderRelInjetaveis(period);
+}
+
+async function _renderRelFinanceiro(period){
+  const cstart=window._relCStart||null;
+  const cend=window._relCEnd||null;
+  const {start,end}=getMonthRange(period,cstart,cend);
+  const sub=document.getElementById('rel-sub-content');
+  sub.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
   const [{data:patients},{data:fin},{data:sessoes},{data:ciclos}]=await Promise.all([
     sb.from('planos_patients').select('*'),
     sb.from('planos_financeiro').select('*'),
     sb.from('planos_soro_sessoes').select('*'),
     sb.from('planos_historico_ciclos').select('*')
   ]);
-  const {start,end}=getMonthRange(period);
   const allP=patients||[],allF=fin||[],allS=sessoes||[],allC=ciclos||[];
   const finPeriod=allF.filter(f=>dateInRange(f.data_pagamento,start,end));
   const totalFat=finPeriod.reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
@@ -2454,13 +2494,11 @@ async function renderRelatorios(period){
   const fimQ=allC.filter(ci=>ci.motivo==='fim').length,desQ=allC.filter(ci=>ci.motivo==='desistencia').length;
   const tipoCount={};allS.forEach(s=>{const t=s.tipo_sessao||'N\u00e3o especificado';tipoCount[t]=(tipoCount[t]||0)+1;});
   const tipoLabels=Object.keys(tipoCount),tipoData=Object.values(tipoCount);
-  const pL={mes:'M\u00eas Atual',trimestre:'Trimestre',semestre:'Semestre',ano:'Ano'};
-  const periodos=['mes','trimestre','semestre','ano'];
-  let periodBtns=periodos.map(p=>'<button class="btn btn-sm '+(period===p?'btn-primary':'btn-ghost')+'" onclick="renderRelatorios(\''+p+'\')">'+pL[p]+'</button>').join('');
-  c.innerHTML='<div class="card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="font-weight:700;font-size:14px">Per\u00edodo:</div>'+periodBtns+'<div style="flex:1"></div><button class="btn btn-sm btn-ghost" onclick="exportRelExcel()">\ud83d\udcca Excel</button></div>'
-    +'<div class="section-header"><div class="section-title">\ud83d\udcb0 Financeiro \u2014 '+pL[period]+'</div></div>'
+  sub.innerHTML=
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn btn-sm btn-ghost" onclick="exportRelExcel()">\ud83d\udcca Exportar CSV</button></div>'
+    +'<div class="section-header"><div class="section-title">\ud83d\udcb0 Financeiro</div></div>'
     +'<div class="dash-grid-2">'
-    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">R$ '+totalFat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="dash-card-label">Faturamento</div><div class="dash-card-sub">'+finPeriod.length+' pagamento(s)</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">R$ '+totalFat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="dash-card-label">Faturamento no per\u00edodo</div><div class="dash-card-sub">'+finPeriod.length+' pagamento(s)</div></div>'
     +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">R$ '+avgPat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="dash-card-label">M\u00e9dia por Paciente</div></div>'
     +'</div>'
     +'<div class="section-header"><div class="section-title">\ud83d\udccb Planos</div></div>'
@@ -2483,6 +2521,141 @@ async function renderRelatorios(period){
     relCharts['enc']=new Chart(document.getElementById('chart-enc'),{type:'bar',data:{labels:['Fim do Plano','Desist\u00eancia'],datasets:[{data:[fimQ,desQ],backgroundColor:['#3b82f6','#f97316'],borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{stepSize:1},grid:{color:'rgba(0,0,0,.06)'}}}}});
   },150);
 }
+
+async function _renderRelInjetaveis(period){
+  const cstart=window._relCStart||null;
+  const cend=window._relCEnd||null;
+  const {start,end}=getMonthRange(period,cstart,cend);
+  const sub=document.getElementById('rel-sub-content');
+  sub.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  const [{data:patients},{data:envios},{data:sessoes}]=await Promise.all([
+    sb.from('planos_patients').select('id,name,modality,plan_type'),
+    sb.from('planos_soro_envios').select('*').order('data_envio',{ascending:false}),
+    sb.from('planos_soro_sessoes').select('id,patient_id,envio_id,data_sessao,tipo_sessao')
+  ]);
+  const patMap={};(patients||[]).forEach(p=>patMap[p.id]=p);
+  const enviosPeriod=(envios||[]).filter(e=>dateInRange(e.data_envio,start,end));
+
+  // Busca por paciente
+  let busca=window._injetBusca||'';
+  const normBusca=normStr(busca);
+  const enviosFiltrados=normBusca
+    ?enviosPeriod.filter(e=>{const p=patMap[e.patient_id];return p&&normStr(p.name).includes(normBusca);})
+    :enviosPeriod;
+
+  // Totais
+  const totalEV=enviosFiltrados.reduce((s,e)=>s+(e.sessoes_ev||0),0);
+  const totalIM=enviosFiltrados.reduce((s,e)=>s+(e.sessoes_im||0),0);
+  const totalSessoes=totalEV+totalIM;
+  const patsUnicos=new Set(enviosFiltrados.map(e=>e.patient_id)).size;
+
+  // Sessoes realizadas vinculadas
+  const sessMap={};(sessoes||[]).forEach(s=>{if(s.envio_id){if(!sessMap[s.envio_id])sessMap[s.envio_id]=[];sessMap[s.envio_id].push(s);}});
+
+  // Por paciente agrupado
+  const byPat={};
+  enviosFiltrados.forEach(e=>{
+    if(!byPat[e.patient_id])byPat[e.patient_id]={envios:[],totalEV:0,totalIM:0,totalSessFeitas:0};
+    byPat[e.patient_id].envios.push(e);
+    byPat[e.patient_id].totalEV+=(e.sessoes_ev||0);
+    byPat[e.patient_id].totalIM+=(e.sessoes_im||0);
+    byPat[e.patient_id].totalSessFeitas+=(sessMap[e.id]||[]).length;
+  });
+
+  // Substâncias mais enviadas
+  const subsCount={};
+  enviosFiltrados.forEach(e=>{
+    if(!e.substancias)return;
+    e.substancias.split(/[,\n;]/).map(s=>s.trim()).filter(Boolean).forEach(sub=>{
+      const k=sub.toLowerCase().slice(0,40);
+      subsCount[k]=(subsCount[k]||0)+1;
+    });
+  });
+  const topSubs=Object.entries(subsCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  sub.innerHTML=
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn btn-sm btn-ghost" onclick="exportInjetaveisCSV()">\ud83d\udcca Exportar CSV</button></div>'
+    // Cards resumo
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+enviosFiltrados.length+'</div><div class="dash-card-label">Envios no per\u00edodo</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+patsUnicos+'</div><div class="dash-card-label">Pacientes atendidos</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+totalEV+'<span style="font-size:14px;font-weight:400"> EV</span></div><div class="dash-card-label">Sess\u00f5es EV prescritas</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+totalIM+'<span style="font-size:14px;font-weight:400"> IM</span></div><div class="dash-card-label">Sess\u00f5es IM prescritas</div></div>'
+    +'</div>'
+    // Busca
+    +'<div class="search-bar" style="margin-bottom:12px"><span>\ud83d\udd0d</span>'
+    +'<input type="text" placeholder="Filtrar por paciente..." value="'+busca+'" oninput="window._injetBusca=this.value;_renderRelInjetaveis(window._relPeriod||\'mes\')" autocomplete="off"/>'
+    +(busca?'<button class="btn btn-ghost btn-sm" onclick="window._injetBusca=\'\';_renderRelInjetaveis(window._relPeriod||\'mes\')">Limpar</button>':'')
+    +'</div>'
+    // Substâncias top
+    +(topSubs.length
+      ?'<div class="card" style="margin-bottom:12px"><div class="card-title">Substâncias mais enviadas (extraído dos textos)</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px">'
+      +topSubs.map(([sub,cnt])=>'<span style="background:#f0f9ff;border:1px solid #bae6fd;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:600;color:#0369a1">'+sub+' <span style="background:#0369a1;color:#fff;border-radius:99px;padding:1px 7px;font-size:11px">'+cnt+'</span></span>').join('')
+      +'</div></div>'
+      :'')
+    // Lista por paciente
+    +'<div class="section-header"><div class="section-title">Por Paciente ('+Object.keys(byPat).length+')</div></div>'
+    +(!Object.keys(byPat).length
+      ?'<div class="empty"><div class="empty-icon">\ud83d\udc89</div>Nenhum envio encontrado neste per\u00edodo</div>'
+      :Object.entries(byPat).sort((a,b)=>{
+          const na=(patMap[a[0]]&&patMap[a[0]].name)||'';
+          const nb=(patMap[b[0]]&&patMap[b[0]].name)||'';
+          return na.localeCompare(nb);
+        }).map(([patId,info])=>{
+          const p=patMap[patId]||{name:'Paciente #'+patId};
+          const totalPrescrito=info.totalEV+info.totalIM;
+          const pct=totalPrescrito>0?Math.round((info.totalSessFeitas/totalPrescrito)*100):0;
+          const barCor=pct>=80?'var(--success)':pct>=50?'var(--warning)':'var(--danger)';
+          const cId='inj-det-'+patId;
+          return '<div class="prog-row" style="margin-bottom:8px">'
+            +'<div class="prog-header" onclick="toggleEnvioCard(\''+cId+'\',this)">'
+            +'<div class="patient-avatar" style="width:38px;height:38px;font-size:14px">'+p.name.charAt(0)+'</div>'
+            +'<div style="flex:1;min-width:0">'
+            +'<div style="font-weight:700;font-size:14px">'+p.name+'</div>'
+            +'<div style="font-size:12px;color:var(--text-muted);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
+            +'<span>\ud83d\udce6 '+info.envios.length+' envio(s)</span>'
+            +'<span>EV: <strong>'+info.totalEV+'</strong> \u00b7 IM: <strong>'+info.totalIM+'</strong></span>'
+            +'<span style="color:var(--success);font-weight:600">'+info.totalSessFeitas+' sess\u00f5es realizadas</span>'
+            +'</div>'
+            +'<div style="margin-top:6px;display:flex;align-items:center;gap:8px">'
+            +'<div style="flex:1;height:6px;background:var(--border-light);border-radius:99px;overflow:hidden">'
+            +'<div style="width:'+Math.min(pct,100)+'%;height:100%;background:'+barCor+';border-radius:99px;transition:width .3s"></div>'
+            +'</div>'
+            +'<span style="font-size:11px;font-weight:700;color:'+barCor+';min-width:36px">'+pct+'%</span>'
+            +'</div>'
+            +'</div>'
+            +'<button class="btn btn-ghost btn-sm" onclick="openPatient('+patId+')" style="flex-shrink:0;margin-right:4px">\ud83d\udcc2</button>'
+            +'<span class="envio-arrow" style="color:var(--text-muted);font-size:14px;transition:transform .2s">\u25bc</span>'
+            +'</div>'
+            +'<div id="'+cId+'" style="display:none;border-top:1px solid var(--border-light);padding:12px 16px">'
+            +info.envios.map((e,ei)=>{
+              const sessFeitasEnvio=(sessMap[e.id]||[]);
+              const totEnvio=(e.sessoes_ev||0)+(e.sessoes_im||0);
+              const proxData=e.data_envio?addDaysToDisplay(e.data_envio,28):'\u2014';
+              return '<div style="padding:10px 0;border-bottom:1px solid var(--border-light)">'
+                +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+                +'<div style="flex:1">'
+                +'<div style="font-weight:700;font-size:13px">\ud83d\udce6 Envio '+(ei+1)+' \u00b7 '+fmtDate(e.data_envio)+'</div>'
+                +'<div style="font-size:12px;color:var(--text-muted);margin-top:4px">'
+                +'EV: '+( e.sessoes_ev||0)+' \u00b7 IM: '+(e.sessoes_im||0)+' \u00b7 Total: '+totEnvio
+                +' \u00b7 Realizadas: <strong style="color:var(--success)">'+sessFeitasEnvio.length+'</strong>'
+                +'</div>'
+                +'<div style="font-size:12px;color:var(--text-muted);margin-top:2px">Pr\u00f3ximo envio estimado: <strong>'+proxData+'</strong></div>'
+                +(e.substancias?'<div style="font-size:12px;margin-top:6px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;color:#0369a1"><strong>Substâncias:</strong> '+e.substancias+'</div>':'')
+                +(sessFeitasEnvio.length
+                  ?'<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">'
+                    +sessFeitasEnvio.map(s=>'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600">\u2713 '+fmtDate(s.data_sessao||'')+(s.tipo_sessao?' \u00b7 '+s.tipo_sessao:'')+'</span>').join('')
+                  +'</div>'
+                  :'<div style="font-size:12px;color:var(--text-muted);margin-top:6px;font-style:italic">Nenhuma sess\u00e3o realizada vinculada</div>')
+                +'</div>'
+                +'<span class="user-badge">'+(e.registrado_por||'')+'</span>'
+                +'</div></div>';
+            }).join('')
+            +'</div></div>';
+        }).join(''));
+}
+
 async function exportRelExcel(){
   const [{data:patients},{data:fin},{data:sessoes}]=await Promise.all([sb.from('planos_patients').select('*'),sb.from('planos_financeiro').select('*'),sb.from('planos_soro_sessoes').select('*')]);
   const patMap={};(patients||[]).forEach(p=>patMap[p.id]=p.name);
@@ -2494,8 +2667,35 @@ async function exportRelExcel(){
   (sessoes||[]).forEach(s=>{const subsSafe=(s.substancias||'').replace(/"/g,"'");csv+='"'+(patMap[s.patient_id]||s.patient_id)+'","'+(s.tipo_sessao||'')+'","'+(s.data_sessao||'')+'","'+subsSafe+'"\n';});
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='relatorio_vitta_'+todayStr().replace(/\//g,'-')+'.csv';a.click();
-  toast('Excel exportado!','success');
+  const a=document.createElement('a');a.href=url;a.download='relatorio_financeiro_vitta_'+todayStr().replace(/\//g,'-')+'.csv';a.click();
+  toast('CSV exportado!','success');
+}
+
+async function exportInjetaveisCSV(){
+  const period=window._relPeriod||'mes';
+  const {start,end}=getMonthRange(period,window._relCStart||null,window._relCEnd||null);
+  const [{data:patients},{data:envios},{data:sessoes}]=await Promise.all([
+    sb.from('planos_patients').select('id,name,modality,plan_type'),
+    sb.from('planos_soro_envios').select('*').order('data_envio',{ascending:false}),
+    sb.from('planos_soro_sessoes').select('id,patient_id,envio_id,data_sessao,tipo_sessao')
+  ]);
+  const patMap={};(patients||[]).forEach(p=>patMap[p.id]=p);
+  const sessMap={};(sessoes||[]).forEach(s=>{if(s.envio_id){if(!sessMap[s.envio_id])sessMap[s.envio_id]=[];sessMap[s.envio_id].push(s);}});
+  const enviosFiltrados=(envios||[]).filter(e=>dateInRange(e.data_envio,start,end));
+  let csv='RELAT\u00d3RIO IJET\u00c1VEIS ENVIADOS \u2014 CL\u00cdNICA VITTA\n\n';
+  csv+='Paciente,Modalidade,Data Envio,Sess\u00f5es EV,Sess\u00f5es IM,Total Prescrito,Sess\u00f5es Realizadas,Pr\u00f3ximo Envio,Substâncias,Registrado por\n';
+  enviosFiltrados.forEach(e=>{
+    const p=patMap[e.patient_id]||{name:'#'+e.patient_id,modality:''};
+    const totPrescr=(e.sessoes_ev||0)+(e.sessoes_im||0);
+    const totFeitas=(sessMap[e.id]||[]).length;
+    const prox=e.data_envio?addDaysToDisplay(e.data_envio,28):'-';
+    const subsSafe=(e.substancias||'').replace(/"/g,"'").replace(/\n/g,' ');
+    csv+='"'+p.name+'","'+(p.modality||'')+'","'+fmtDate(e.data_envio)+'","'+(e.sessoes_ev||0)+'","'+(e.sessoes_im||0)+'","'+totPrescr+'","'+totFeitas+'","'+prox+'","'+subsSafe+'","'+(e.registrado_por||'')+'"\n';
+  });
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='injetaveis_vitta_'+todayStr().replace(/\//g,'-')+'.csv';a.click();
+  toast('CSV exportado!','success');
 }
 const manifest={name:'Cl\u00ednica Vitta | Alphaville',short_name:'Vitta Planos',start_url:'/',display:'standalone',background_color:'#1D2846',theme_color:'#1D2846',icons:[{src:'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 100 100%22%3E%3Crect width%3D%22100%22 height%3D%22100%22 rx%3D%2220%22 fill%3D%22%231D2846%22%2F%3E%3Ctext x%3D%2250%22 y%3D%2272%22 text-anchor%3D%22middle%22 font-size%3D%2260%22%3E%F0%9F%8F%A5%3C%2Ftext%3E%3C%2Fsvg%3E',sizes:'192x192',type:'image/svg+xml'}]};
 document.getElementById('pwa-manifest').href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
