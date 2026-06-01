@@ -2681,21 +2681,129 @@ async function exportInjetaveisCSV(){
   ]);
   const patMap={};(patients||[]).forEach(p=>patMap[p.id]=p);
   const sessMap={};(sessoes||[]).forEach(s=>{if(s.envio_id){if(!sessMap[s.envio_id])sessMap[s.envio_id]=[];sessMap[s.envio_id].push(s);}});
-  const enviosFiltrados=(envios||[]).filter(e=>dateInRange(e.data_envio,start,end));
-  let csv='RELAT\u00d3RIO IJET\u00c1VEIS ENVIADOS \u2014 CL\u00cdNICA VITTA\n\n';
-  csv+='Paciente,Modalidade,Data Envio,Sess\u00f5es EV,Sess\u00f5es IM,Total Prescrito,Sess\u00f5es Realizadas,Pr\u00f3ximo Envio,Substâncias,Registrado por\n';
-  enviosFiltrados.forEach(e=>{
-    const p=patMap[e.patient_id]||{name:'#'+e.patient_id,modality:''};
+  const enviosFiltrados=(envios||[]).filter(e=>dateInRange(e.data_envio,start,end))
+    .sort((a,b)=>{
+      const na=(patMap[a.patient_id]&&patMap[a.patient_id].name)||'';
+      const nb=(patMap[b.patient_id]&&patMap[b.patient_id].name)||'';
+      return na.localeCompare(nb)||parseDateInt(fmtDate(a.data_envio))-parseDateInt(fmtDate(b.data_envio));
+    });
+
+  // Carrega SheetJS dinamicamente se necessário
+  if(!window.XLSX){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload=res;s.onerror=rej;
+      document.head.appendChild(s);
+    });
+  }
+  const XLSX=window.XLSX;
+
+  // Monta dados da planilha
+  const periodoLabel=period==='mes'?'M\u00eas Atual':period==='trimestre'?'Trimestre':period==='semestre'?'Semestre':period==='ano'?'Ano Atual':((window._relCStart||'')+' a '+(window._relCEnd||''));
+  const totalEV=enviosFiltrados.reduce((s,e)=>s+(e.sessoes_ev||0),0);
+  const totalIM=enviosFiltrados.reduce((s,e)=>s+(e.sessoes_im||0),0);
+  const totalFeitas=enviosFiltrados.reduce((s,e)=>s+(sessMap[e.id]||[]).length,0);
+  const patsUnicos=new Set(enviosFiltrados.map(e=>e.patient_id)).size;
+
+  // Cabeçalho com metadados
+  const wsData=[];
+  wsData.push(['CL\u00cdNICA VITTA \u2014 RELAT\u00d3RIO DE IJET\u00c1VEIS ENVIADOS']);
+  wsData.push(['Per\u00edodo: '+periodoLabel,'','Gerado em: '+todayStr()]);
+  wsData.push([]);
+  wsData.push(['RESUMO','','','','']);
+  wsData.push(['Total de Envios','Pacientes','Sess\u00f5es EV','Sess\u00f5es IM','Realizadas']);
+  wsData.push([enviosFiltrados.length,patsUnicos,totalEV,totalIM,totalFeitas]);
+  wsData.push([]);
+
+  // Cabeçalho da tabela principal
+  wsData.push([
+    'Paciente',
+    'Modalidade',
+    'Data do Envio',
+    'Pr\u00f3ximo Envio (28d)',
+    'Sess\u00f5es EV',
+    'Sess\u00f5es IM',
+    'Total Prescrito',
+    'Sess\u00f5es Realizadas',
+    'Aproveitamento (%)',
+    'Substâncias',
+    'Registrado por'
+  ]);
+
+  // Linha de destaque para separar por paciente
+  let lastPat='';
+  enviosFiltrados.forEach((e,idx)=>{
+    const p=patMap[e.patient_id]||{name:'#'+e.patient_id,modality:'',plan_type:''};
     const totPrescr=(e.sessoes_ev||0)+(e.sessoes_im||0);
-    const totFeitas=(sessMap[e.id]||[]).length;
+    const sessFeitasEnvio=(sessMap[e.id]||[]);
+    const totFeitas=sessFeitasEnvio.length;
+    const pct=totPrescr>0?Math.round((totFeitas/totPrescr)*100):0;
     const prox=e.data_envio?addDaysToDisplay(e.data_envio,28):'-';
-    const subsSafe=(e.substancias||'').replace(/"/g,"'").replace(/\n/g,' ');
-    csv+='"'+p.name+'","'+(p.modality||'')+'","'+fmtDate(e.data_envio)+'","'+(e.sessoes_ev||0)+'","'+(e.sessoes_im||0)+'","'+totPrescr+'","'+totFeitas+'","'+prox+'","'+subsSafe+'","'+(e.registrado_por||'')+'"\n';
+    const subsLimpa=(e.substancias||'').replace(/\n/g,' \u00b7 ').trim();
+
+    // Linha separadora quando muda de paciente
+    if(p.name!==lastPat&&idx>0){
+      wsData.push([]);
+    }
+    lastPat=p.name;
+
+    wsData.push([
+      p.name,
+      p.modality||'',
+      fmtDate(e.data_envio),
+      prox,
+      e.sessoes_ev||0,
+      e.sessoes_im||0,
+      totPrescr,
+      totFeitas,
+      pct+'%',
+      subsLimpa,
+      e.registrado_por||''
+    ]);
+
+    // Sub-linhas com sessões realizadas
+    if(sessFeitasEnvio.length>0){
+      sessFeitasEnvio.forEach(s=>{
+        wsData.push([
+          '  \u21b3 Sess\u00e3o realizada',
+          '',
+          fmtDate(s.data_sessao||''),
+          '',
+          s.tipo_sessao&&s.tipo_sessao.includes('EV')?1:0,
+          s.tipo_sessao&&s.tipo_sessao.includes('IM')?1:0,
+          '',
+          '',
+          '',
+          s.tipo_sessao||'',
+          ''
+        ]);
+      });
+    }
   });
-  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='injetaveis_vitta_'+todayStr().replace(/\//g,'-')+'.csv';a.click();
-  toast('CSV exportado!','success');
+
+  // Cria workbook
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+
+  // Larguras das colunas
+  ws['!cols']=[
+    {wch:30}, // Paciente
+    {wch:12}, // Modalidade
+    {wch:14}, // Data Envio
+    {wch:18}, // Próximo Envio
+    {wch:10}, // EV
+    {wch:10}, // IM
+    {wch:14}, // Total
+    {wch:14}, // Realizadas
+    {wch:14}, // %
+    {wch:50}, // Substâncias
+    {wch:16}  // Registrado por
+  ];
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Ijet\u00e1veis Enviados');
+  XLSX.writeFile(wb,'injetaveis_vitta_'+todayStr().replace(/\//g,'-')+'.xlsx');
+  toast('Planilha Excel exportada!','success');
 }
 const manifest={name:'Cl\u00ednica Vitta | Alphaville',short_name:'Vitta Planos',start_url:'/',display:'standalone',background_color:'#1D2846',theme_color:'#1D2846',icons:[{src:'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 100 100%22%3E%3Crect width%3D%22100%22 height%3D%22100%22 rx%3D%2220%22 fill%3D%22%231D2846%22%2F%3E%3Ctext x%3D%2250%22 y%3D%2272%22 text-anchor%3D%22middle%22 font-size%3D%2260%22%3E%F0%9F%8F%A5%3C%2Ftext%3E%3C%2Fsvg%3E',sizes:'192x192',type:'image/svg+xml'}]};
 document.getElementById('pwa-manifest').href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
