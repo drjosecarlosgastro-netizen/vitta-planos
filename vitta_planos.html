@@ -1113,12 +1113,13 @@ async function showLaudoTRHE(id) {
     ex.preparo_adequado !== false
   );
 
-  const siboHtml = ex.sibo
-    ? '<div class="sibo-positivo"><div style="font-weight:700;color:#991b1b;font-size:14px">\u2713 SIBO POSITIVO</div><div style="font-size:12px;color:#991b1b;margin-top:4px">Delta H\u2082 = ' + ex.delta_h2 + ' ppm \u2265 20 ppm at\u00e9 90 minutos.</div></div>'
-    : '<div class="sibo-negativo"><div style="font-weight:700;color:#166534;font-size:14px">SIBO NEGATIVO</div><div style="font-size:12px;color:#166534;margin-top:4px">Delta H\u2082 = ' + ex.delta_h2 + ' ppm &lt; 20 ppm.</div></div>';
+  // Sempre usa valores recalculados (r), nunca os salvos no banco
+  const siboHtml = r.sibo
+    ? '<div class="sibo-positivo"><div style="font-weight:700;color:#991b1b;font-size:14px">\u2713 SIBO POSITIVO</div><div style="font-size:12px;color:#991b1b;margin-top:4px">Delta H\u2082 = ' + r.deltaH2 + ' ppm \u2265 20 ppm at\u00e9 90 minutos.</div></div>'
+    : '<div class="sibo-negativo"><div style="font-weight:700;color:#166534;font-size:14px">SIBO NEGATIVO</div><div style="font-size:12px;color:#166534;margin-top:4px">Delta H\u2082 = ' + r.deltaH2 + ' ppm &lt; 20 ppm.</div></div>';
 
-  const sgfCor = ex.sgf >= 61 ? '#dc2626' : ex.sgf >= 41 ? '#d97706' : ex.sgf >= 21 ? '#2563eb' : '#6b7280';
-  const sgfBg = ex.sgf >= 61 ? '#fee2e2' : ex.sgf >= 41 ? '#fef3c7' : ex.sgf >= 21 ? '#dbeafe' : '#f3f4f6';
+  const sgfCor = r.sgf >= 61 ? '#dc2626' : r.sgf >= 41 ? '#d97706' : r.sgf >= 21 ? '#2563eb' : '#6b7280';
+  const sgfBg = r.sgf >= 61 ? '#fee2e2' : r.sgf >= 41 ? '#fef3c7' : r.sgf >= 21 ? '#dbeafe' : '#f3f4f6';
 
   // Tabela de valores
   const tempos = ['Basal', '15 min', '30 min', '45 min', '60 min', '90 min', '120 min', '150 min', '180 min'];
@@ -1151,19 +1152,19 @@ async function showLaudoTRHE(id) {
     + '<div class="laudo-section">'
     + '<div class="laudo-section-title">2. Indicadores</div>'
     + '<div class="trhe-stat-grid">'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.delta_h2 + '</div><div class="trhe-stat-label">Delta H\u2082</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.ifi + '</div><div class="trhe-stat-label">IFI</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.auc + '</div><div class="trhe-stat-label">AUC</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.pico_h2_absoluto + '</div><div class="trhe-stat-label">Pico M\u00e1x</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + ex.tempo_pico_90 + 'min</div><div class="trhe-stat-label">Tempo Pico 90</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num" style="font-size:12px;color:' + sgfCor + '">' + ex.sgf + '</div><div class="trhe-stat-label">SGF</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.deltaH2 + '</div><div class="trhe-stat-label">Delta H\u2082</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.ifi + '</div><div class="trhe-stat-label">IFI</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.auc + '</div><div class="trhe-stat-label">AUC</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.picoAbsoluto + '</div><div class="trhe-stat-label">Pico M\u00e1x</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.tempoPico90 + 'min</div><div class="trhe-stat-label">Tempo Pico 90</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num" style="font-size:12px;color:' + sgfCor + '">' + r.sgf + '</div><div class="trhe-stat-label">SGF</div></div>'
     + '</div>'
     + '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
-    + '<span style="font-size:11px;font-weight:700;color:' + sgfCor + ';background:' + sgfBg + ';padding:3px 10px;border-radius:99px">' + ex.classificacao_sgf + '</span>'
-    + '<span style="font-size:11px;font-weight:700;color:var(--navy);background:var(--bg);padding:3px 10px;border-radius:99px">' + ex.perfil_fermentativo + '</span>'
-    + (ex.basal_elevado ? '<span style="font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;padding:3px 10px;border-radius:99px">\u26a0\ufe0f Basal elevado</span>' : '')
-    + (ex.fermentacao_colonica ? '<span style="font-size:11px;font-weight:700;color:#5b21b6;background:#ede9fe;padding:3px 10px;border-radius:99px">Ferment. col\u00f4nica</span>' : '')
-    + (ex.baixa_producao_h2 ? '<span style="font-size:11px;font-weight:700;color:#6b7280;background:#f3f4f6;padding:3px 10px;border-radius:99px">Baixa produ\u00e7\u00e3o H\u2082</span>' : '')
+    + '<span style="font-size:11px;font-weight:700;color:' + sgfCor + ';background:' + sgfBg + ';padding:3px 10px;border-radius:99px">' + r.classSGF + '</span>'
+    + '<span style="font-size:11px;font-weight:700;color:var(--navy);background:var(--bg);padding:3px 10px;border-radius:99px">' + r.perfilIFI + '</span>'
+    + (r.basalElevado ? '<span style="font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;padding:3px 10px;border-radius:99px">\u26a0\ufe0f Basal elevado</span>' : '')
+    + (r.fermentacaoColonica ? '<span style="font-size:11px;font-weight:700;color:#5b21b6;background:#ede9fe;padding:3px 10px;border-radius:99px">Ferment. col\u00f4nica</span>' : '')
+    + (r.baixaProducao ? '<span style="font-size:11px;font-weight:700;color:#6b7280;background:#f3f4f6;padding:3px 10px;border-radius:99px">Baixa produ\u00e7\u00e3o H\u2082</span>' : '')
     + '</div></div>'
 
     + '<div class="card" style="margin-bottom:12px"><canvas id="chart-trhe-laudo" height="150"></canvas></div>'
