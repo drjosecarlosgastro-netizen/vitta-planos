@@ -864,7 +864,7 @@ async function showFormBio(id) {
     + '<div id="bio-diag-gord-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Gordura Visceral</label>'
     + '<div id="bio-diag-visc-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
-    + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Controle Muscular</label>'
+    + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Peso Ideal / Meta</label>'
     + '<div id="bio-ctrl-musc-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Nota do Médico</label>'
@@ -912,13 +912,20 @@ async function showFormBio(id) {
     if (elImc && imc) { elImc.textContent = dImc; elImc.style.cssText += ';' + tagStyle(dImc, ['Normal'], ['Sobrepeso', 'Baixo peso']); }
     if (elGord && perc) { elGord.textContent = dGord; elGord.style.cssText += ';' + tagStyle(dGord, ['Normal'], []); }
     if (elVisc && visc) { elVisc.textContent = dVisc + ' (nível ' + visc + ')'; elVisc.style.cssText += ';' + tagStyle(dVisc, ['Normal'], ['Limite normal']); }
-    if (elCtrl && ctrlMusc !== null) {
-      elCtrl.textContent = (ctrlMusc >= 0 ? '+' : '') + ctrlMusc + ' kg — ' + (ctrlMusc >= 0 ? 'No ideal' : 'Abaixo do ideal');
-      elCtrl.style.cssText += ';' + (ctrlMusc >= 0 ? 'color:#1a7a3e;background:#e8f8ee;border:1px solid #a3d9b8' : 'color:#9a5c00;background:#fef3e2;border:1px solid #f0c97a');
+    if (elCtrl && bioAltura) {
+      var pesoAtual = parseFloat((document.getElementById('bio-amg_peso') || {}).value || 0);
+      var pesoIdeal = parseFloat((bioAltura * bioAltura * 24.9).toFixed(1));
+      var deltaPeso = pesoAtual ? parseFloat((pesoAtual - pesoIdeal).toFixed(1)) : null;
+      if (pesoIdeal) {
+        var txt = 'Ideal: ' + pesoIdeal + ' kg';
+        if (deltaPeso !== null) txt += ' (' + (deltaPeso > 0 ? '+' : '') + deltaPeso + ' kg)';
+        elCtrl.textContent = txt;
+        elCtrl.style.cssText += ';' + (deltaPeso === null || Math.abs(deltaPeso) < 2 ? 'color:#1a7a3e;background:#e8f8ee;border:1px solid #a3d9b8' : deltaPeso > 0 ? 'color:#9a5c00;background:#fef3e2;border:1px solid #f0c97a' : 'color:#1a7a3e;background:#e8f8ee;border:1px solid #a3d9b8');
+      }
     }
   }
   setTimeout(function() {
-    ['bio-imc','bio-perc_gordura','bio-gordura_visceral','bio-amg_musculo'].forEach(function(fid) {
+    ['bio-imc','bio-perc_gordura','bio-gordura_visceral','bio-amg_musculo','bio-amg_peso'].forEach(function(fid) {
       var el = document.getElementById(fid);
       if (el) el.addEventListener('input', calcDiagBio);
     });
@@ -973,12 +980,16 @@ async function salvarBio(id) {
       var v = fnum('gordura_visceral'); if (!v) return null;
       return v <= 9 ? 'Normal' : v <= 14 ? 'Limite normal' : 'Alto';
     })(),
-    ctrl_muscular: (function() {
-      var mm = fnum('amg_musculo'); var alt = parseFloat(p.altura || 0);
-      var sx = (p.gender || '').toLowerCase();
-      if (!mm || !alt) return null;
-      var ideal = sx === 'masculino' || sx === 'male' ? (alt * alt * 8.0) : (alt * alt * 6.5);
-      return parseFloat((mm - ideal).toFixed(1));
+    peso_ideal: (function() {
+      var alt = parseFloat(p.altura || 0);
+      if (!alt) return null;
+      return parseFloat((alt * alt * 24.9).toFixed(1));
+    })(),
+    delta_peso_ideal: (function() {
+      var alt = parseFloat(p.altura || 0);
+      var pesoAtual = fnum('amg_peso');
+      if (!alt || !pesoAtual) return null;
+      return parseFloat((pesoAtual - (alt * alt * 24.9)).toFixed(1));
     })(),
     nota_medico: fv('nota'),
     altura: p.altura || null,
@@ -1270,8 +1281,8 @@ async function gerarLaudoBio(id) {
     + '<div class="di"><div class="dl">IMC</div><div class="dv">' + (atual.imc || '--') + '</div><div class="dr">Normal: 18,5–24,9</div>' + diagTag(atual.diag_imc) + '</div>'
     + '<div class="di"><div class="dl">% Gordura</div><div class="dv">' + (atual.perc_gordura || '--') + '%</div><div class="dr">Normal: 21–33%</div>' + diagTag(atual.diag_gordura) + '</div>'
     + '<div class="di"><div class="dl">Gord. Visceral</div><div class="dv">Nível ' + (atual.gordura_visceral || '--') + '</div><div class="dr">Normal: 1–9</div>' + diagTag(atual.diag_visceral) + '</div>'
-    + '<div class="di"><div class="dl">Ctrl. Muscular</div><div class="dv">' + (atual.ctrl_muscular !== null && atual.ctrl_muscular !== undefined ? (atual.ctrl_muscular > 0 ? '+' : '') + atual.ctrl_muscular + ' kg' : '--') + '</div><div class="dr">' + (atual.ctrl_muscular < 0 ? 'Abaixo do ideal' : 'Acima ou no ideal') + '</div>'
-    + (atual.ctrl_muscular < 0 ? '<span style="display:inline-block;margin-top:4px;padding:1px 7px;border-radius:8px;font-size:9px;font-weight:600;background:#fef3e2;color:#9a5c00;border:1px solid #f0c97a">Abaixo ideal</span>' : '<span style="display:inline-block;margin-top:4px;padding:1px 7px;border-radius:8px;font-size:9px;font-weight:600;background:#e8f8ee;color:#1a7a3e;border:1px solid #a3d9b8">No ideal</span>')
+    + '<div class="di"><div class="dl">Peso Ideal / Meta</div><div class="dv">' + (atual.peso_ideal ? atual.peso_ideal + ' kg' : '--') + '</div><div class="dr">' + (atual.delta_peso_ideal !== null && atual.delta_peso_ideal !== undefined ? (atual.delta_peso_ideal > 0 ? '+' : '') + atual.delta_peso_ideal + ' kg do ideal' : 'IMC 24,9') + '</div>'
+    + (atual.delta_peso_ideal > 2 ? '<span style="display:inline-block;margin-top:4px;padding:1px 7px;border-radius:8px;font-size:9px;font-weight:600;background:#fef3e2;color:#9a5c00;border:1px solid #f0c97a">Acima do ideal</span>' : '<span style="display:inline-block;margin-top:4px;padding:1px 7px;border-radius:8px;font-size:9px;font-weight:600;background:#e8f8ee;color:#1a7a3e;border:1px solid #a3d9b8">No ideal</span>')
     + '</div></div></div>'
     + '</div>'
 
