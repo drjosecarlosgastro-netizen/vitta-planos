@@ -1994,37 +1994,54 @@ async function saveContrato(){
 async function deleteContrato(id){await sb.from('planos_contratos').delete().eq('id',id);patTab('contrato');}
 
 async function renderHistorico(){
-  const[{data:appts},{data:fin},{data:soro},{data:impl},{data:ciclos},{data:edicoes}]=await Promise.all([
+  const[{data:appts},{data:fin},{data:soro},{data:impl},{data:ciclos},{data:edicoes},{data:histOcorr}]=await Promise.all([
     sb.from('planos_appointments').select('*').eq('patient_id',currentPatientId).order('created_at'),
     sb.from('planos_financeiro').select('*').eq('patient_id',currentPatientId),
     sb.from('planos_soro_sessoes').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false}),
     sb.from('planos_implantes').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false}),
     sb.from('planos_historico_ciclos').select('*').eq('patient_id',currentPatientId).order('created_at'),
-    sb.from('planos_historico_edicoes').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false}).limit(50)
+    sb.from('planos_historico_edicoes').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false}).limit(50),
+    sb.from('planos_appt_historico').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false})
   ]);
   const c=document.getElementById('patient-tab-content');
   const totalFin=(fin||[]).reduce((s,i)=>s+(parseFloat(i.valor)||0),0);
-  const consultasLista=(appts||[]).filter(a=>a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+  const consultasLista=(appts||[]).filter(a=>!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
   const soroLista=soro||[];
   const implLista=impl||[];
   let html='';
-  html+='<div class="card"><div class="card-title">Resumo do Plano</div><div class="grid-3">'
-    +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+consultasLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Consultas</div></div>'
+  html+='<div class="card"><div class="card-title">Resumo do Plano</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
+    +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+totalComp+'</div><div style="font-size:11px;color:var(--text-muted)">Consultas</div></div>'
+    +'<div style="text-align:center;background:#fef3c7;border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:#92400e">'+totalFalt+'</div><div style="font-size:11px;color:#92400e">Faltas</div></div>'
     +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+soroLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Sess\u00f5es Soro</div></div>'
     +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+implLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Implantes</div></div>'
     +'</div></div>';
-  html+='<div class="card"><div class="card-title" style="margin-bottom:10px">\ud83e\ude7a Consultas ('+consultasLista.length+')</div>';
+  const totalComp=consultasLista.filter(a=>a.status==='Compareceu').length;
+  const totalFalt=consultasLista.filter(a=>a.status==='Faltou').length;
+  const totalCanc=consultasLista.filter(a=>a.status==='Cancelou').length;
+  const totalFaltas=(histOcorr||[]).filter(h=>h.tipo==='falta').length;
+  html+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    +'<div class="card-title" style="margin:0">\ud83e\ude7a Consultas e Ocorr\u00eancias</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +(totalComp>0?'<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700">\u2713 '+totalComp+' comparec.</span>':'')
+    +(totalFalt>0?'<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700">\u26a0\ufe0f '+totalFalt+' falta(s)</span>':'')
+    +(totalCanc>0?'<span style="background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700">\u274c '+totalCanc+' cancelam.</span>':'')
+    +'</div></div>';
   if(consultasLista.length){
     consultasLista.forEach(a=>{
-      const statusCls=a.status==='Compareceu'?'pill-green':a.status==='Faltou'?'pill-red':a.status==='Cancelou'?'pill-amber':'pill-blue';
-      html+='<div class="hist-box hist-box-consult">'
+      const isFalta=a.status==='Faltou';const isCanc=a.status==='Cancelou';const isComp=a.status==='Compareceu';
+      const statusCls=isComp?'pill-green':isFalta?'pill-red':isCanc?'pill-amber':'pill-blue';
+      const borderClr=isFalta?'border-left:3px solid #f59e0b;background:#fffbeb':isCanc?'border-left:3px solid #ef4444;background:#fff9f9':'';
+      const icon=isComp?'\u2705':isFalta?'\u26a0\ufe0f':isCanc?'\u274c':'\ud83d\udcc5';
+      const ocorr=(histOcorr||[]).find(h=>h.appointment_id===a.id&&(h.tipo==='falta'||h.tipo==='cancelamento'));
+      html+='<div class="hist-box hist-box-consult" style="'+borderClr+'">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
-        +'<div><div style="font-weight:700;font-size:14px">\ud83d\udcc5 '+fmtDate(a.date_str)+'</div>'
-        +'<div style="font-size:13px;color:var(--text-muted);margin-top:3px">'+(a.procedimento||'')+(a.tipo?' \u00b7 '+a.tipo:'')+'</div>'
+        +'<div style="flex:1"><div style="font-weight:700;font-size:14px">'+icon+' '+fmtDate(a.date_str)+(a.time_str?' \u00b7 '+a.time_str:'')+'</div>'
+        +'<div style="font-size:13px;color:var(--text-muted);margin-top:2px">'+(a.procedimento||'')+(a.tipo?' \u00b7 '+a.tipo:'')+'</div>'
         +(a.profissional_nome?'<div style="font-size:12px;color:var(--navy);font-weight:600;margin-top:2px">\ud83d\udc64 '+a.profissional_nome+'</div>':'')
-        +(a.observacao?'<div style="font-size:12px;color:var(--text-muted);margin-top:2px;font-style:italic">'+a.observacao+'</div>':'')
-        +'</div><span class="pill '+statusCls+'">'+a.status+'</span></div></div>';
-    });
+        +(ocorr&&ocorr.observacao?'<div style="font-size:12px;color:#92400e;margin-top:3px;font-style:italic">\ud83d\udcac '+ocorr.observacao+'</div>':'')
+        +((!ocorr&&a.observacao)?'<div style="font-size:12px;color:var(--text-muted);margin-top:2px;font-style:italic">'+a.observacao+'</div>':'')
+        +'</div><span class="pill '+statusCls+'">'+(a.status||'Agendado')+'</span></div></div>';
+    });;
   }else{html+='<div class="text-muted text-sm">Nenhuma consulta registrada</div>';}
   html+='</div>';
   html+='<div class="card"><div class="card-title" style="margin-bottom:10px">\ud83d\udc89 Sess\u00f5es de Soroterapia ('+soroLista.length+')</div>';
