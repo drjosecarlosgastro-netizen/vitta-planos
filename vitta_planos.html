@@ -1049,16 +1049,6 @@ async function gerarLaudoBio(id) {
   const deltaPeso = primeiroAnterior && atual.peso && primeiroAnterior.peso ? (atual.peso - primeiroAnterior.peso) : null;
   const deltaGord = primeiroAnterior && atual.gordura_corporal && primeiroAnterior.gordura_corporal ? (atual.gordura_corporal - primeiroAnterior.gordura_corporal) : null;
 
-  // Referências para radar (% do ideal por segmento)
-  const refMusc = { braco: 3.0, perna: 10.0 };
-  const radarData = [
-    atual.seg_braco_d ? Math.round((atual.seg_braco_d / refMusc.braco) * 100) : 0,
-    atual.seg_perna_d ? Math.round((atual.seg_perna_d / refMusc.perna) * 100) : 0,
-    atual.seg_perna_e ? Math.round((atual.seg_perna_e / refMusc.perna) * 100) : 0,
-    atual.seg_braco_e ? Math.round((atual.seg_braco_e / refMusc.braco) * 100) : 0
-  ].map(function(v) { return Math.min(100, v); });
-  const temRadar = radarData.some(function(v){ return v > 0; });
-
   // Equilíbrio L/R
   const eqBraco = atual.seg_braco_d && atual.seg_braco_e ? Math.round((1 - Math.abs(atual.seg_braco_d - atual.seg_braco_e) / Math.max(atual.seg_braco_d, atual.seg_braco_e)) * 100) : null;
   const eqPerna = atual.seg_perna_d && atual.seg_perna_e ? Math.round((1 - Math.abs(atual.seg_perna_d - atual.seg_perna_e) / Math.max(atual.seg_perna_d, atual.seg_perna_e)) * 100) : null;
@@ -1277,15 +1267,12 @@ async function gerarLaudoBio(id) {
     + '<div class="mr"><span class="mnm">Taxa Metab. Basal</span><div class="mbar"><div class="mfil" style="width:70%;background:#34d399"></div></div><span class="mval" style="color:#1a7a3e">' + (atual.tmb || '--') + ' kcal</span></div>'
     + '</div></div>'
 
-    // SEGMENTAR + EQUILÍBRIO + RADAR + DIAGNÓSTICO
-    + '<div style="display:grid;grid-template-columns:95px 1fr 140px 1fr;gap:4mm;align-items:start">'
+    // SEGMENTAR + EQUILÍBRIO + DIAGNÓSTICO
+    + '<div style="display:grid;grid-template-columns:95px 1fr 1fr;gap:4mm;align-items:start">'
     + '<div class="card" style="padding:4px;display:flex;justify-content:center"><div class="ctop"></div>' + silhuetaSVG(atual) + '</div>'
     + '<div class="card"><div class="ctop"></div><div class="ct">Equilíbrio D / E</div>' + lrHtml(atual)
     + (simetria ? '<div style="margin-top:5px;padding:5px 8px;background:var(--goldf);border:1px solid var(--bd);border-radius:2px"><div style="font-size:6.5pt;letter-spacing:2px;text-transform:uppercase;color:#7a7a7a">Simetria</div><div style="font-size:14pt;font-weight:700;color:var(--gold)">' + simetria + '%</div></div>' : '')
     + '</div>'
-    + '<div class="card" style="padding:6px"><div class="ctop"></div><div class="ct">Radar Muscular</div>'
-    + '<div style="position:relative;width:128px;height:128px"><canvas id="laudoRadar" width="128" height="128" role="img" aria-label="Radar muscular">Dados segmentares</canvas></div>'
-    + '<div style="font-size:7pt;color:#7a7a7a;text-align:center;margin-top:2px">% do ideal</div></div>'
     + '<div class="card"><div class="ctop"></div><div class="ct">Diagnóstico</div>'
     + '<div class="dg">'
     + '<div class="di"><div class="dl">IMC</div><div class="dv">' + (atual.imc || '--') + '</div><div class="dr">Normal: 18,5–24,9</div>' + diagTag(atual.diag_imc) + '</div>'
@@ -1326,7 +1313,6 @@ async function gerarLaudoBio(id) {
     + '<script>'
     + 'var _sc=' + score + ';'
     + 'var _ed=' + JSON.stringify(historico.map(function(h) { return { label: fmtDate(h.data_exame), peso: h.peso, gord: h.gordura_corporal, magra: h.massa_magra }; })) + ';'
-    + 'var _rd=' + JSON.stringify(radarData) + ';'
     + 'window.onload=function(){'
     + 'var circ=182,dur=900,t0=Date.now();'
     + 'var arc=document.getElementById("laudoArc"),snum=document.getElementById("laudoScore");'
@@ -1335,7 +1321,6 @@ async function gerarLaudoBio(id) {
     + 'btn.innerHTML="<span style=\'color:rgba(255,255,255,0.6);font-size:12px;font-family:Rajdhani,sans-serif;flex:1\'>Cl\u00ednica Vitta | Bioimpedância</span><button onclick=\'window.print()\' style=\'background:#C9A84C;color:#1D2846;border:none;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer\'>\ud83d\udda8\ufe0f Imprimir</button><button onclick=\'salvarPDF()\' style=\'background:transparent;color:#C9A84C;border:2px solid #C9A84C;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer\'> Salvar PDF</button><button onclick=\'window.close()\' style=\'background:transparent;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.2);padding:8px 14px;border-radius:4px;font-size:12px;cursor:pointer\'>\u2715 Fechar</button>";'
     + 'document.body.insertBefore(btn,document.body.firstChild);document.body.style.paddingTop="52px";'
     + 'if(document.getElementById("laudoEvo")&&_ed.length>=1){new Chart(document.getElementById("laudoEvo"),{type:"line",data:{labels:_ed.map(function(d){return d.label;}),datasets:[{label:"Gordura",data:_ed.map(function(d){return d.gord;}),borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.08)",borderWidth:2.5,pointBackgroundColor:"#C9A84C",pointRadius:7,tension:0.35,fill:true},{label:"Massa Magra",data:_ed.map(function(d){return d.magra;}),borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.08)",borderWidth:2.5,pointBackgroundColor:"#34d399",pointRadius:7,tension:0.35,fill:true},{label:"Peso",data:_ed.map(function(d){return d.peso;}),borderColor:"#60a5fa",borderDash:[5,4],borderWidth:2,pointBackgroundColor:"#60a5fa",pointRadius:7,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"#fff",borderColor:"rgba(139,106,26,0.3)",borderWidth:1,titleColor:"#8B6A1A",bodyColor:"#3a3a3a",padding:8}},scales:{x:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:10},autoSkip:false}},y:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:10}},min:20,max:90}}}}}); }'
-    + 'setTimeout(function(){var rc=document.getElementById("laudoRadar");if(rc){rc.width=128;rc.height=128;new Chart(rc,{type:"radar",data:{labels:["Bra\u00e7o D","Perna D","Perna E","Bra\u00e7o E"],datasets:[{data:_rd,borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.15)",borderWidth:2,pointBackgroundColor:"#C9A84C",pointRadius:4}]},options:{responsive:false,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:8},backdropColor:"transparent",color:"#7a7a7a"},grid:{color:"rgba(0,0,0,0.08)"},angleLines:{color:"rgba(0,0,0,0.1)"},pointLabels:{font:{size:9,family:"Rajdhani"},color:"#3a3a3a"}}}}});}},400);'
     + '};'
     + 'function salvarPDF(){var b=document.getElementById("btn-bar");if(b)b.style.display="none";document.body.style.paddingTop="0";window.print();setTimeout(function(){if(b){b.style.display="flex";document.body.style.paddingTop="52px";}},1200);}'
     + '<\/script><\/body><\/html>';
