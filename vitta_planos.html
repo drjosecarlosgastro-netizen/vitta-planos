@@ -818,6 +818,8 @@ async function showFormBio(id) {
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Data do Exame</label>'
     + '<input type="date" id="bio-data" value="' + reg.data_exame + '" style="padding:6px 8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px"></div>'
+    + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Altura (m)</label>'
+    + '<input type="number" id="bio-altura" step="0.01" min="1" max="2.5" value="' + (reg.altura || p.altura || '') + '" placeholder="ex: 1.62" style="padding:6px 8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px"></div>'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Responsável</label>'
     + '<select id="bio-resp" style="padding:6px 8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px">' + profOpts + '</select></div>'
     + '</div>'
@@ -905,6 +907,7 @@ async function showFormBio(id) {
       if (warnVals && warnVals.indexOf(v) >= 0) return 'color:#9a5c00;background:#fef3e2;border:1px solid #f0c97a';
       return 'color:#a32d2d;background:#fdf0f0;border:1px solid #f09595';
     }
+    var bioAlturaInput = parseFloat((document.getElementById('bio-altura') || {}).value || bioAltura || 0);
     var elImc = document.getElementById('bio-diag-imc-display');
     var elGord = document.getElementById('bio-diag-gord-display');
     var elVisc = document.getElementById('bio-diag-visc-display');
@@ -912,9 +915,9 @@ async function showFormBio(id) {
     if (elImc && imc) { elImc.textContent = dImc; elImc.style.cssText += ';' + tagStyle(dImc, ['Normal'], ['Sobrepeso', 'Baixo peso']); }
     if (elGord && perc) { elGord.textContent = dGord; elGord.style.cssText += ';' + tagStyle(dGord, ['Normal'], []); }
     if (elVisc && visc) { elVisc.textContent = dVisc + ' (nível ' + visc + ')'; elVisc.style.cssText += ';' + tagStyle(dVisc, ['Normal'], ['Limite normal']); }
-    if (elCtrl && bioAltura) {
+    if (elCtrl && bioAlturaInput) {
       var pesoAtual = parseFloat((document.getElementById('bio-amg_peso') || {}).value || 0);
-      var pesoIdeal = parseFloat((bioAltura * bioAltura * 24.9).toFixed(1));
+      var pesoIdeal = parseFloat((bioAlturaInput * bioAlturaInput * 24.9).toFixed(1));
       var deltaPeso = pesoAtual ? parseFloat((pesoAtual - pesoIdeal).toFixed(1)) : null;
       if (pesoIdeal) {
         var txt = 'Ideal: ' + pesoIdeal + ' kg';
@@ -925,7 +928,7 @@ async function showFormBio(id) {
     }
   }
   setTimeout(function() {
-    ['bio-imc','bio-perc_gordura','bio-gordura_visceral','bio-amg_musculo','bio-amg_peso'].forEach(function(fid) {
+    ['bio-imc','bio-perc_gordura','bio-gordura_visceral','bio-amg_musculo','bio-amg_peso','bio-altura'].forEach(function(fid) {
       var el = document.getElementById(fid);
       if (el) el.addEventListener('input', calcDiagBio);
     });
@@ -992,7 +995,7 @@ async function salvarBio(id) {
       return parseFloat((pesoAtual - (alt * alt * 24.9)).toFixed(1));
     })(),
     nota_medico: fv('nota'),
-    altura: p.altura || null,
+    altura: fnum('altura') || parseFloat(p.altura || 0) || null,
     sexo: p.gender || null,
     updated_by: currentUser.name,
     updated_at: new Date().toISOString()
@@ -1020,7 +1023,7 @@ async function gerarLaudoBio(id) {
   if (!atual) { toast('Registro não encontrado', 'error'); return; }
   const p = currentPatientData;
   const nome = p.name || '';
-  const idade = p.birth_date ? (new Date().getFullYear() - parseInt(p.birth_date)) + ' anos' : '--';
+  const idade = p.dob ? (new Date().getFullYear() - new Date(p.dob).getFullYear()) + ' anos' : '--';
   const sexo = p.gender || '--';
   const altura = atual.altura ? atual.altura + ' m' : (p.altura ? p.altura + ' m' : '--');
   const resp = atual.responsavel || 'Dra. Bruna';
@@ -1035,9 +1038,10 @@ async function gerarLaudoBio(id) {
   score = Math.min(100, Math.max(0, score));
 
   // Evolução (últimas 3 avaliações incluindo atual)
-  if (!atual.peso_ideal && atual.altura) {
-    var altH = parseFloat(atual.altura);
-    atual.peso_ideal = parseFloat((altH * altH * 24.9).toFixed(1));
+  var _altRef = parseFloat(atual.altura || 0);
+  if (!_altRef && p.altura) _altRef = parseFloat(p.altura);
+  if (_altRef) {
+    atual.peso_ideal = parseFloat((_altRef * _altRef * 24.9).toFixed(1));
     if (atual.peso) atual.delta_peso_ideal = parseFloat((atual.peso - atual.peso_ideal).toFixed(1));
   }
   const historico = lista.slice(-3);
@@ -1327,12 +1331,12 @@ async function gerarLaudoBio(id) {
     + 'var evoData=' + JSON.stringify(historico.map(function(h) { return { label: fmtDate(h.data_exame), peso: h.peso, gord: h.gordura_corporal, magra: h.massa_magra }; })) + ';'
     + 'if(document.getElementById("laudoEvo")&&evoData.length>=1){'
     + 'new Chart(document.getElementById("laudoEvo"),{type:"line",data:{labels:evoData.map(function(d){return d.label;}),datasets:['
-    + '{label:"Gordura",data:evoData.map(function(d){return d.gord;}),borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.07)",borderWidth:2,pointBackgroundColor:"#C9A84C",pointRadius:4,tension:0.35,fill:true},'
-    + '{label:"Massa Magra",data:evoData.map(function(d){return d.magra;}),borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.07)",borderWidth:2,pointBackgroundColor:"#34d399",pointRadius:4,tension:0.35,fill:true},'
-    + '{label:"Peso",data:evoData.map(function(d){return d.peso;}),borderColor:"#60a5fa",borderDash:[5,4],borderWidth:1.5,pointBackgroundColor:"#60a5fa",pointRadius:4,tension:0.35}'
+    + '{label:"Gordura",data:evoData.map(function(d){return d.gord;}),borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.07)",borderWidth:2,pointBackgroundColor:"#C9A84C",pointRadius:6,pointStyle:"circle",tension:0.35,fill:true,spanGaps:true},' 
+    + '{label:"Massa Magra",data:evoData.map(function(d){return d.magra;}),borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.07)",borderWidth:2,pointBackgroundColor:"#34d399",pointRadius:6,pointStyle:"circle",tension:0.35,fill:true,spanGaps:true},' 
+    + '{label:"Peso",data:evoData.map(function(d){return d.peso;}),borderColor:"#60a5fa",borderDash:[5,4],borderWidth:1.5,pointBackgroundColor:"#60a5fa",pointRadius:6,pointStyle:"circle",tension:0.35,spanGaps:true}'
     + ']},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:9},autoSkip:false}},y:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:9}},min:20,max:90}}}}});}'
     + 'var radarData=' + JSON.stringify(radarData) + ';'
-    + 'var temRadar=' + (temRadar ? 'true' : 'false') + ';'
+    + 'var temRadar=true;'
     + 'if(document.getElementById("laudoRadar")&&temRadar){'
     + 'new Chart(document.getElementById("laudoRadar"),{type:"radar",data:{labels:["Braço D","Perna D","Perna E","Braço E"],datasets:[{data:radarData,borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.15)",borderWidth:1.5,pointBackgroundColor:"#C9A84C",pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:7},backdropColor:"transparent",color:"#7a7a7a"},grid:{color:"rgba(0,0,0,0.08)"},angleLines:{color:"rgba(0,0,0,0.1)"},pointLabels:{font:{size:8,family:"Rajdhani"},color:"#3a3a3a"}}}}});}'
     + 'window.onload=function(){'
