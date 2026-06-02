@@ -823,9 +823,9 @@ async function showFormBio(id) {
     + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Análise Músculo-Gordura (InBody)</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + fields('Peso (% do normal)', 'amg_peso_perc', reg.amg_peso_perc, '%')
-    + fields('Massa Muscular Esq. (% do normal)', 'amg_musculo_perc', reg.amg_musculo_perc, '%')
-    + fields('Massa de Gordura (% do normal)', 'amg_gordura_perc', reg.amg_gordura_perc, '%')
+    + fields('Peso', 'amg_peso', reg.amg_peso, 'kg')
+    + fields('Massa Muscular Esq.', 'amg_musculo', reg.amg_musculo, 'kg')
+    + fields('Massa de Gordura', 'amg_gordura', reg.amg_gordura, 'kg')
     + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Composição Corporal</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
@@ -839,9 +839,9 @@ async function showFormBio(id) {
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Índices & Metabolismo</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + fields('IMC', 'imc', reg.imc, 'kg/m²')
-    + fields('% Gordura', 'perc_gordura', reg.perc_gordura, '%')
+    + fields('PGC (%)', 'perc_gordura', reg.perc_gordura, '%')
     + fields('TMB', 'tmb', reg.tmb, 'kcal', '1')
-    + fields('SMI', 'smi', reg.smi, 'kg/m²')
+    + fields('Índice de Músculo Esq. (kg/m²)', 'smi', reg.smi, 'kg/m²')
     + fields('Gord. Visceral', 'gordura_visceral', reg.gordura_visceral, 'nível', '1')
     + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Análise Segmentar (kg de músculo)</div>'
@@ -864,7 +864,7 @@ async function showFormBio(id) {
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Diagnóstico IMC</label>'
     + '<div id="bio-diag-imc-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
-    + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Diagnóstico % Gordura</label>'
+    + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Diagnóstico PGC</label>'
     + '<div id="bio-diag-gord-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Gordura Visceral</label>'
     + '<div id="bio-diag-visc-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
@@ -941,9 +941,9 @@ async function salvarBio(id) {
     data_exame: fv('data'),
     responsavel: respParts[0] || '',
     responsavel_crm: respParts[1] || '',
-    amg_peso_perc: fnum('amg_peso_perc'),
-    amg_musculo_perc: fnum('amg_musculo_perc'),
-    amg_gordura_perc: fnum('amg_gordura_perc'),
+    amg_peso: fnum('amg_peso'),
+    amg_musculo: fnum('amg_musculo'),
+    amg_gordura: fnum('amg_gordura'),
     peso: fnum('peso'),
     massa_magra: fnum('massa_magra'),
     gordura_corporal: fnum('gordura_corporal'),
@@ -1208,48 +1208,44 @@ async function gerarLaudoBio(id) {
     + '<div class="body">'
 
     // ANÁLISE MÚSCULO-GORDURA
-    + (atual.amg_peso_perc || atual.amg_musculo_perc || atual.amg_gordura_perc ? (function(){
-      function amgBar(label, perc, colorOk, colorBad) {
-        var p = parseFloat(perc) || 100;
-        // escala: 70=leftmost, 100=normal center, 160=rightmost
-        // zona normal: 80-120%; abaixo: <80%; acima: >120%
-        var MIN=70, MAX=160, NORM_L=80, NORM_R=120;
-        var pct = Math.min(Math.max(p, MIN), MAX);
-        var markerLeft = ((pct - MIN) / (MAX - MIN)) * 100;
-        var zone = p < NORM_L ? 'Abaixo' : p > NORM_R ? 'Acima' : 'Normal';
-        var zoneColor = p < NORM_L ? '#9a5c00' : p > NORM_R ? '#a32d2d' : '#1a7a3e';
-        var zoneTag = p < NORM_L ? 'background:#fef3e2;color:#9a5c00;border:1px solid #f0c97a'
-          : p > NORM_R ? 'background:#fdf0f0;color:#a32d2d;border:1px solid #f09595'
+    + (atual.amg_peso || atual.amg_musculo || atual.amg_gordura ? (function(){
+      function amgBar(label, val, min, max, normL, normR) {
+        var v = parseFloat(val) || 0;
+        if (!v) return '';
+        var vC = Math.min(Math.max(v, min), max);
+        var markerLeft = ((vC - min) / (max - min)) * 100;
+        var nL = ((normL - min) / (max - min)) * 100;
+        var nW = ((normR - normL) / (max - min)) * 100;
+        var zone = v < normL ? 'Abaixo' : v > normR ? 'Acima' : 'Normal';
+        var zoneTag = v < normL ? 'background:#fef3e2;color:#9a5c00;border:1px solid #f0c97a'
+          : v > normR ? 'background:#fdf0f0;color:#a32d2d;border:1px solid #f09595'
           : 'background:#e8f8ee;color:#1a7a3e;border:1px solid #a3d9b8';
-        var normL = ((NORM_L - MIN) / (MAX - MIN)) * 100;
-        var normW = ((NORM_R - NORM_L) / (MAX - MIN)) * 100;
-        return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,0.05)">'
-          + '<div style="min-width:110px;font-size:8pt;color:#3a3a3a">' + label + '</div>'
+        return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.05)">'
+          + '<div style="min-width:125px;font-size:8pt;color:#3a3a3a">' + label + '</div>'
           + '<div style="flex:1;position:relative;height:14px">'
           + '<div style="position:absolute;inset:0;background:#e8e8e8;border-radius:2px"></div>'
-          + '<div style="position:absolute;top:0;bottom:0;left:' + normL + '%;width:' + normW + '%;background:#d0e8d8;border-radius:1px"></div>'
+          + '<div style="position:absolute;top:0;bottom:0;left:' + nL + '%;width:' + nW + '%;background:#d0e8d8;border-radius:1px"></div>'
           + '<div style="position:absolute;top:1px;bottom:1px;left:calc(' + markerLeft + '% - 3px);width:6px;background:#8B6A1A;border-radius:2px"></div>'
           + '</div>'
-          + '<div style="min-width:38px;text-align:right;font-size:9pt;font-weight:700;color:#1a1a1a">' + p + '%</div>'
+          + '<div style="min-width:42px;text-align:right;font-size:9pt;font-weight:700;color:#1a1a1a">' + v + ' kg</div>'
           + '<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-size:8pt;font-weight:600;min-width:44px;text-align:center;' + zoneTag + '">' + zone + '</span>'
           + '</div>';
       }
+      var sx = (atual.sexo || '').toLowerCase();
+      var masc = sx === 'masculino' || sx === 'male';
       return '<div class="card" style="padding:6px 10px"><div class="ctop"></div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
         + '<div class="ct" style="margin-bottom:0">Análise Músculo-Gordura</div>'
         + '<div style="display:flex;gap:12px;font-size:7pt;color:#7a7a7a">'
         + '<span style="display:flex;align-items:center;gap:3px"><span style="width:20px;height:8px;background:#d0e8d8;border-radius:1px;display:inline-block"></span>Zona Normal</span>'
         + '<span style="display:flex;align-items:center;gap:3px"><span style="width:6px;height:12px;background:#8B6A1A;border-radius:2px;display:inline-block"></span>Paciente</span>'
         + '</div></div>'
-        + '<div style="display:flex;gap:6px;font-size:7pt;color:#7a7a7a;margin-bottom:4px;padding:0 0 2px;border-bottom:1px solid rgba(139,106,26,0.1)">'
-        + '<div style="min-width:110px"></div>'
-        + '<div style="flex:1;display:flex;justify-content:space-between"><span>Abaixo</span><span style="margin-left:20%">Normal</span><span>Acima</span></div>'
-        + '</div>'
-        + amgBar('Peso', atual.amg_peso_perc, '#34d399', '#f59e0b')
-        + amgBar('Massa Muscular Esq.', atual.amg_musculo_perc, '#34d399', '#f59e0b')
-        + amgBar('Massa de Gordura', atual.amg_gordura_perc, '#34d399', '#f59e0b')
+        + amgBar('Peso (kg)', atual.amg_peso, 40, 140, masc ? 60 : 50, masc ? 90 : 75)
+        + amgBar('Massa Muscular Esq. (kg)', atual.amg_musculo, 10, 50, masc ? 28 : 20, masc ? 38 : 28)
+        + amgBar('Massa de Gordura (kg)', atual.amg_gordura, 5, 60, masc ? 10 : 13, masc ? 20 : 25)
         + '</div>';
     })() : '')
+
 
     // COMPOSIÇÃO + ÍNDICES
     + '<div class="g2">'
