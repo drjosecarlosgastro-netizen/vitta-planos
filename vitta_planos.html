@@ -1035,6 +1035,11 @@ async function gerarLaudoBio(id) {
   score = Math.min(100, Math.max(0, score));
 
   // Evolução (últimas 3 avaliações incluindo atual)
+  if (!atual.peso_ideal && atual.altura) {
+    var altH = parseFloat(atual.altura);
+    atual.peso_ideal = parseFloat((altH * altH * 24.9).toFixed(1));
+    if (atual.peso) atual.delta_peso_ideal = parseFloat((atual.peso - atual.peso_ideal).toFixed(1));
+  }
   const historico = lista.slice(-3);
   const primeiroAnterior = historico.length > 1 ? historico[0] : null;
   const deltaPeso = primeiroAnterior && atual.peso && primeiroAnterior.peso ? (atual.peso - primeiroAnterior.peso) : null;
@@ -1048,6 +1053,7 @@ async function gerarLaudoBio(id) {
     atual.seg_perna_e ? Math.round((atual.seg_perna_e / refMusc.perna) * 100) : 0,
     atual.seg_braco_e ? Math.round((atual.seg_braco_e / refMusc.braco) * 100) : 0
   ].map(function(v) { return Math.min(100, v); });
+  const temRadar = radarData.some(function(v){ return v > 0; });
 
   // Equilíbrio L/R
   const eqBraco = atual.seg_braco_d && atual.seg_braco_e ? Math.round((1 - Math.abs(atual.seg_braco_d - atual.seg_braco_e) / Math.max(atual.seg_braco_d, atual.seg_braco_e)) * 100) : null;
@@ -1067,7 +1073,7 @@ async function gerarLaudoBio(id) {
 
   // BARRAS EVOLUTIVAS
   function barrasEvo(hist) {
-    if (hist.length < 2) return '<div style="font-size:11px;color:#7a7a7a;text-align:center;padding:10px">Registre mais avaliações para visualizar a evolução.</div>';
+    if (hist.length < 1) return '<div style="font-size:11px;color:#7a7a7a;text-align:center;padding:10px">Nenhuma avaliação registrada.</div>';
     var maxP = Math.max.apply(null, hist.map(function(h) { return h.peso || 0; }));
     var maxH = 80;
     var bHtml = '';
@@ -1304,7 +1310,7 @@ async function gerarLaudoBio(id) {
     + '</div>'
 
     // NOTA MÉDICA (se existir)
-    + (atual.nota_medico ? '<div class="card" style="padding:5mm"><div class="ctop"></div><div class="ct">Orientação Médica</div><div style="font-size:9pt;color:#3a3a3a;line-height:1.5">' + atual.nota_medico + '</div></div>' : '')
+
 
     + '</div>'
 
@@ -1319,14 +1325,15 @@ async function gerarLaudoBio(id) {
     + 'function anim(){var t=Math.min((Date.now()-t0)/dur,1),e=1-Math.pow(1-t,3);arc.setAttribute("stroke-dashoffset",circ-(circ*(score/100)*e));snum.textContent=Math.round(score*e);if(t<1)requestAnimationFrame(anim);}'
     + 'anim();'
     + 'var evoData=' + JSON.stringify(historico.map(function(h) { return { label: fmtDate(h.data_exame), peso: h.peso, gord: h.gordura_corporal, magra: h.massa_magra }; })) + ';'
-    + 'if(document.getElementById("laudoEvo")&&evoData.length>1){'
+    + 'if(document.getElementById("laudoEvo")&&evoData.length>=1){'
     + 'new Chart(document.getElementById("laudoEvo"),{type:"line",data:{labels:evoData.map(function(d){return d.label;}),datasets:['
     + '{label:"Gordura",data:evoData.map(function(d){return d.gord;}),borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.07)",borderWidth:2,pointBackgroundColor:"#C9A84C",pointRadius:4,tension:0.35,fill:true},'
     + '{label:"Massa Magra",data:evoData.map(function(d){return d.magra;}),borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.07)",borderWidth:2,pointBackgroundColor:"#34d399",pointRadius:4,tension:0.35,fill:true},'
     + '{label:"Peso",data:evoData.map(function(d){return d.peso;}),borderColor:"#60a5fa",borderDash:[5,4],borderWidth:1.5,pointBackgroundColor:"#60a5fa",pointRadius:4,tension:0.35}'
     + ']},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:9},autoSkip:false}},y:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:9}},min:20,max:90}}}}});}'
     + 'var radarData=' + JSON.stringify(radarData) + ';'
-    + 'if(document.getElementById("laudoRadar")){'
+    + 'var temRadar=' + (temRadar ? 'true' : 'false') + ';'
+    + 'if(document.getElementById("laudoRadar")&&temRadar){'
     + 'new Chart(document.getElementById("laudoRadar"),{type:"radar",data:{labels:["Braço D","Perna D","Perna E","Braço E"],datasets:[{data:radarData,borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.15)",borderWidth:1.5,pointBackgroundColor:"#C9A84C",pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:7},backdropColor:"transparent",color:"#7a7a7a"},grid:{color:"rgba(0,0,0,0.08)"},angleLines:{color:"rgba(0,0,0,0.1)"},pointLabels:{font:{size:8,family:"Rajdhani"},color:"#3a3a3a"}}}}});}'
     + 'window.onload=function(){'
     + 'var bar=document.createElement("div");'
