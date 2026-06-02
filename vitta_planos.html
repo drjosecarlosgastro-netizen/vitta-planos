@@ -1024,7 +1024,7 @@ async function gerarLaudoBio(id) {
   const p = currentPatientData;
   const nome = p.name || '';
   const idade = p.dob ? (new Date().getFullYear() - new Date(p.dob).getFullYear()) + ' anos' : '--';
-  const sexo = p.gender || '--';
+  const sexo = atual.sexo || p.gender || null;
   const altura = atual.altura ? atual.altura + ' m' : (p.altura ? p.altura + ' m' : '--');
   const resp = atual.responsavel || 'Dra. Bruna';
   const crm = atual.responsavel_crm || 'CRM-SP 11111';
@@ -1213,7 +1213,7 @@ async function gerarLaudoBio(id) {
     + '<div><div class="pname">' + nome + '</div>'
     + '<div class="meta">'
     + '<div><span class="ml">Idade</span><span class="mv">' + idade + '</span></div>'
-    + '<div><span class="ml">Sexo</span><span class="mv">' + sexo + '</span></div>'
+    + '<div><span class="ml">Sexo</span>' + (sexo ? '<span class="mv">' + sexo + '</span>' : '<select id="laudoSexoSel" style="font-size:11pt;font-weight:600;color:#3a3a3a;border:1px solid rgba(139,106,26,0.3);border-radius:3px;padding:2px 6px;background:#fff"><option value="">Selecione</option><option value="Feminino">Feminino</option><option value="Masculino">Masculino</option></select>') + '</div>'
     + '<div><span class="ml">Altura</span><span class="mv">' + altura + '</span></div>'
     + '<div><span class="ml">Peso atual</span><span class="mv">' + (atual.peso || '--') + ' kg</span></div>'
     + '<div><span class="ml">Data</span><span class="mv">' + dataFmt + '</span></div>'
@@ -1324,39 +1324,20 @@ async function gerarLaudoBio(id) {
 
     // SCRIPTS
     + '<script>'
-    + 'var score=' + score + ',circ=182,dur=900,t0=Date.now();'
-    + 'var arc=document.getElementById("laudoArc"),snum=document.getElementById("laudoScore");'
-    + 'function anim(){var t=Math.min((Date.now()-t0)/dur,1),e=1-Math.pow(1-t,3);arc.setAttribute("stroke-dashoffset",circ-(circ*(score/100)*e));snum.textContent=Math.round(score*e);if(t<1)requestAnimationFrame(anim);}'
-    + 'anim();'
-    + 'var evoData=' + JSON.stringify(historico.map(function(h) { return { label: fmtDate(h.data_exame), peso: h.peso, gord: h.gordura_corporal, magra: h.massa_magra }; })) + ';'
-    + 'if(document.getElementById("laudoEvo")&&evoData.length>=1){'
-    + 'new Chart(document.getElementById("laudoEvo"),{type:"line",data:{labels:evoData.map(function(d){return d.label;}),datasets:['
-    + '{label:"Gordura",data:evoData.map(function(d){return d.gord;}),borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.07)",borderWidth:2,pointBackgroundColor:"#C9A84C",pointRadius:6,pointStyle:"circle",tension:0.35,fill:true,spanGaps:true},' 
-    + '{label:"Massa Magra",data:evoData.map(function(d){return d.magra;}),borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.07)",borderWidth:2,pointBackgroundColor:"#34d399",pointRadius:6,pointStyle:"circle",tension:0.35,fill:true,spanGaps:true},' 
-    + '{label:"Peso",data:evoData.map(function(d){return d.peso;}),borderColor:"#60a5fa",borderDash:[5,4],borderWidth:1.5,pointBackgroundColor:"#60a5fa",pointRadius:6,pointStyle:"circle",tension:0.35,spanGaps:true}'
-    + ']},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:9},autoSkip:false}},y:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:9}},min:20,max:90}}}}});}'
-    + 'var radarData=' + JSON.stringify(radarData) + ';'
-    + 'var temRadar=true;'
-    + 'if(document.getElementById("laudoRadar")&&temRadar){'
-    + 'new Chart(document.getElementById("laudoRadar"),{type:"radar",data:{labels:["Braço D","Perna D","Perna E","Braço E"],datasets:[{data:radarData,borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.15)",borderWidth:1.5,pointBackgroundColor:"#C9A84C",pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:7},backdropColor:"transparent",color:"#7a7a7a"},grid:{color:"rgba(0,0,0,0.08)"},angleLines:{color:"rgba(0,0,0,0.1)"},pointLabels:{font:{size:8,family:"Rajdhani"},color:"#3a3a3a"}}}}});}'
+    + 'var _sc=' + score + ';'
+    + 'var _ed=' + JSON.stringify(historico.map(function(h) { return { label: fmtDate(h.data_exame), peso: h.peso, gord: h.gordura_corporal, magra: h.massa_magra }; })) + ';'
+    + 'var _rd=' + JSON.stringify(radarData) + ';'
     + 'window.onload=function(){'
-    + 'var bar=document.createElement("div");'
-    + 'bar.id="btn-bar";'
-    + 'bar.style.cssText="position:fixed;top:0;left:0;right:0;z-index:9999;background:#1D2846;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:10px 24px;box-shadow:0 2px 8px rgba(0,0,0,0.2)";'
-    + 'bar.innerHTML="<span style=\'color:rgba(255,255,255,0.6);font-size:12px;font-family:Rajdhani,sans-serif;letter-spacing:1px;flex:1\'>Clínica Vitta | Bioimpedância</span>"'
-    + '+"<button onclick=\'window.print()\' style=\'background:#C9A84C;color:#1D2846;border:none;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif;letter-spacing:0.5px\'>🖨️ Imprimir</button>"'
-    + '+"<button onclick=\'salvarPDF()\' style=\'background:transparent;color:#C9A84C;border:2px solid #C9A84C;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif;letter-spacing:0.5px\'>💾 Salvar PDF</button>"'
-    + '+"<button onclick=\'window.close()\' style=\'background:transparent;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.2);padding:8px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-family:Rajdhani,sans-serif\'>✕ Fechar</button>";'
-    + 'document.body.insertBefore(bar,document.body.firstChild);'
-    + 'document.body.style.paddingTop="52px";'
+    + 'var circ=182,dur=900,t0=Date.now();'
+    + 'var arc=document.getElementById("laudoArc"),snum=document.getElementById("laudoScore");'
+    + 'if(arc&&snum){function anim(){var t=Math.min((Date.now()-t0)/dur,1),e=1-Math.pow(1-t,3);arc.setAttribute("stroke-dashoffset",circ-(circ*(_sc/100)*e));snum.textContent=Math.round(_sc*e);if(t<1)requestAnimationFrame(anim);}anim();}'
+    + 'var btn=document.createElement("div");btn.id="btn-bar";btn.style.cssText="position:fixed;top:0;left:0;right:0;z-index:9999;background:#1D2846;display:flex;align-items:center;gap:10px;padding:10px 24px;box-shadow:0 2px 8px rgba(0,0,0,0.2)";'
+    + 'btn.innerHTML="<span style=\'color:rgba(255,255,255,0.6);font-size:12px;font-family:Rajdhani,sans-serif;flex:1\'>Cl\u00ednica Vitta | Bioimpedância</span><button onclick=\'window.print()\' style=\'background:#C9A84C;color:#1D2846;border:none;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer\'>\ud83d\udda8\ufe0f Imprimir</button><button onclick=\'salvarPDF()\' style=\'background:transparent;color:#C9A84C;border:2px solid #C9A84C;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer\'> Salvar PDF</button><button onclick=\'window.close()\' style=\'background:transparent;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.2);padding:8px 14px;border-radius:4px;font-size:12px;cursor:pointer\'>\u2715 Fechar</button>";'
+    + 'document.body.insertBefore(btn,document.body.firstChild);document.body.style.paddingTop="52px";'
+    + 'if(document.getElementById("laudoEvo")&&_ed.length>=1){new Chart(document.getElementById("laudoEvo"),{type:"line",data:{labels:_ed.map(function(d){return d.label;}),datasets:[{label:"Gordura",data:_ed.map(function(d){return d.gord;}),borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.08)",borderWidth:2.5,pointBackgroundColor:"#C9A84C",pointRadius:7,tension:0.35,fill:true},{label:"Massa Magra",data:_ed.map(function(d){return d.magra;}),borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.08)",borderWidth:2.5,pointBackgroundColor:"#34d399",pointRadius:7,tension:0.35,fill:true},{label:"Peso",data:_ed.map(function(d){return d.peso;}),borderColor:"#60a5fa",borderDash:[5,4],borderWidth:2,pointBackgroundColor:"#60a5fa",pointRadius:7,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"#fff",borderColor:"rgba(139,106,26,0.3)",borderWidth:1,titleColor:"#8B6A1A",bodyColor:"#3a3a3a",padding:8}},scales:{x:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:10},autoSkip:false}},y:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:10}},min:20,max:90}}}}}); }'
+    + 'if(document.getElementById("laudoRadar")){new Chart(document.getElementById("laudoRadar"),{type:"radar",data:{labels:["Bra\u00e7o D","Perna D","Perna E","Bra\u00e7o E"],datasets:[{data:_rd,borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.15)",borderWidth:2,pointBackgroundColor:"#C9A84C",pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:8},backdropColor:"transparent",color:"#7a7a7a"},grid:{color:"rgba(0,0,0,0.08)"},angleLines:{color:"rgba(0,0,0,0.1)"},pointLabels:{font:{size:9,family:"Rajdhani"},color:"#3a3a3a"}}}}}); }'
     + '};'
-    + 'function salvarPDF(){'
-    + 'var bar=document.getElementById("btn-bar");'
-    + 'if(bar)bar.style.display="none";'
-    + 'document.body.style.paddingTop="0";'
-    + 'window.print();'
-    + 'setTimeout(function(){if(bar){bar.style.display="flex";document.body.style.paddingTop="52px";}},1000);'
-    + '}'
+    + 'function salvarPDF(){var b=document.getElementById("btn-bar");if(b)b.style.display="none";document.body.style.paddingTop="0";window.print();setTimeout(function(){if(b){b.style.display="flex";document.body.style.paddingTop="52px";}},1200);}'
     + '<\/script><\/body><\/html>';
 
   const win = window.open('', '_blank');
