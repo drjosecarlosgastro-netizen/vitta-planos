@@ -829,7 +829,6 @@ async function showFormBio(id) {
     + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Composição Corporal</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + fields('Gordura Corporal', 'gordura_corporal', reg.gordura_corporal, 'kg')
     + fields('Água Corporal', 'agua_corporal', reg.agua_corporal, 'kg')
     + fields('Proteína', 'proteina', reg.proteina, 'kg')
     + fields('Minerais', 'minerais', reg.minerais, 'kg')
@@ -944,7 +943,7 @@ async function salvarBio(id) {
     amg_gordura: fnum('amg_gordura'),
     peso: fnum('amg_peso'),
     massa_magra: fnum('amg_musculo'),
-    gordura_corporal: fnum('gordura_corporal'),
+    gordura_corporal: fnum('amg_gordura'),
     agua_corporal: fnum('agua_corporal'),
     proteina: fnum('proteina'),
     minerais: fnum('minerais'),
