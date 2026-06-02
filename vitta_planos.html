@@ -1019,7 +1019,7 @@ async function deletarBio(id) {
 async function gerarLaudoBio(id) {
   const { data: todos } = await sb.from('planos_bioimpedancia').select('*').eq('patient_id', currentPatientId).order('data_exame', { ascending: true });
   const lista = todos || [];
-  const atual = lista.find(function(r) { return r.id === id; });
+  const atual = lista.find(function(r) { return r.id == id; });
   if (!atual) { toast('Registro não encontrado', 'error'); return; }
   const p = currentPatientData;
   const nome = p.name || '';
@@ -1130,8 +1130,7 @@ async function gerarLaudoBio(id) {
     lrData.forEach(function(lr) {
       if (!lr.d || !lr.e) return;
       var maxV = Math.max(lr.d, lr.e);
-      var refV = lr.seg === 'Braço' ? refMusc.braco : refMusc.perna;
-      var pd = Math.round((lr.d / refV) * 100); var pe = Math.round((lr.e / refV) * 100);
+      var pd = Math.round((lr.d / maxV) * 100); var pe = Math.round((lr.e / maxV) * 100);
       var diff = Math.abs(lr.d - lr.e).toFixed(1);
       html += '<div style="background:#fff;border:1px solid rgba(139,106,26,0.13);border-radius:2px;padding:6px 8px;margin-bottom:5px">'
         + '<div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#7a7a7a;margin-bottom:4px">' + lr.seg + '</div>'
@@ -1326,6 +1325,7 @@ async function gerarLaudoBio(id) {
     + '<\/script><\/body><\/html>';
 
   const win = window.open('', '_blank');
+  if (!win) { toast('Permita pop-ups para abrir o laudo', 'error'); return; }
   win.document.write(laudoHTML);
   win.document.close();
 }
