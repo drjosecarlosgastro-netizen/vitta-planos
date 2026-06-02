@@ -1220,25 +1220,25 @@ async function showLaudoTRHE(id) {
     + ' @page{size:A4 portrait;margin:0}'
     + ' body{background:#fff!important}'
     + ' #laudo-print-overlay,#laudo-print-page{display:block!important;position:static!important;background:#fff!important;box-shadow:none!important}'
-    + ' .lp-pg{padding:10mm 14mm!important;page-break-after:always;min-height:0!important}'
+    + ' .lp-pg{padding:9mm 13mm!important;page-break-after:always;min-height:0!important}'
     + ' .lp-pg:last-child{page-break-after:auto}'
     + '}'
     + '#laudo-print-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;overflow-y:auto;padding:20px}'
     + '#laudo-print-page{background:#fff;font-family:Georgia,serif;font-size:11.5px;color:#1a1a1a;width:210mm;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.25);box-sizing:border-box;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    + '.lp-pg{padding:14mm 16mm 12mm;box-sizing:border-box;min-height:297mm}'
-    + '.lp-hdr{border-bottom:2px solid #1D2846;padding-bottom:7px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:flex-end}'
+    + '.lp-pg{padding:12mm 15mm 10mm;box-sizing:border-box;min-height:297mm}'
+    + '.lp-hdr{border-bottom:2px solid #1D2846;padding-bottom:6px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:flex-end}'
     + '.lp-clinic{font-size:14px;font-weight:700;color:#1D2846}'
     + '.lp-sub{font-size:11px;color:#555;margin-top:1px}'
     + '.lp-hdr-r{text-align:right;font-size:10px;color:#555;line-height:1.6}'
-    + '.lp-pat{display:flex;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid #ddd}'
+    + '.lp-pat{display:flex;justify-content:space-between;margin-bottom:7px;padding-bottom:6px;border-bottom:0.5px solid #ddd}'
     + '.lp-lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}'
     + '.lp-val{font-size:13px;font-weight:700;color:#1D2846}'
-    + '.lp-sec{margin-bottom:11px}'
+    + '.lp-sec{margin-bottom:7px}'
     + '.lp-sec-ttl{font-size:9px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.6px;border-bottom:1.5px solid #1D2846;padding-bottom:3px;margin-bottom:7px}'
-    + '.lp-chart{height:165px;position:relative;margin-bottom:3px}'
-    + '.lp-chart-leg{font-size:8.5px;color:#555;margin-bottom:7px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}'
-    + '.lp-ind{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:9px}'
-    + '.lp-ind-box{background:#1D2846;border-radius:5px;padding:8px 3px;text-align:center}'
+    + '.lp-chart{height:148px;position:relative;margin-bottom:2px}'
+    + '.lp-chart-leg{font-size:8.5px;color:#555;margin-bottom:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}'
+    + '.lp-ind{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:7px}'
+    + '.lp-ind-box{background:#1D2846;border-radius:5px;padding:6px 3px;text-align:center}'
     + '.lp-ind-n{font-size:16px;font-weight:700;color:#fff;line-height:1}'
     + '.lp-ind-n-auc{font-size:16px;font-weight:700;color:#FCD34D;line-height:1}'
     + '.lp-ind-l{font-size:7.5px;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:.2px;margin-top:3px}'
@@ -1246,10 +1246,10 @@ async function showLaudoTRHE(id) {
     + '.lp-gi{font-size:10px;color:#1a1a1a;padding:2.5px 0;border-bottom:0.5px solid rgba(0,0,0,.06)}'
     + '.lp-gi strong{color:#1D2846}'
     + '.lp-badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}'
-    + '.lp-ldblk{margin-bottom:7px}'
+    + '.lp-ldblk{margin-bottom:4px}'
     + '.lp-ldlbl{font-size:9px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}'
-    + '.lp-ldtxt{font-size:11.5px;line-height:1.6;color:#222;background:#f9f9f9;border-left:2.5px solid #1D2846;padding:5px 9px;border-radius:0 4px 4px 0}'
-    + '.lp-strip{background:#f5f7fa;border:0.5px solid #ddd;border-radius:5px;padding:6px 10px;margin-bottom:7px;display:flex;gap:18px;flex-wrap:wrap}'
+    + '.lp-ldtxt{font-size:11px;line-height:1.5;color:#222;background:#f9f9f9;border-left:2.5px solid #1D2846;padding:4px 8px;border-radius:0 4px 4px 0}'
+    + '.lp-strip{background:#f5f7fa;border:0.5px solid #ddd;border-radius:5px;padding:4px 10px;margin-bottom:5px;display:flex;gap:18px;flex-wrap:wrap}'
     + '.lp-si-l{font-size:8.5px;color:#888;text-transform:uppercase;letter-spacing:.3px}'
     + '.lp-si-v{font-size:11px;font-weight:700;color:#222}'
     + '.lp-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:9px}'
@@ -1258,9 +1258,9 @@ async function showLaudoTRHE(id) {
     + '.lp-tbl th{background:#1D2846;color:#fff;padding:5px 7px;text-align:left;font-size:9px}'
     + '.lp-tbl td{padding:4px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10.5px}'
     + '.lp-tbl tr:nth-child(even) td{background:#f9fafb}'
-    + '.lp-vtbl{width:100%;border-collapse:collapse;margin-bottom:9px}'
+    + '.lp-vtbl{width:100%;border-collapse:collapse;margin-bottom:7px}'
     + '.lp-vtbl th{background:#1D2846;color:#fff;padding:5px 8px;text-align:left;font-size:9px}'
-    + '.lp-vtbl td{padding:4px 8px;border-bottom:0.5px solid #e5e7eb;font-size:10.5px}'
+    + '.lp-vtbl td{padding:3px 8px;border-bottom:0.5px solid #e5e7eb;font-size:10px}'
     + '.lp-vtbl tr:nth-child(even) td{background:#f9fafb}'
     + '.lp-ftr{border-top:1px solid #ddd;padding-top:8px;margin-top:10px;display:flex;justify-content:space-between;align-items:flex-end}'
     + '.lp-ftr-info{font-size:9px;color:#aaa}'
@@ -1404,34 +1404,34 @@ async function showLaudoTRHE(id) {
       'body{background:#e5e5e5;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:Georgia,serif}',
       // Layout das paginas na tela
       '#laudo-print-page{display:block!important;position:static!important;background:transparent;width:210mm;margin:0 auto}',
-      '.lp-pg{background:#fff;width:210mm;padding:14mm 16mm 12mm;box-sizing:border-box;min-height:297mm;',
+      '.lp-pg{background:#fff;width:210mm;padding:12mm 15mm 10mm;box-sizing:border-box;min-height:297mm;',
       '  margin:20px auto;box-shadow:0 4px 24px rgba(0,0,0,.3);color:#1a1a1a;font-size:11.5px;line-height:1.45}',
       // Print: quebra de pagina entre as divs .lp-pg
       '@media print{',
       '  body{background:#fff}',
       '  #laudo-print-page{width:100%}',
-      '  .lp-pg{margin:0!important;box-shadow:none!important;padding:10mm 14mm!important;min-height:0!important;page-break-after:always}',
+      '  .lp-pg{margin:0!important;box-shadow:none!important;padding:9mm 13mm!important;min-height:0!important;page-break-after:always}',
       '  .lp-pg:last-child{page-break-after:auto}',
       '  .no-print-btn{display:none!important}',
       '  @page{size:A4 portrait;margin:0}}',
       // Cabecalho
-      '.lp-hdr{border-bottom:2px solid #1D2846;padding-bottom:7px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:flex-end}',
+      '.lp-hdr{border-bottom:2px solid #1D2846;padding-bottom:6px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:flex-end}',
       '.lp-clinic{font-size:14px;font-weight:700;color:#1D2846}',
       '.lp-sub{font-size:11px;color:#555;margin-top:1px}',
       '.lp-hdr-r{text-align:right;font-size:10px;color:#555;line-height:1.6}',
       // Paciente
-      '.lp-pat{display:flex;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid #ddd}',
+      '.lp-pat{display:flex;justify-content:space-between;margin-bottom:7px;padding-bottom:6px;border-bottom:0.5px solid #ddd}',
       '.lp-lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}',
       '.lp-val{font-size:13px;font-weight:700;color:#1D2846}',
       // Secoes
-      '.lp-sec{margin-bottom:11px}',
+      '.lp-sec{margin-bottom:7px}',
       '.lp-sec-ttl{font-size:9px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.6px;border-bottom:1.5px solid #1D2846;padding-bottom:3px;margin-bottom:7px}',
       // Grafico
-      '.lp-chart{height:165px;position:relative;margin-bottom:3px}',
-      '.lp-chart-leg{font-size:8.5px;color:#555;margin-bottom:7px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}',
+      '.lp-chart{height:148px;position:relative;margin-bottom:2px}',
+      '.lp-chart-leg{font-size:8.5px;color:#555;margin-bottom:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}',
       // Indicadores: fundo navy, texto branco, AUC em amarelo
-      '.lp-ind{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:9px}',
-      '.lp-ind-box{background:#1D2846;border-radius:5px;padding:8px 3px;text-align:center}',
+      '.lp-ind{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:7px}',
+      '.lp-ind-box{background:#1D2846;border-radius:5px;padding:6px 3px;text-align:center}',
       '.lp-ind-n{font-size:16px;font-weight:700;color:#fff;line-height:1}',
       '.lp-ind-n-auc{font-size:16px;font-weight:700;color:#FCD34D;line-height:1}',
       '.lp-ind-l{font-size:7.5px;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:.2px;margin-top:3px}',
@@ -1442,11 +1442,11 @@ async function showLaudoTRHE(id) {
       // Badges
       '.lp-badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}',
       // Laudo medico: fonte 11.5px
-      '.lp-ldblk{margin-bottom:7px}',
+      '.lp-ldblk{margin-bottom:4px}',
       '.lp-ldlbl{font-size:9px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}',
-      '.lp-ldtxt{font-size:11.5px;line-height:1.6;color:#222;background:#f9f9f9;border-left:2.5px solid #1D2846;padding:5px 9px;border-radius:0 4px 4px 0}',
+      '.lp-ldtxt{font-size:11px;line-height:1.5;color:#222;background:#f9f9f9;border-left:2.5px solid #1D2846;padding:4px 8px;border-radius:0 4px 4px 0}',
       // Strip preparo/sintomas
-      '.lp-strip{background:#f5f7fa;border:0.5px solid #ddd;border-radius:5px;padding:6px 10px;margin-bottom:7px;display:flex;gap:18px;flex-wrap:wrap}',
+      '.lp-strip{background:#f5f7fa;border:0.5px solid #ddd;border-radius:5px;padding:4px 10px;margin-bottom:5px;display:flex;gap:18px;flex-wrap:wrap}',
       '.lp-si-l{font-size:8.5px;color:#888;text-transform:uppercase;letter-spacing:.3px}',
       '.lp-si-v{font-size:11px;font-weight:700;color:#222}',
       // Tabelas
@@ -1456,9 +1456,9 @@ async function showLaudoTRHE(id) {
       '.lp-tbl th{background:#1D2846;color:#fff;padding:5px 7px;text-align:left;font-size:9px}',
       '.lp-tbl td{padding:4px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10.5px}',
       '.lp-tbl tr:nth-child(even) td{background:#f9fafb}',
-      '.lp-vtbl{width:100%;border-collapse:collapse;margin-bottom:9px}',
+      '.lp-vtbl{width:100%;border-collapse:collapse;margin-bottom:7px}',
       '.lp-vtbl th{background:#1D2846;color:#fff;padding:5px 8px;text-align:left;font-size:9px}',
-      '.lp-vtbl td{padding:4px 8px;border-bottom:0.5px solid #e5e7eb;font-size:10.5px}',
+      '.lp-vtbl td{padding:3px 8px;border-bottom:0.5px solid #e5e7eb;font-size:10px}',
       '.lp-vtbl tr:nth-child(even) td{background:#f9fafb}',
       // Rodape
       '.lp-ftr{border-top:1px solid #ddd;padding-top:8px;margin-top:10px;display:flex;justify-content:space-between;align-items:flex-end}',
