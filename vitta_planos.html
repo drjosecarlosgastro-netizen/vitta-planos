@@ -1893,6 +1893,7 @@ async function renderPatAgenda(){
       +(a.profissional_nome?'<div class="appt-sub" style="color:var(--navy);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>':'')
       +'<div style="margin-top:2px"><span class="user-badge">'+(a.registrado_por||'')+'</span></div>'
       +'</div>'
+      +'<button onclick="editAppt('+a.id+')" title="Editar" style="padding:5px 9px;border-radius:7px;background:transparent;border:1.5px solid var(--border);color:var(--navy);cursor:pointer;font-size:14px">&#9999;&#65039;</button>'
       +'<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font)" onchange="handleApptStatusChange('+a.id+','+currentPatientId+',this.value,this)">'+statusOpts+'</select>'
       +'<button class="btn-icon" onclick="excluirAgendamentoPat('+a.id+')" title="Excluir cadastro errado">\ud83d\uddd1</button>'
       +'</div>';
@@ -2275,6 +2276,7 @@ async function renderAgenda(){
         if(a.profissional_nome)html2+='<div style="font-size:12px;color:var(--navy);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>';
         html2+='</div>';
         if(patIdMap[a.patient_id])html2+='<button class="btn btn-ghost btn-sm" onclick="openPatient('+a.patient_id+')" style="flex-shrink:0">\ud83d\udcc2</button>';
+        html2+='<button onclick="editAppt('+a.id+')" title="Editar" style="padding:5px 9px;border-radius:7px;background:transparent;border:1.5px solid var(--border);color:var(--navy);cursor:pointer;font-size:14px;flex-shrink:0">&#9999;&#65039;</button>';
         html2+='<select style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;font-family:var(--font);flex-shrink:0" onchange="handleApptStatusChange('+a.id+','+a.patient_id+',this.value,this)">'+statusOpts+'</select>';
         html2+='<button onclick="excluirAgendamento('+a.id+')" style="padding:5px 9px;border-radius:7px;background:transparent;border:1.5px solid #fca5a5;color:#ef4444;cursor:pointer;font-size:14px;flex-shrink:0">\ud83d\uddd1</button>';
         html2+='</div>';
@@ -2300,6 +2302,47 @@ async function renderAgenda(){
   renderAgendaContent();
 }
 
+async function editAppt(id){
+  const {data:a}=await sb.from('planos_appointments').select('*').eq('id',id).single();
+  if(!a){toast('Agendamento n\u00e3o encontrado','error');return;}
+  const procs=['Consulta Avulsa','Consulta de Plano de Acompanhamento','Enfermeira','Nutricionista','Exame','Preparador F\u00edsico'];
+  const tipos=['Consulta','Ijet\u00e1vel','Teste Respirat\u00f3rio','Bioimpedância'];
+  const procOpts=procs.map(p=>'<option '+(a.procedimento===p?'selected':'')+'>'+p+'</option>').join('');
+  const tipoOpts=tipos.map(t=>'<option '+(a.tipo===t?'selected':'')+'>'+t+'</option>').join('');
+  showGenericModal(
+    '<div class="grid-2"><div class="field"><label>Data</label><input id="ea-date" value="'+(a.date_str||todayStr())+'"/></div><div class="field"><label>Hora</label><input id="ea-time" type="time" value="'+(a.time_str||'09:00')+'"/></div></div>'
+    +'<div class="field"><label>Procedimento</label><select id="ea-proc">'+procOpts+'</select></div>'
+    +'<div class="field"><label>Tipo</label><select id="ea-tipo">'+tipoOpts+'</select></div>'
+    +'<div class="field"><label>Profissional</label><select id="ea-prof"><option value="">— Selecionar —</option></select></div>'
+    +'<div class="field"><label>Observa\u00e7\u00e3o</label><input type="text" id="ea-obs" value="'+(a.observacao||'').replace(/"/g,'&quot;')+'"/></div>'
+    +'<button class="btn btn-primary btn-full" onclick="saveEditAppt('+id+')">Salvar altera\u00e7\u00f5es</button>',
+    '\u270f\ufe0f Editar Agendamento'
+  );
+  loadProfsIntoSelect('ea-prof');
+  setTimeout(function(){
+    const sel=document.getElementById('ea-prof');
+    if(sel&&a.profissional_nome){
+      Array.from(sel.options).forEach(function(o){if(o.text===a.profissional_nome)o.selected=true;});
+    }
+  },200);
+}
+async function saveEditAppt(id){
+  const updates={
+    date_str:document.getElementById('ea-date').value,
+    time_str:document.getElementById('ea-time').value,
+    procedimento:document.getElementById('ea-proc').value,
+    tipo:document.getElementById('ea-tipo').value,
+    profissional_nome:document.getElementById('ea-prof')?.value||null,
+    observacao:document.getElementById('ea-obs').value.trim(),
+    updated_by:currentUser?currentUser.name:'Sistema'
+  };
+  const{error}=await sb.from('planos_appointments').update(updates).eq('id',id);
+  if(error){toast('Erro ao salvar: '+error.message,'error');return;}
+  closeModal('modal-generic');
+  toast('Agendamento atualizado!','success');
+  if(typeof window.renderAgendaContent==='function')window.renderAgendaContent();
+  else if(typeof renderAgenda==='function')renderAgenda();
+}
 function showAddApptGlobal(){
   showGenericModal(
     '<div class="field"><label>Paciente</label><input id="gag-pat-name" placeholder="Digite o nome..." oninput="searchPatForAppt(this.value)"/><div id="gag-pat-results" style="margin-top:4px"></div><input type="hidden" id="gag-pat-id"/></div>'
