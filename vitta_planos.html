@@ -1375,74 +1375,122 @@ async function showLaudoTRHE(id) {
 
   showGenericModal(botoesHtml, '\ud83e\udeb2 Laudo TRHE \u2014 ' + patName);
 
-  // Guarda dados do grafico para a nova janela
+  // Guarda o HTML completo do laudo e dados do grafico
   window._trhePrintVArr = vArr;
   window._trhePrintPico = picoAbs;
+  window._trheLaudoHtml = laudoHtml;
+
   window.abrirLaudoNovaJanela = function(autoPrint) {
     var vA = window._trhePrintVArr || [];
     var pA = window._trhePrintPico || 0;
-    var overlay = document.getElementById('laudo-print-overlay');
-    var pg = document.getElementById('laudo-print-page');
-    if (!overlay || !pg) { toast('Laudo nao encontrado','error'); return; }
-    // Clonar o conteudo da pagina A4
-    var cloneHtml = pg.outerHTML;
+    var lHtml = window._trheLaudoHtml || '';
+
+    // Extrair apenas o HTML do laudo (sem a tag <style> interna)
+    // laudoHtml = css + '<div id="laudo-print-overlay">...' 
+    // Precisamos pegar somente o conteudo do overlay/page
+    var pgStart = lHtml.indexOf('<div id="laudo-print-page">');
+    var pgContent = pgStart >= 0 ? lHtml.substring(pgStart) : lHtml;
+    // Remover o wrapper duplo </div></div> do final
+    if (pgContent.slice(-12) === '</div></div>') {
+      pgContent = pgContent.slice(0, -6); // Remove um </div>
+    }
+
     var win = window.open('','_blank');
     if (!win) { toast('Permita pop-ups neste site','error'); return; }
-    var css = document.getElementById('laudo-print-style') ? document.getElementById('laudo-print-style').innerHTML : '';
-    var extraCss = [
-      '*{box-sizing:border-box;margin:0;padding:0}',
-      'body{background:#e5e5e5;font-family:Georgia,serif}',
-      '#laudo-print-page{display:block!important;position:static!important;',
-      '  background:#fff;width:210mm;min-height:297mm;margin:20px auto;padding:14mm 16mm 12mm;',
-      '  box-shadow:0 2px 24px rgba(0,0,0,.25);box-sizing:border-box;',
-      '  -webkit-print-color-adjust:exact;print-color-adjust:exact}',
-      '@media print{body{background:#fff}',
-      '  #laudo-print-page{margin:0!important;box-shadow:none!important;padding:10mm 14mm!important}',
-      '  .no-screen{display:none!important}',
-      '  @page{size:A4 portrait;margin:0}}',
-      '#laudo-print-overlay{display:block!important;position:static!important;background:transparent}',
-    ].join('\n');
+
     var vJSON = JSON.stringify(vA);
-    var chartScript = '<script>'
-      + 'window.addEventListener("load",function(){'
+    var btnBar = '<div style="position:fixed;top:12px;right:12px;z-index:999;display:flex;gap:8px;font-family:sans-serif">'
+      + '<button onclick="window.print()" style="background:#1D2846;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer">\ud83d\udda8\ufe0f Imprimir / Salvar PDF</button>'
+      + '<button onclick="window.close()" style="background:#fff;color:#1D2846;border:1.5px solid #1D2846;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer">Fechar</button>'
+      + '</div>';
+
+    var styles = [
+      '*{box-sizing:border-box;margin:0;padding:0}',
+      'body{background:#e5e5e5;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+      '#laudo-print-page{display:block!important;position:relative!important;background:#fff;',
+      '  width:210mm;min-height:297mm;margin:20px auto;padding:14mm 16mm 12mm;',
+      '  box-shadow:0 4px 24px rgba(0,0,0,.3);box-sizing:border-box;font-family:Georgia,serif;font-size:11px;color:#1a1a1a}',
+      '@media print{',
+      '  body{background:#fff}',
+      '  #laudo-print-page{margin:0!important;box-shadow:none!important;padding:10mm 14mm!important;width:100%!important}',
+      '  .no-print-btn{display:none!important}',
+      '  @page{size:A4 portrait;margin:0}}',
+      '.lp-hdr{border-bottom:2px solid #1D2846;padding-bottom:7px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:flex-end}',
+      '.lp-clinic{font-size:13px;font-weight:700;color:#1D2846}',
+      '.lp-sub{font-size:10px;color:#555;margin-top:1px}',
+      '.lp-hdr-r{text-align:right;font-size:9px;color:#555;line-height:1.5}',
+      '.lp-pat{display:flex;justify-content:space-between;margin-bottom:9px;padding-bottom:7px;border-bottom:0.5px solid #ddd}',
+      '.lp-lbl{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}',
+      '.lp-val{font-size:12px;font-weight:700;color:#1D2846}',
+      '.lp-sec{margin-bottom:9px}',
+      '.lp-sec-ttl{font-size:8px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.6px;border-bottom:1.5px solid #1D2846;padding-bottom:3px;margin-bottom:6px}',
+      '.lp-chart{height:165px;position:relative;margin-bottom:3px}',
+      '.lp-chart-leg{font-size:8px;color:#555;margin-bottom:6px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}',
+      '.lp-ind{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:7px}',
+      '.lp-ind-box{background:#f5f7fa;border-radius:4px;padding:5px 3px;text-align:center;border:0.5px solid #ddd}',
+      '.lp-ind-n{font-size:14px;font-weight:700;color:#1D2846;line-height:1}',
+      '.lp-ind-l{font-size:7px;color:#888;text-transform:uppercase;letter-spacing:.2px;margin-top:2px}',
+      '.lp-gloss{background:#EBF4FF;border:0.5px solid #BFDBFE;border-radius:4px;padding:5px 8px;margin-bottom:6px;display:grid;grid-template-columns:1fr 1fr;gap:1px 12px}',
+      '.lp-gi{font-size:8px;color:#1a1a1a;padding:1.5px 0;border-bottom:0.5px solid rgba(0,0,0,.05)}',
+      '.lp-gi strong{color:#1D2846}',
+      '.lp-badges{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px}',
+      '.lp-ldblk{margin-bottom:5px}',
+      '.lp-ldlbl{font-size:8px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}',
+      '.lp-ldtxt{font-size:9px;line-height:1.5;color:#222;background:#f9f9f9;border-left:2.5px solid #1D2846;padding:4px 7px;border-radius:0 3px 3px 0}',
+      '.lp-strip{background:#f5f7fa;border:0.5px solid #ddd;border-radius:4px;padding:5px 8px;margin-bottom:6px;display:flex;gap:16px;flex-wrap:wrap}',
+      '.lp-si-l{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.3px}',
+      '.lp-si-v{font-size:9px;font-weight:700;color:#222}',
+      '.lp-two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px}',
+      '.lp-tbl{width:100%;border-collapse:collapse}',
+      '.lp-tbl-cap{font-size:7.5px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.4px;padding-bottom:2px;display:block}',
+      '.lp-tbl th{background:#1D2846;color:#fff;padding:4px 6px;text-align:left;font-size:8px}',
+      '.lp-tbl td{padding:3px 6px;border-bottom:0.5px solid #e5e7eb;font-size:9px}',
+      '.lp-tbl tr:nth-child(even) td{background:#f9fafb}',
+      '.lp-vtbl{width:100%;border-collapse:collapse;margin-bottom:8px}',
+      '.lp-vtbl th{background:#1D2846;color:#fff;padding:4px 7px;text-align:left;font-size:8px}',
+      '.lp-vtbl tr:nth-child(even) td{background:#f9fafb}',
+      '.lp-ftr{border-top:1px solid #ddd;padding-top:7px;margin-top:9px;display:flex;justify-content:space-between;align-items:flex-end}',
+      '.lp-ftr-info{font-size:8px;color:#aaa}',
+      '.lp-sig{border-top:1px solid #1D2846;padding-top:3px;margin-top:20px;width:200px;text-align:center;margin-left:auto;margin-right:auto}',
+      '.lp-sig-name{font-size:10px;font-weight:700;color:#1D2846}',
+      '.lp-sig-crm{font-size:8px;color:#555}',
+    ].join('\n');
+
+    var chartJs = 'window.addEventListener("load",function(){'
       + 'var v='+vJSON+';var p='+pA+';'
-      + 'var c=document.getElementById("chart-laudo-a4");if(!c)return;'
-      + 'var g=c.getContext("2d").createLinearGradient(0,0,0,160);'
+      + 'var c=document.getElementById("chart-laudo-a4");if(!c){console.log("canvas nao achou");return;}'
+      + 'var g=c.getContext("2d").createLinearGradient(0,0,0,165);'
       + 'g.addColorStop(0,"rgba(29,40,70,0.15)");g.addColorStop(1,"rgba(29,40,70,0.01)");'
       + 'new Chart(c,{type:"line",data:{labels:["Basal","15","30","45","60","90","120","150","180"],'
       + 'datasets:[{data:v,borderColor:"#1D2846",backgroundColor:g,fill:true,tension:0.3,'
       + 'pointRadius:v.map(function(x){return x===p?7:4;}),'
       + 'pointBackgroundColor:v.map(function(x){return x===p?"#ef4444":"#1D2846";}),'
       + 'pointBorderColor:v.map(function(x){return x===p?"#ef4444":"#1D2846";}),'
-      + 'borderWidth:2,order:1},'
-      + '{data:[20,20,20,20,20,20,20,20,20],borderColor:"#10b981",backgroundColor:"transparent",'
-      + 'borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,order:2}'
-      + ']},options:{responsive:true,maintainAspectRatio:false,'
-      + 'plugins:{legend:{display:false}},'
-      + 'scales:{x:{title:{display:true,text:"Tempo (min)",font:{size:9},color:"#666"},grid:{display:false},ticks:{font:{size:9},color:"#555"}},'
-      + 'y:{title:{display:true,text:"H2 (ppm)",font:{size:9},color:"#666"},grid:{color:"rgba(0,0,0,.05)"},ticks:{font:{size:9},color:"#555"},min:0}'
-      + '}}});'
-      + (autoPrint ? 'setTimeout(function(){window.print();},700);' : '')
-      + '});'
-      + '<\/script>';
-    var btnBar = autoPrint ? '' :
-      '<div class="no-screen" style="position:fixed;top:12px;right:12px;z-index:999;display:flex;gap:8px">'
-      + '<button onclick="window.print()" style="background:#1D2846;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer">\ud83d\udda8\ufe0f Imprimir / Salvar PDF</button>'
-      + '<button onclick="window.close()" style="background:#fff;color:#1D2846;border:1.5px solid #1D2846;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer">Fechar</button>'
-      + '</div>';
-    var fullHtml = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>'
-      + '<title>Laudo TRHE</title>'
+      + 'borderWidth:2,order:1},{data:[20,20,20,20,20,20,20,20,20],borderColor:"#10b981",backgroundColor:"transparent",'
+      + 'borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,order:2}]},'
+      + 'options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},'
+      + 'scales:{x:{title:{display:true,text:"Tempo (min)",font:{size:9}},grid:{display:false},ticks:{font:{size:9}}},'
+      + 'y:{title:{display:true,text:"H2 (ppm)",font:{size:9}},grid:{color:"rgba(0,0,0,.05)"},ticks:{font:{size:9}},min:0}}}});'
+      + (autoPrint ? 'setTimeout(function(){window.print();},900);' : '')
+      + '});';
+
+    var fullHtml = '<!DOCTYPE html><html lang="pt-BR">'
+      + '<head><meta charset="UTF-8"/>'
+      + '<title>Laudo TRHE - Clinica Vitta</title>'
       + '<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"><\/script>'
-      + '<style>' + css + extraCss + '<\/style>'
+      + '<style>' + styles + '<\/style>'
       + '</head><body>'
-      + btnBar
-      + cloneHtml
-      + chartScript
+      + (autoPrint ? '' : '<div class="no-print-btn">' + btnBar + '</div>')
+      + pgContent
+      + '<script>' + chartJs + '<\/script>'
       + '</body></html>';
+
     win.document.open();
     win.document.write(fullHtml);
     win.document.close();
-    if (autoPrint) { win.addEventListener('load', function(){ setTimeout(function(){ win.print(); }, 700); }); }
+    if (autoPrint) {
+      win.onload = function() { setTimeout(function(){ win.print(); }, 900); };
+    }
   };
 
   setTimeout(() => {
