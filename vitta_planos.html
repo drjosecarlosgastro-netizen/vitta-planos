@@ -837,13 +837,11 @@ async function showFormBio(id) {
     + fields('TMB', 'tmb', reg.tmb, 'kcal', '1')
     + fields('SMI', 'smi', reg.smi, 'kg/m²')
     + fields('Gord. Visceral', 'gordura_visceral', reg.gordura_visceral, 'nível', '1')
-    + fields('Rel. Cintura/Alt.', 'rcq', reg.rcq, '')
     + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Análise Segmentar (kg de músculo)</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px">'
     + fields('Braço D', 'seg_braco_d', reg.seg_braco_d, 'kg')
     + fields('Braço E', 'seg_braco_e', reg.seg_braco_e, 'kg')
-    + fields('Tronco', 'seg_tronco', reg.seg_tronco, 'kg')
     + fields('Perna D', 'seg_perna_d', reg.seg_perna_d, 'kg')
     + fields('Perna E', 'seg_perna_e', reg.seg_perna_e, 'kg')
     + '</div>'
@@ -851,7 +849,6 @@ async function showFormBio(id) {
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px">'
     + fields('Braço D', 'gord_braco_d', reg.gord_braco_d, 'kg')
     + fields('Braço E', 'gord_braco_e', reg.gord_braco_e, 'kg')
-    + fields('Tronco', 'gord_tronco', reg.gord_tronco, 'kg')
     + fields('Perna D', 'gord_perna_d', reg.gord_perna_d, 'kg')
     + fields('Perna E', 'gord_perna_e', reg.gord_perna_e, 'kg')
     + '</div>'
@@ -911,15 +908,12 @@ async function salvarBio(id) {
     tmb: fnum('tmb'),
     smi: fnum('smi'),
     gordura_visceral: fnum('gordura_visceral'),
-    rcq: fnum('rcq'),
     seg_braco_d: fnum('seg_braco_d'),
     seg_braco_e: fnum('seg_braco_e'),
-    seg_tronco: fnum('seg_tronco'),
     seg_perna_d: fnum('seg_perna_d'),
     seg_perna_e: fnum('seg_perna_e'),
     gord_braco_d: fnum('gord_braco_d'),
     gord_braco_e: fnum('gord_braco_e'),
-    gord_tronco: fnum('gord_tronco'),
     gord_perna_d: fnum('gord_perna_d'),
     gord_perna_e: fnum('gord_perna_e'),
     diag_imc: (document.getElementById('bio-diag-imc') || {}).value || null,
@@ -968,7 +962,6 @@ async function gerarLaudoBio(id) {
   if (atual.perc_gordura) { if (atual.perc_gordura < 25) score += 10; else if (atual.perc_gordura < 33) score += 5; }
   if (atual.smi) { if (atual.smi >= 7) score += 10; else if (atual.smi >= 6) score += 5; }
   if (atual.gordura_visceral) { if (atual.gordura_visceral <= 9) score += 10; else if (atual.gordura_visceral <= 12) score += 5; }
-  if (atual.rcq) { if (atual.rcq < 0.5) score += 10; else if (atual.rcq < 0.55) score += 5; }
   score = Math.min(100, Math.max(0, score));
 
   // Evolução (últimas 3 avaliações incluindo atual)
@@ -978,9 +971,8 @@ async function gerarLaudoBio(id) {
   const deltaGord = primeiroAnterior && atual.gordura_corporal && primeiroAnterior.gordura_corporal ? (atual.gordura_corporal - primeiroAnterior.gordura_corporal) : null;
 
   // Referências para radar (% do ideal por segmento)
-  const refMusc = { braco: 3.0, tronco: 26.0, perna: 10.0 };
+  const refMusc = { braco: 3.0, perna: 10.0 };
   const radarData = [
-    atual.seg_tronco ? Math.round((atual.seg_tronco / refMusc.tronco) * 100) : 0,
     atual.seg_braco_d ? Math.round((atual.seg_braco_d / refMusc.braco) * 100) : 0,
     atual.seg_perna_d ? Math.round((atual.seg_perna_d / refMusc.perna) * 100) : 0,
     atual.seg_perna_e ? Math.round((atual.seg_perna_e / refMusc.perna) * 100) : 0,
@@ -1033,14 +1025,10 @@ async function gerarLaudoBio(id) {
   function silhuetaSVG(r) {
     var bD = r.seg_braco_d || '--'; var bE = r.seg_braco_e || '--';
     var pD = r.seg_perna_d || '--'; var pE = r.seg_perna_e || '--';
-    var tr = r.seg_tronco || '--'; var gTr = r.gord_tronco ? ' gord:' + r.gord_tronco + 'kg' : '';
     return '<svg width="100" height="220" viewBox="0 0 100 220" xmlns="http://www.w3.org/2000/svg">'
       + '<ellipse cx="50" cy="16" rx="13" ry="14" fill="#F5EDD8" stroke="#C9A84C" stroke-width="1.2"/>'
       + '<rect x="44" y="29" width="12" height="8" rx="3" fill="#F5EDD8" stroke="#C9A84C" stroke-width="1"/>'
       + '<rect x="28" y="37" width="44" height="62" rx="7" fill="#FFF3D6" stroke="#C9A84C" stroke-width="1.4"/>'
-      + '<circle cx="50" cy="86" r="4" fill="#f59e0b"/>'
-      + '<text x="50" y="59" text-anchor="middle" font-size="8" fill="#8B6A1A" font-family="Rajdhani" font-weight="600">TRONCO</text>'
-      + '<text x="50" y="69" text-anchor="middle" font-size="7" fill="#8B6A1A" font-family="Rajdhani">' + tr + 'kg</text>'
       + '<rect x="4" y="39" width="21" height="52" rx="9" fill="#F5EDD8" stroke="#34d399" stroke-width="1.4"/>'
       + '<text x="14" y="64" text-anchor="middle" font-size="7" fill="#065f46" font-family="Rajdhani" font-weight="600">' + bD + 'kg</text>'
       + '<circle cx="14" cy="72" r="4" fill="#34d399"/>'
@@ -1165,7 +1153,6 @@ async function gerarLaudoBio(id) {
     + '<div class="mr"><span class="mnm">% Gordura</span><div class="mbar"><div class="mfil" style="width:55%;background:#f59e0b"></div></div><span class="mval" style="color:#9a5c00">' + (atual.perc_gordura || '--') + '%</span></div>'
     + '<div class="mr"><span class="mnm">Taxa Metab. Basal</span><div class="mbar"><div class="mfil" style="width:70%;background:#34d399"></div></div><span class="mval" style="color:#1a7a3e">' + (atual.tmb || '--') + ' kcal</span></div>'
     + '<div class="mr"><span class="mnm">SMI (Músculo Esq.)</span><div class="mbar"><div class="mfil" style="width:48%;background:#a78bfa"></div></div><span class="mval" style="color:#6d28d9">' + (atual.smi || '--') + ' kg/m²</span></div>'
-    + '<div class="mr"><span class="mnm">Rel. Cintura/Alt.</span><div class="mbar"><div class="mfil" style="width:52%;background:#f59e0b"></div></div><span class="mval" style="color:#9a5c00">' + (atual.rcq || '--') + '</span></div>'
     + '</div></div>'
 
     // SEGMENTAR + EQUILÍBRIO + RADAR + DIAGNÓSTICO
@@ -1228,7 +1215,7 @@ async function gerarLaudoBio(id) {
     + ']},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:9},autoSkip:false}},y:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:9}},min:20,max:90}}}}});}'
     + 'var radarData=' + JSON.stringify(radarData) + ';'
     + 'if(document.getElementById("laudoRadar")){'
-    + 'new Chart(document.getElementById("laudoRadar"),{type:"radar",data:{labels:["Tronco","Braço D","Perna D","Perna E","Braço E"],datasets:[{data:radarData,borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.15)",borderWidth:1.5,pointBackgroundColor:"#C9A84C",pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:7},backdropColor:"transparent",color:"#7a7a7a"},grid:{color:"rgba(0,0,0,0.08)"},angleLines:{color:"rgba(0,0,0,0.1)"},pointLabels:{font:{size:8,family:"Rajdhani"},color:"#3a3a3a"}}}}});}'
+    + 'new Chart(document.getElementById("laudoRadar"),{type:"radar",data:{labels:["Braço D","Perna D","Perna E","Braço E"],datasets:[{data:radarData,borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.15)",borderWidth:1.5,pointBackgroundColor:"#C9A84C",pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:7},backdropColor:"transparent",color:"#7a7a7a"},grid:{color:"rgba(0,0,0,0.08)"},angleLines:{color:"rgba(0,0,0,0.1)"},pointLabels:{font:{size:8,family:"Rajdhani"},color:"#3a3a3a"}}}}});}'
     + 'window.onload=function(){setTimeout(function(){window.print();},800);};'
     + '<\/script><\/body><\/html>';
 
