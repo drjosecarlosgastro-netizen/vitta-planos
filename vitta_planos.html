@@ -838,7 +838,6 @@ async function showFormBio(id) {
     + fields('IMC', 'imc', reg.imc, 'kg/m²')
     + fields('PGC (%)', 'perc_gordura', reg.perc_gordura, '')
     + fields('TMB', 'tmb', reg.tmb, 'kcal', '1')
-    + fields('Índice de Músculo Esq.', 'smi', reg.smi, 'kg/m²')
     + fields('Gord. Visceral', 'gordura_visceral', reg.gordura_visceral, 'nível', '1')
     + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Análise Segmentar (kg de músculo)</div>'
@@ -950,7 +949,6 @@ async function salvarBio(id) {
     imc: fnum('imc'),
     perc_gordura: fnum('perc_gordura'),
     tmb: fnum('tmb'),
-    smi: fnum('smi'),
     gordura_visceral: fnum('gordura_visceral'),
     seg_braco_d: fnum('seg_braco_d'),
     seg_braco_e: fnum('seg_braco_e'),
@@ -1022,7 +1020,6 @@ async function gerarLaudoBio(id) {
   let score = 50;
   if (atual.imc) { if (atual.imc < 25) score += 10; else if (atual.imc < 30) score += 5; }
   if (atual.perc_gordura) { if (atual.perc_gordura < 25) score += 10; else if (atual.perc_gordura < 33) score += 5; }
-  if (atual.smi) { if (atual.smi >= 7) score += 10; else if (atual.smi >= 6) score += 5; }
   if (atual.gordura_visceral) { if (atual.gordura_visceral <= 9) score += 10; else if (atual.gordura_visceral <= 12) score += 5; }
   score = Math.min(100, Math.max(0, score));
 
@@ -1257,7 +1254,6 @@ async function gerarLaudoBio(id) {
     + '<div class="mr"><span class="mnm">IMC</span><div class="mbar"><div class="mfil" style="width:58%;background:#f59e0b"></div></div><span class="mval" style="color:#9a5c00">' + (atual.imc || '--') + ' kg/m²</span></div>'
     + '<div class="mr"><span class="mnm">% Gordura</span><div class="mbar"><div class="mfil" style="width:55%;background:#f59e0b"></div></div><span class="mval" style="color:#9a5c00">' + (atual.perc_gordura || '--') + '%</span></div>'
     + '<div class="mr"><span class="mnm">Taxa Metab. Basal</span><div class="mbar"><div class="mfil" style="width:70%;background:#34d399"></div></div><span class="mval" style="color:#1a7a3e">' + (atual.tmb || '--') + ' kcal</span></div>'
-    + '<div class="mr"><span class="mnm">SMI (Músculo Esq.)</span><div class="mbar"><div class="mfil" style="width:48%;background:#a78bfa"></div></div><span class="mval" style="color:#6d28d9">' + (atual.smi || '--') + ' kg/m²</span></div>'
     + '</div></div>'
 
     // SEGMENTAR + EQUILÍBRIO + RADAR + DIAGNÓSTICO
