@@ -829,8 +829,6 @@ async function showFormBio(id) {
     + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Composição Corporal</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + fields('Peso Total', 'peso', reg.peso, 'kg')
-    + fields('Massa Magra', 'massa_magra', reg.massa_magra, 'kg')
     + fields('Gordura Corporal', 'gordura_corporal', reg.gordura_corporal, 'kg')
     + fields('Água Corporal', 'agua_corporal', reg.agua_corporal, 'kg')
     + fields('Proteína', 'proteina', reg.proteina, 'kg')
@@ -885,7 +883,7 @@ async function showFormBio(id) {
     var imc = parseFloat((document.getElementById('bio-imc') || {}).value || 0);
     var perc = parseFloat((document.getElementById('bio-perc_gordura') || {}).value || 0);
     var visc = parseFloat((document.getElementById('bio-gordura_visceral') || {}).value || 0);
-    var mm = parseFloat((document.getElementById('bio-massa_magra') || {}).value || 0);
+    var mm = parseFloat((document.getElementById('bio-amg_musculo') || {}).value || 0);
     // IMC
     var dImc = imc < 18.5 ? 'Baixo peso' : imc < 25 ? 'Normal' : imc < 30 ? 'Sobrepeso' : imc < 35 ? 'Obesidade I' : 'Obesidade II';
     // % Gordura (faixas femininas e masculinas)
@@ -922,7 +920,7 @@ async function showFormBio(id) {
     }
   }
   setTimeout(function() {
-    ['bio-imc','bio-perc_gordura','bio-gordura_visceral','bio-massa_magra'].forEach(function(fid) {
+    ['bio-imc','bio-perc_gordura','bio-gordura_visceral','bio-amg_musculo'].forEach(function(fid) {
       var el = document.getElementById(fid);
       if (el) el.addEventListener('input', calcDiagBio);
     });
@@ -944,8 +942,8 @@ async function salvarBio(id) {
     amg_peso: fnum('amg_peso'),
     amg_musculo: fnum('amg_musculo'),
     amg_gordura: fnum('amg_gordura'),
-    peso: fnum('peso'),
-    massa_magra: fnum('massa_magra'),
+    peso: fnum('amg_peso'),
+    massa_magra: fnum('amg_musculo'),
     gordura_corporal: fnum('gordura_corporal'),
     agua_corporal: fnum('agua_corporal'),
     proteina: fnum('proteina'),
@@ -979,7 +977,7 @@ async function salvarBio(id) {
       return v <= 9 ? 'Normal' : v <= 14 ? 'Limite normal' : 'Alto';
     })(),
     ctrl_muscular: (function() {
-      var mm = fnum('massa_magra'); var alt = parseFloat(p.altura || 0);
+      var mm = fnum('amg_musculo'); var alt = parseFloat(p.altura || 0);
       var sx = (p.gender || '').toLowerCase();
       if (!mm || !alt) return null;
       var ideal = sx === 'masculino' || sx === 'male' ? (alt * alt * 8.0) : (alt * alt * 6.5);
