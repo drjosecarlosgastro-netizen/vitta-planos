@@ -821,6 +821,12 @@ async function showFormBio(id) {
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Responsável</label>'
     + '<select id="bio-resp" style="padding:6px 8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px">' + profOpts + '</select></div>'
     + '</div>'
+    + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Análise Músculo-Gordura (InBody)</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    + fields('Peso (% do normal)', 'amg_peso_perc', reg.amg_peso_perc, '%')
+    + fields('Massa Muscular Esq. (% do normal)', 'amg_musculo_perc', reg.amg_musculo_perc, '%')
+    + fields('Massa de Gordura (% do normal)', 'amg_gordura_perc', reg.amg_gordura_perc, '%')
+    + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Composição Corporal</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + fields('Peso', 'peso', reg.peso, 'kg')
@@ -842,6 +848,7 @@ async function showFormBio(id) {
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px">'
     + fields('Braço D', 'seg_braco_d', reg.seg_braco_d, 'kg')
     + fields('Braço E', 'seg_braco_e', reg.seg_braco_e, 'kg')
+    + fields('Abdome', 'seg_abdome', reg.seg_abdome, 'kg')
     + fields('Perna D', 'seg_perna_d', reg.seg_perna_d, 'kg')
     + fields('Perna E', 'seg_perna_e', reg.seg_perna_e, 'kg')
     + '</div>'
@@ -849,6 +856,7 @@ async function showFormBio(id) {
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px">'
     + fields('Braço D', 'gord_braco_d', reg.gord_braco_d, 'kg')
     + fields('Braço E', 'gord_braco_e', reg.gord_braco_e, 'kg')
+    + fields('Abdome', 'gord_abdome', reg.gord_abdome, 'kg')
     + fields('Perna D', 'gord_perna_d', reg.gord_perna_d, 'kg')
     + fields('Perna E', 'gord_perna_e', reg.gord_perna_e, 'kg')
     + '</div>'
@@ -874,8 +882,8 @@ async function showFormBio(id) {
     + '<option value="Limite normal"' + (reg.diag_visceral==='Limite normal'?' selected':'') + '>Limite normal</option>'
     + '<option value="Alto"' + (reg.diag_visceral==='Alto'?' selected':'') + '>Alto</option>'
     + '</select></div>'
-    + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Controle Muscular (kg)</label>'
-    + '<input type="number" id="bio-ctrl-musc" step="0.1" value="' + (reg.ctrl_muscular || '') + '" placeholder="negativo = abaixo do ideal" style="padding:6px 8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px"></div>'
+    + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Controle Muscular</label>'
+    + '<div style="padding:6px 10px;border:1px solid rgba(139,106,26,0.2);border-radius:3px;font-size:12px;color:#7a7a7a;background:#fafaf7">Calculado automaticamente com base na massa magra e altura</div></div>'
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Nota do Médico</label>'
     + '<textarea id="bio-nota" rows="3" style="padding:8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px;resize:none">' + (reg.nota_medico || '') + '</textarea></div>'
@@ -897,6 +905,9 @@ async function salvarBio(id) {
     data_exame: fv('data'),
     responsavel: respParts[0] || '',
     responsavel_crm: respParts[1] || '',
+    amg_peso_perc: fnum('amg_peso_perc'),
+    amg_musculo_perc: fnum('amg_musculo_perc'),
+    amg_gordura_perc: fnum('amg_gordura_perc'),
     peso: fnum('peso'),
     massa_magra: fnum('massa_magra'),
     gordura_corporal: fnum('gordura_corporal'),
@@ -910,16 +921,24 @@ async function salvarBio(id) {
     gordura_visceral: fnum('gordura_visceral'),
     seg_braco_d: fnum('seg_braco_d'),
     seg_braco_e: fnum('seg_braco_e'),
+    seg_abdome: fnum('seg_abdome'),
     seg_perna_d: fnum('seg_perna_d'),
     seg_perna_e: fnum('seg_perna_e'),
     gord_braco_d: fnum('gord_braco_d'),
     gord_braco_e: fnum('gord_braco_e'),
+    gord_abdome: fnum('gord_abdome'),
     gord_perna_d: fnum('gord_perna_d'),
     gord_perna_e: fnum('gord_perna_e'),
     diag_imc: (document.getElementById('bio-diag-imc') || {}).value || null,
     diag_gordura: (document.getElementById('bio-diag-gord') || {}).value || null,
     diag_visceral: (document.getElementById('bio-diag-visc') || {}).value || null,
-    ctrl_muscular: fnum('ctrl-musc'),
+    ctrl_muscular: (function() {
+      var mm = fnum('massa_magra'); var alt = parseFloat(p.altura || 0);
+      var sx = (p.gender || '').toLowerCase();
+      if (!mm || !alt) return null;
+      var ideal = sx === 'masculino' || sx === 'male' ? (alt * alt * 8.0) : (alt * alt * 6.5);
+      return parseFloat((mm - ideal).toFixed(1));
+    })(),
     nota_medico: fv('nota'),
     altura: p.altura || null,
     sexo: p.gender || null,
@@ -1025,10 +1044,13 @@ async function gerarLaudoBio(id) {
   function silhuetaSVG(r) {
     var bD = r.seg_braco_d || '--'; var bE = r.seg_braco_e || '--';
     var pD = r.seg_perna_d || '--'; var pE = r.seg_perna_e || '--';
+    var abd = r.seg_abdome || '--';
     return '<svg width="100" height="220" viewBox="0 0 100 220" xmlns="http://www.w3.org/2000/svg">'
       + '<ellipse cx="50" cy="16" rx="13" ry="14" fill="#F5EDD8" stroke="#C9A84C" stroke-width="1.2"/>'
       + '<rect x="44" y="29" width="12" height="8" rx="3" fill="#F5EDD8" stroke="#C9A84C" stroke-width="1"/>'
       + '<rect x="28" y="37" width="44" height="62" rx="7" fill="#FFF3D6" stroke="#C9A84C" stroke-width="1.4"/>'
+      + '<text x="50" y="62" text-anchor="middle" font-size="7" fill="#8B6A1A" font-family="Rajdhani" font-weight="600">ABDOME</text>'
+      + '<text x="50" y="72" text-anchor="middle" font-size="7" fill="#8B6A1A" font-family="Rajdhani">' + abd + 'kg</text>'
       + '<rect x="4" y="39" width="21" height="52" rx="9" fill="#F5EDD8" stroke="#34d399" stroke-width="1.4"/>'
       + '<text x="14" y="64" text-anchor="middle" font-size="7" fill="#065f46" font-family="Rajdhani" font-weight="600">' + bD + 'kg</text>'
       + '<circle cx="14" cy="72" r="4" fill="#34d399"/>'
@@ -1139,6 +1161,50 @@ async function gerarLaudoBio(id) {
     // BODY
     + '<div class="body">'
 
+    // ANÁLISE MÚSCULO-GORDURA
+    + (atual.amg_peso_perc || atual.amg_musculo_perc || atual.amg_gordura_perc ? (function(){
+      function amgBar(label, perc, colorOk, colorBad) {
+        var p = parseFloat(perc) || 100;
+        // escala: 70=leftmost, 100=normal center, 160=rightmost
+        // zona normal: 80-120%; abaixo: <80%; acima: >120%
+        var MIN=70, MAX=160, NORM_L=80, NORM_R=120;
+        var pct = Math.min(Math.max(p, MIN), MAX);
+        var markerLeft = ((pct - MIN) / (MAX - MIN)) * 100;
+        var zone = p < NORM_L ? 'Abaixo' : p > NORM_R ? 'Acima' : 'Normal';
+        var zoneColor = p < NORM_L ? '#9a5c00' : p > NORM_R ? '#a32d2d' : '#1a7a3e';
+        var zoneTag = p < NORM_L ? 'background:#fef3e2;color:#9a5c00;border:1px solid #f0c97a'
+          : p > NORM_R ? 'background:#fdf0f0;color:#a32d2d;border:1px solid #f09595'
+          : 'background:#e8f8ee;color:#1a7a3e;border:1px solid #a3d9b8';
+        var normL = ((NORM_L - MIN) / (MAX - MIN)) * 100;
+        var normW = ((NORM_R - NORM_L) / (MAX - MIN)) * 100;
+        return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,0.05)">'
+          + '<div style="min-width:110px;font-size:8pt;color:#3a3a3a">' + label + '</div>'
+          + '<div style="flex:1;position:relative;height:14px">'
+          + '<div style="position:absolute;inset:0;background:#e8e8e8;border-radius:2px"></div>'
+          + '<div style="position:absolute;top:0;bottom:0;left:' + normL + '%;width:' + normW + '%;background:#d0e8d8;border-radius:1px"></div>'
+          + '<div style="position:absolute;top:1px;bottom:1px;left:calc(' + markerLeft + '% - 3px);width:6px;background:#8B6A1A;border-radius:2px"></div>'
+          + '</div>'
+          + '<div style="min-width:38px;text-align:right;font-size:9pt;font-weight:700;color:#1a1a1a">' + p + '%</div>'
+          + '<span style="display:inline-block;padding:1px 6px;border-radius:8px;font-size:8pt;font-weight:600;min-width:44px;text-align:center;' + zoneTag + '">' + zone + '</span>'
+          + '</div>';
+      }
+      return '<div class="card" style="padding:6px 10px"><div class="ctop"></div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        + '<div class="ct" style="margin-bottom:0">Análise Músculo-Gordura</div>'
+        + '<div style="display:flex;gap:12px;font-size:7pt;color:#7a7a7a">'
+        + '<span style="display:flex;align-items:center;gap:3px"><span style="width:20px;height:8px;background:#d0e8d8;border-radius:1px;display:inline-block"></span>Zona Normal</span>'
+        + '<span style="display:flex;align-items:center;gap:3px"><span style="width:6px;height:12px;background:#8B6A1A;border-radius:2px;display:inline-block"></span>Paciente</span>'
+        + '</div></div>'
+        + '<div style="display:flex;gap:6px;font-size:7pt;color:#7a7a7a;margin-bottom:4px;padding:0 0 2px;border-bottom:1px solid rgba(139,106,26,0.1)">'
+        + '<div style="min-width:110px"></div>'
+        + '<div style="flex:1;display:flex;justify-content:space-between"><span>Abaixo</span><span style="margin-left:20%">Normal</span><span>Acima</span></div>'
+        + '</div>'
+        + amgBar('Peso', atual.amg_peso_perc, '#34d399', '#f59e0b')
+        + amgBar('Massa Muscular Esq.', atual.amg_musculo_perc, '#34d399', '#f59e0b')
+        + amgBar('Massa de Gordura', atual.amg_gordura_perc, '#34d399', '#f59e0b')
+        + '</div>';
+    })() : '')
+
     // COMPOSIÇÃO + ÍNDICES
     + '<div class="g2">'
     + '<div class="card"><div class="ctop"></div><div class="ct">Composição Corporal</div>'
@@ -1169,7 +1235,7 @@ async function gerarLaudoBio(id) {
     + '<div class="di"><div class="dl">IMC</div><div class="dv">' + (atual.imc || '--') + '</div><div class="dr">Normal: 18,5–24,9</div>' + diagTag(atual.diag_imc) + '</div>'
     + '<div class="di"><div class="dl">% Gordura</div><div class="dv">' + (atual.perc_gordura || '--') + '%</div><div class="dr">Normal: 21–33%</div>' + diagTag(atual.diag_gordura) + '</div>'
     + '<div class="di"><div class="dl">Gord. Visceral</div><div class="dv">Nível ' + (atual.gordura_visceral || '--') + '</div><div class="dr">Normal: 1–9</div>' + diagTag(atual.diag_visceral) + '</div>'
-    + '<div class="di"><div class="dl">Ctrl. Muscular</div><div class="dv">' + (atual.ctrl_muscular !== null && atual.ctrl_muscular !== undefined ? (atual.ctrl_muscular > 0 ? '+' : '') + atual.ctrl_muscular + ' kg' : '--') + '</div><div class="dr">Massa a ganhar</div>'
+    + '<div class="di"><div class="dl">Ctrl. Muscular</div><div class="dv">' + (atual.ctrl_muscular !== null && atual.ctrl_muscular !== undefined ? (atual.ctrl_muscular > 0 ? '+' : '') + atual.ctrl_muscular + ' kg' : '--') + '</div><div class="dr">' + (atual.ctrl_muscular < 0 ? 'Abaixo do ideal' : 'Acima ou no ideal') + '</div>'
     + (atual.ctrl_muscular < 0 ? '<span style="display:inline-block;margin-top:4px;padding:1px 7px;border-radius:8px;font-size:9px;font-weight:600;background:#fef3e2;color:#9a5c00;border:1px solid #f0c97a">Abaixo ideal</span>' : '<span style="display:inline-block;margin-top:4px;padding:1px 7px;border-radius:8px;font-size:9px;font-weight:600;background:#e8f8ee;color:#1a7a3e;border:1px solid #a3d9b8">No ideal</span>')
     + '</div></div></div>'
     + '</div>'
