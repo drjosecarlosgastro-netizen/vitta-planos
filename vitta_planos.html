@@ -860,30 +860,16 @@ async function showFormBio(id) {
     + fields('Perna D', 'gord_perna_d', reg.gord_perna_d, 'kg')
     + fields('Perna E', 'gord_perna_e', reg.gord_perna_e, 'kg')
     + '</div>'
-    + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Diagnóstico</div>'
+    + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Diagnóstico (calculado automaticamente)</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Diagnóstico IMC</label>'
-    + '<select id="bio-diag-imc" style="padding:6px 8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px">'
-    + '<option value="Baixo peso"' + (reg.diag_imc==='Baixo peso'?' selected':'') + '>Baixo peso</option>'
-    + '<option value="Normal"' + (reg.diag_imc==='Normal'?' selected':'') + '>Normal</option>'
-    + '<option value="Sobrepeso"' + (reg.diag_imc==='Sobrepeso'?' selected':'') + '>Sobrepeso</option>'
-    + '<option value="Obesidade I"' + (reg.diag_imc==='Obesidade I'?' selected':'') + '>Obesidade I</option>'
-    + '<option value="Obesidade II"' + (reg.diag_imc==='Obesidade II'?' selected':'') + '>Obesidade II</option>'
-    + '</select></div>'
+    + '<div id="bio-diag-imc-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Diagnóstico % Gordura</label>'
-    + '<select id="bio-diag-gord" style="padding:6px 8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px">'
-    + '<option value="Abaixo do ideal"' + (reg.diag_gordura==='Abaixo do ideal'?' selected':'') + '>Abaixo do ideal</option>'
-    + '<option value="Normal"' + (reg.diag_gordura==='Normal'?' selected':'') + '>Normal</option>'
-    + '<option value="Acima do ideal"' + (reg.diag_gordura==='Acima do ideal'?' selected':'') + '>Acima do ideal</option>'
-    + '</select></div>'
-    + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Diag. Gordura Visceral</label>'
-    + '<select id="bio-diag-visc" style="padding:6px 8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px">'
-    + '<option value="Normal"' + (reg.diag_visceral==='Normal'?' selected':'') + '>Normal</option>'
-    + '<option value="Limite normal"' + (reg.diag_visceral==='Limite normal'?' selected':'') + '>Limite normal</option>'
-    + '<option value="Alto"' + (reg.diag_visceral==='Alto'?' selected':'') + '>Alto</option>'
-    + '</select></div>'
+    + '<div id="bio-diag-gord-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
+    + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Gordura Visceral</label>'
+    + '<div id="bio-diag-visc-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Controle Muscular</label>'
-    + '<div style="padding:6px 10px;border:1px solid rgba(139,106,26,0.2);border-radius:3px;font-size:12px;color:#7a7a7a;background:#fafaf7">Calculado automaticamente com base na massa magra e altura</div></div>'
+    + '<div id="bio-ctrl-musc-display" style="padding:6px 10px;border:1px solid rgba(139,106,26,0.15);border-radius:3px;font-size:13px;font-weight:600;background:#fafaf7;color:#1a1a1a">--</div></div>'
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7a7a7a">Nota do Médico</label>'
     + '<textarea id="bio-nota" rows="3" style="padding:8px;border:1px solid rgba(139,106,26,0.25);border-radius:3px;font-size:13px;resize:none">' + (reg.nota_medico || '') + '</textarea></div>'
@@ -892,6 +878,56 @@ async function showFormBio(id) {
     + '<button class="btn btn-ghost" onclick="closeModal(\'modal-generic\')" style="flex-shrink:0">Cancelar</button>'
     + '</div></div>';
   openModal('modal-generic');
+  // Auto-calcular diagnósticos ao digitar
+  var bioSexo = (p.gender || '').toLowerCase();
+  var bioAltura = parseFloat(p.altura || 0);
+  function calcDiagBio() {
+    var imc = parseFloat((document.getElementById('bio-imc') || {}).value || 0);
+    var perc = parseFloat((document.getElementById('bio-perc_gordura') || {}).value || 0);
+    var visc = parseFloat((document.getElementById('bio-gordura_visceral') || {}).value || 0);
+    var mm = parseFloat((document.getElementById('bio-massa_magra') || {}).value || 0);
+    // IMC
+    var dImc = imc < 18.5 ? 'Baixo peso' : imc < 25 ? 'Normal' : imc < 30 ? 'Sobrepeso' : imc < 35 ? 'Obesidade I' : 'Obesidade II';
+    // % Gordura (faixas femininas e masculinas)
+    var dGord;
+    if (bioSexo === 'masculino' || bioSexo === 'male') {
+      dGord = perc < 8 ? 'Abaixo do ideal' : perc <= 19 ? 'Normal' : 'Acima do ideal';
+    } else {
+      dGord = perc < 15 ? 'Abaixo do ideal' : perc <= 33 ? 'Normal' : 'Acima do ideal';
+    }
+    // Visceral
+    var dVisc = visc <= 9 ? 'Normal' : visc <= 14 ? 'Limite normal' : 'Alto';
+    // Controle muscular
+    var ctrlMusc = null;
+    if (mm && bioAltura) {
+      var ideal = (bioSexo === 'masculino' || bioSexo === 'male') ? (bioAltura * bioAltura * 8.0) : (bioAltura * bioAltura * 6.5);
+      ctrlMusc = parseFloat((mm - ideal).toFixed(1));
+    }
+    // Cores
+    function tagStyle(v, okVals, warnVals) {
+      if (okVals.indexOf(v) >= 0) return 'color:#1a7a3e;background:#e8f8ee;border:1px solid #a3d9b8';
+      if (warnVals && warnVals.indexOf(v) >= 0) return 'color:#9a5c00;background:#fef3e2;border:1px solid #f0c97a';
+      return 'color:#a32d2d;background:#fdf0f0;border:1px solid #f09595';
+    }
+    var elImc = document.getElementById('bio-diag-imc-display');
+    var elGord = document.getElementById('bio-diag-gord-display');
+    var elVisc = document.getElementById('bio-diag-visc-display');
+    var elCtrl = document.getElementById('bio-ctrl-musc-display');
+    if (elImc && imc) { elImc.textContent = dImc; elImc.style.cssText += ';' + tagStyle(dImc, ['Normal'], ['Sobrepeso', 'Baixo peso']); }
+    if (elGord && perc) { elGord.textContent = dGord; elGord.style.cssText += ';' + tagStyle(dGord, ['Normal'], []); }
+    if (elVisc && visc) { elVisc.textContent = dVisc + ' (nível ' + visc + ')'; elVisc.style.cssText += ';' + tagStyle(dVisc, ['Normal'], ['Limite normal']); }
+    if (elCtrl && ctrlMusc !== null) {
+      elCtrl.textContent = (ctrlMusc >= 0 ? '+' : '') + ctrlMusc + ' kg — ' + (ctrlMusc >= 0 ? 'No ideal' : 'Abaixo do ideal');
+      elCtrl.style.cssText += ';' + (ctrlMusc >= 0 ? 'color:#1a7a3e;background:#e8f8ee;border:1px solid #a3d9b8' : 'color:#9a5c00;background:#fef3e2;border:1px solid #f0c97a');
+    }
+  }
+  setTimeout(function() {
+    ['bio-imc','bio-perc_gordura','bio-gordura_visceral','bio-massa_magra'].forEach(function(fid) {
+      var el = document.getElementById(fid);
+      if (el) el.addEventListener('input', calcDiagBio);
+    });
+    calcDiagBio();
+  }, 100);
 }
 
 async function salvarBio(id) {
@@ -929,9 +965,19 @@ async function salvarBio(id) {
     gord_abdome: fnum('gord_abdome'),
     gord_perna_d: fnum('gord_perna_d'),
     gord_perna_e: fnum('gord_perna_e'),
-    diag_imc: (document.getElementById('bio-diag-imc') || {}).value || null,
-    diag_gordura: (document.getElementById('bio-diag-gord') || {}).value || null,
-    diag_visceral: (document.getElementById('bio-diag-visc') || {}).value || null,
+    diag_imc: (function() {
+      var v = fnum('imc'); if (!v) return null;
+      return v < 18.5 ? 'Baixo peso' : v < 25 ? 'Normal' : v < 30 ? 'Sobrepeso' : v < 35 ? 'Obesidade I' : 'Obesidade II';
+    })(),
+    diag_gordura: (function() {
+      var v = fnum('perc_gordura'); var sx = (p.gender || '').toLowerCase(); if (!v) return null;
+      if (sx === 'masculino' || sx === 'male') return v < 8 ? 'Abaixo do ideal' : v <= 19 ? 'Normal' : 'Acima do ideal';
+      return v < 15 ? 'Abaixo do ideal' : v <= 33 ? 'Normal' : 'Acima do ideal';
+    })(),
+    diag_visceral: (function() {
+      var v = fnum('gordura_visceral'); if (!v) return null;
+      return v <= 9 ? 'Normal' : v <= 14 ? 'Limite normal' : 'Alto';
+    })(),
     ctrl_muscular: (function() {
       var mm = fnum('massa_magra'); var alt = parseFloat(p.altura || 0);
       var sx = (p.gender || '').toLowerCase();
