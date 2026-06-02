@@ -2008,6 +2008,10 @@ async function renderHistorico(){
   const consultasLista=(appts||[]).filter(a=>!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
   const soroLista=soro||[];
   const implLista=impl||[];
+  // Contadores calculados ANTES de usar no HTML
+  const totalComp=consultasLista.filter(a=>a.status==='Compareceu').length;
+  const totalFalt=consultasLista.filter(a=>a.status==='Faltou').length;
+  const totalCanc=consultasLista.filter(a=>a.status==='Cancelou').length;
   let html='';
   html+='<div class="card"><div class="card-title">Resumo do Plano</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
     +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+totalComp+'</div><div style="font-size:11px;color:var(--text-muted)">Consultas</div></div>'
@@ -2015,10 +2019,6 @@ async function renderHistorico(){
     +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+soroLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Sess\u00f5es Soro</div></div>'
     +'<div style="text-align:center;background:var(--bg);border-radius:8px;padding:12px"><div style="font-size:22px;font-weight:700;color:var(--navy)">'+implLista.length+'</div><div style="font-size:11px;color:var(--text-muted)">Implantes</div></div>'
     +'</div></div>';
-  const totalComp=consultasLista.filter(a=>a.status==='Compareceu').length;
-  const totalFalt=consultasLista.filter(a=>a.status==='Faltou').length;
-  const totalCanc=consultasLista.filter(a=>a.status==='Cancelou').length;
-  const totalFaltas=(histOcorr||[]).filter(h=>h.tipo==='falta').length;
   html+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
     +'<div class="card-title" style="margin:0">\ud83e\ude7a Consultas e Ocorr\u00eancias</div>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
