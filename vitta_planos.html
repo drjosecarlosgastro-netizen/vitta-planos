@@ -1385,15 +1385,16 @@ async function showLaudoTRHE(id) {
     var pA = window._trhePrintPico || 0;
     var lHtml = window._trheLaudoHtml || '';
 
-    // Extrair apenas o HTML do laudo (sem a tag <style> interna)
-    // laudoHtml = css + '<div id="laudo-print-overlay">...' 
-    // Precisamos pegar somente o conteudo do overlay/page
-    var pgStart = lHtml.indexOf('<div id="laudo-print-page">');
-    var pgContent = pgStart >= 0 ? lHtml.substring(pgStart) : lHtml;
-    // Remover o wrapper duplo </div></div> do final
-    if (pgContent.slice(-12) === '</div></div>') {
-      pgContent = pgContent.slice(0, -6); // Remove um </div>
-    }
+    // Extrair as duas divs .lp-pg diretamente da string do laudoHtml
+    // laudoHtml = <style>...</style> + <div id=laudo-print-overlay> + <div id=laudo-print-page> + <div class=lp-pg>...</div><div class=lp-pg>...</div> + </div></div>
+    var pgStart = lHtml.indexOf('<div class="lp-pg">');
+    // Encontrar o fechamento do laudo-print-page (antes dos 2 fechamentos finais)
+    var pgEnd = lHtml.lastIndexOf('</div></div>');
+    var innerContent = (pgStart >= 0 && pgEnd > pgStart)
+      ? lHtml.substring(pgStart, pgEnd)
+      : lHtml;
+    // Embrulhar no #laudo-print-page para os estilos funcionarem
+    var pgContent = '<div id="laudo-print-page">' + innerContent + '</div>';
 
     var win = window.open('','_blank');
     if (!win) { toast('Permita pop-ups neste site','error'); return; }
