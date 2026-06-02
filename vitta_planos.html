@@ -829,7 +829,7 @@ async function showFormBio(id) {
     + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Composição Corporal</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
-    + fields('Peso', 'peso', reg.peso, 'kg')
+    + fields('Peso Total', 'peso', reg.peso, 'kg')
     + fields('Massa Magra', 'massa_magra', reg.massa_magra, 'kg')
     + fields('Gordura Corporal', 'gordura_corporal', reg.gordura_corporal, 'kg')
     + fields('Água Corporal', 'agua_corporal', reg.agua_corporal, 'kg')
@@ -839,9 +839,9 @@ async function showFormBio(id) {
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Índices & Metabolismo</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
     + fields('IMC', 'imc', reg.imc, 'kg/m²')
-    + fields('PGC (%)', 'perc_gordura', reg.perc_gordura, '%')
+    + fields('PGC (%)', 'perc_gordura', reg.perc_gordura, '')
     + fields('TMB', 'tmb', reg.tmb, 'kcal', '1')
-    + fields('Índice de Músculo Esq. (kg/m²)', 'smi', reg.smi, 'kg/m²')
+    + fields('Índice de Músculo Esq.', 'smi', reg.smi, 'kg/m²')
     + fields('Gord. Visceral', 'gordura_visceral', reg.gordura_visceral, 'nível', '1')
     + '</div>'
     + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6a1a;border-bottom:1px solid rgba(139,106,26,0.2);padding-bottom:4px">Análise Segmentar (kg de músculo)</div>'
