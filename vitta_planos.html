@@ -1258,7 +1258,7 @@ async function showLaudoTRHE(id) {
     + '.lp-tbl th{background:#1D2846;color:#fff;padding:5px 7px;text-align:left;font-size:9px}'
     + '.lp-tbl td{padding:4px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10.5px}'
     + '.lp-tbl tr:nth-child(even) td{background:#f9fafb}'
-    + '.lp-vtbl{width:100%;border-collapse:collapse;margin-bottom:7px}'
+    + '.lp-vtbl{width:100%;border-collapse:collapse;margin-bottom:7px}' + '.lp-vtbl-sm{width:100%;border-collapse:collapse;font-size:9px}' + '.lp-vtbl-sm th{background:#1D2846;color:#fff;padding:4px 6px;text-align:left;font-size:8px}' + '.lp-vtbl-sm td{padding:2.5px 6px;border-bottom:0.5px solid #e5e7eb;font-size:9px}' + '.lp-vtbl-sm tr:nth-child(even) td{background:#f9fafb}'
     + '.lp-vtbl th{background:#1D2846;color:#fff;padding:5px 8px;text-align:left;font-size:9px}'
     + '.lp-vtbl td{padding:3px 8px;border-bottom:0.5px solid #e5e7eb;font-size:10px}'
     + '.lp-vtbl tr:nth-child(even) td{background:#f9fafb}'
@@ -1284,9 +1284,12 @@ async function showLaudoTRHE(id) {
     + '<span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:16px;border-top:2px dashed #10b981;vertical-align:middle"></span>Limite SIBO (20 ppm)</span>'
     + '<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:7px;height:7px;background:#ef4444;border-radius:50%;display:inline-block"></span>Pico m\u00e1ximo</span>'
     + '</div>'
-    + '<table class="lp-vtbl"><thead><tr><th>Tempo</th><th>H\u2082 (ppm)</th><th>\u0394 vs basal</th><th>Observa\u00e7\u00e3o</th></tr></thead><tbody>' + valRows + '</tbody></table>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;margin-bottom:7px">'
+    + '<div>'
+    + '<table class="lp-vtbl-sm"><thead><tr><th>Tempo</th><th>H\u2082 (ppm)</th><th>\u0394 vs basal</th><th>Observa\u00e7\u00e3o</th></tr></thead><tbody>' + valRows + '</tbody></table>'
     + '</div>'
-    + '<div class="lp-sec"><div class="lp-sec-ttl">2. Indicadores calculados</div>'
+    + '<div>'
+    + '<div style="font-size:9px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.6px;border-bottom:1.5px solid #1D2846;padding-bottom:3px;margin-bottom:7px">2. Indicadores calculados</div>'
     + '<div class="lp-ind">'
     + '<div class="lp-ind-box"><div class="lp-ind-n">' + vArr[0] + '</div><div class="lp-ind-l">Basal (ppm)</div></div>'
     + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.deltaH2 + '</div><div class="lp-ind-l">Delta H\u2082</div></div>'
@@ -1294,7 +1297,9 @@ async function showLaudoTRHE(id) {
     + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.picoAbsoluto + '</div><div class="lp-ind-l">Pico m\u00e1x</div></div>'
     + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.tempoPico90 + '</div><div class="lp-ind-l">Tempo pico</div></div>'
     + '<div class="lp-ind-box"><div class="lp-ind-n-auc">' + r.sgf + '</div><div class="lp-ind-l">AUC/SGF</div></div>'
-    + '</div></div>'
+    + '</div>'
+    + '</div>'
+    + '</div>'
     + '<div class="lp-sec"><div class="lp-sec-ttl">3. Laudo m\u00e9dico</div>'
     + '<div class="lp-strip">'
     + '<div><div class="lp-si-l">Preparo adequado</div><div class="lp-si-v" style="color:' + (ex.preparo_adequado !== false ? '#166534' : '#991b1b') + '">' + (ex.preparo_adequado !== false ? 'Sim' : 'N\u00e3o \u2014 interpreta\u00e7\u00e3o limitada') + '</div></div>'
@@ -1457,6 +1462,10 @@ async function showLaudoTRHE(id) {
       '.lp-tbl td{padding:4px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10.5px}',
       '.lp-tbl tr:nth-child(even) td{background:#f9fafb}',
       '.lp-vtbl{width:100%;border-collapse:collapse;margin-bottom:7px}',
+      '.lp-vtbl-sm{width:100%;border-collapse:collapse}',
+      '.lp-vtbl-sm th{background:#1D2846;color:#fff;padding:4px 6px;text-align:left;font-size:8px}',
+      '.lp-vtbl-sm td{padding:2.5px 6px;border-bottom:0.5px solid #e5e7eb;font-size:9px}',
+      '.lp-vtbl-sm tr:nth-child(even) td{background:#f9fafb}',
       '.lp-vtbl th{background:#1D2846;color:#fff;padding:5px 8px;text-align:left;font-size:9px}',
       '.lp-vtbl td{padding:3px 8px;border-bottom:0.5px solid #e5e7eb;font-size:10px}',
       '.lp-vtbl tr:nth-child(even) td{background:#f9fafb}',
