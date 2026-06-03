@@ -2756,8 +2756,9 @@ async function renderHistoricoPlanos(){
   const c=document.getElementById('patient-tab-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
   const p=currentPatientData;
-  const {data:planos}=await sb.from('planos_historico_planos').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false});
+  const {data:planos, error:plErr}=await sb.from('planos_historico_planos').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false});
   const lista=planos||[];
+  console.log('planos_historico_planos patient_id='+currentPatientId+' count='+lista.length, plErr);
   const isEncerrado=!p.active&&p.motivo_encerramento;
   const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
   const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
