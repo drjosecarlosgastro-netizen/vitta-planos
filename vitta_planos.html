@@ -551,18 +551,12 @@ async function renderPatInfo(){
   ]);
   const allTags=etCfg?JSON.parse(etCfg.value||'[]'):[];
   const patTags=p.etiquetas||[];
-  const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
-  const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'\u2014';
-  const isEncerrado=!p.active&&p.motivo_encerramento;
   const consultasFeitas=(appts||[]).filter(a=>a.status==='Compareceu'&&!a.origem_tabela).length;
   const sessoesCount=(soro||[]).length;
   const implantesCount=(impl||[]).length;
   const lastConsult=(appts||[]).filter(a=>a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str))[0];
   const lastSoro=(soro||[]).sort((a,b)=>parseDateInt(b.data_sessao||'')-parseDateInt(a.data_sessao||''))[0];
   const lastImpl=(impl||[]).sort((a,b)=>parseDateInt(b.data_implante||'')-parseDateInt(a.data_implante||''))[0];
-  const encBlock=isEncerrado
-    ?'<div class="enc-box-encerrado"><div style="font-size:24px">\ud83d\udd12</div><div style="flex:1"><div style="font-weight:700;font-size:14px;color:#1d4ed8;margin-bottom:4px">Plano Encerrado</div><div style="font-size:13px;color:#1e40af">Motivo: <strong>'+(p.motivo_encerramento==='fim'?'Fim do Plano':'Desist\u00eancia')+'</strong>'+(p.data_encerramento?' \u00b7 <strong>'+isoToDisplay(p.data_encerramento)+'</strong>':'')+'</div><div style="margin-top:10px"><button class="btn btn-sm" style="background:#1d4ed8;color:#fff;border:none" onclick="iniciarNovoPlano()">\u2795 Iniciar Novo Plano</button></div></div></div>'
-    :'<div class="enc-box-ativo"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Encerramento do Plano</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:1.5px solid #93c5fd;font-weight:700" onclick="encerrarPlano(\'fim\')">\u2705 Fim do Plano</button><button class="btn btn-sm" style="background:#fff7ed;color:#c2410c;border:1.5px solid #fdba74;font-weight:700" onclick="encerrarPlano(\'desistencia\')">\u274c Desist\u00eancia</button></div><div style="font-size:11px;color:var(--text-muted);margin-top:8px">\u26a0\ufe0f Ao encerrar, as sess\u00f5es de soroterapia ser\u00e3o arquivadas no hist\u00f3rico.</div></div>';
   const tagSelectHtml=allTags.map(tag=>{
     const sel=patTags.some(t=>t.name===tag.name);
     return '<div class="etiqueta" style="background:'+(sel?tag.color:'#e5e7eb')+';color:'+(sel?'#fff':'#6b7280')+';cursor:pointer;border:2px solid '+tag.color+'" onclick="toggleTag(this,\''+tag.name+'\',\''+tag.color+'\')">'+tag.name+'</div>';
@@ -576,25 +570,6 @@ async function renderPatInfo(){
     +'<div class="field"><label>CPF</label><input id="pi-cpf" value="'+(p.cpf||'')+'" placeholder="000.000.000-00"/></div>'
     +'<div class="field"><label>Telefone</label><input id="pi-tel" value="'+(p.telefone||'')+'" placeholder="(00) 00000-0000"/></div>'
     +'</div></div>'
-    +'<div class="card"><div class="card-title">Plano de Acompanhamento</div>'
-    +'<div class="grid-2">'
-    +'<div class="field"><label>Tipo de Plano</label><select id="pi-plan">'
-    +'<option value="Plano 3 meses" '+(p.plan_type==='Plano 3 meses'?'selected':'')+'>Plano 3 meses</option>'
-    +'<option value="Plano 6 meses" '+(p.plan_type==='Plano 6 meses'?'selected':'')+'>Plano 6 meses</option>'
-    +'<option value="Consulta Avulsa" '+(p.plan_type==='Consulta Avulsa'?'selected':'')+'>Consulta Avulsa</option>'
-    +'</select></div>'
-    +'<div class="field"><label>Modalidade</label><select id="pi-modality">'
-    +'<option value="Presencial" '+(p.modality==='Presencial'?'selected':'')+'>Presencial</option>'
-    +'<option value="Online" '+(p.modality==='Online'?'selected':'')+'>Online</option>'
-    +'</select></div>'
-    +'<div class="field"><label>Data de In\u00edcio</label><input id="pi-inicio" value="'+fmtDate(p.inicio_programa||'')+'"/></div>'
-    +'<div class="field"><label>Fase Atual (autom\u00e1tica)</label>'
-    +'<div style="padding:10px 13px;background:var(--bg);border-radius:var(--radius-sm);font-weight:700"><span class="phase-badge phase-'+phase+'">Fase '+phase+'</span> \u00b7 M\u00eas '+(p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0+1)+'</div></div>'
-    +'</div>'
-    +'<div class="field"><label>Encerramento Estimado</label><div style="padding:10px 13px;background:var(--bg);border-radius:var(--radius-sm);font-size:14px">'+endDate+'</div></div>'
-    +'<div class="field"><label>Observa\u00e7\u00f5es</label><textarea id="pi-obs" rows="3">'+(p.observacao||'')+'</textarea></div>'
-    +encBlock
-    +'</div>'
     +'<div class="card"><div class="card-title" style="margin-bottom:10px">Resumo do Plano</div>'
     +'<div class="resumo-mini">'
     +'<div class="resumo-mini-card" onclick="patTab(\'agenda\')"><div class="resumo-mini-num">'+consultasFeitas+'</div><div class="resumo-mini-label">Consultas</div><div class="resumo-mini-link">\u2192 Ver Agenda</div></div>'
@@ -634,13 +609,35 @@ async function saveNewTagFromInfo(){
   toast('Etiqueta criada!','success');renderPatInfo();
 }
 async function savePatInfo(){
-  const inicio=displayToISO(document.getElementById('pi-inicio').value.trim());
-  const planType=document.getElementById('pi-plan').value;
-  const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
-  const data={name:titleCase(document.getElementById('pi-name').value.trim()),dob:displayToISO(document.getElementById('pi-dob').value.trim())||null,cpf:document.getElementById('pi-cpf').value.trim(),telefone:document.getElementById('pi-tel').value.trim(),plan_type:planType,duracao_programa:duracao,modality:document.getElementById('pi-modality').value,inicio_programa:inicio||null,observacao:document.getElementById('pi-obs').value.trim(),etiquetas:JSON.parse(document.getElementById('pi-tags').value||'[]'),updated_by:currentUser.name,updated_at:new Date().toISOString()};
+  const data={
+    name:titleCase(document.getElementById('pi-name').value.trim()),
+    dob:displayToISO(document.getElementById('pi-dob').value.trim())||null,
+    cpf:document.getElementById('pi-cpf').value.trim(),
+    telefone:document.getElementById('pi-tel').value.trim(),
+    etiquetas:JSON.parse(document.getElementById('pi-tags').value||'[]'),
+    updated_by:currentUser.name,
+    updated_at:new Date().toISOString()
+  };
   const{error}=await sb.from('planos_patients').update(data).eq('id',currentPatientId);
   if(error){toast('Erro ao salvar','error');return;}
   Object.assign(currentPatientData,data);document.getElementById('pd-name-header').textContent=data.name;toast('Salvo!','success');
+}
+async function savePlanInfo(){
+  const inicio=displayToISO(document.getElementById('pl-inicio').value.trim());
+  const planType=document.getElementById('pl-plan').value;
+  const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
+  const data={
+    plan_type:planType,
+    duracao_programa:duracao,
+    modality:document.getElementById('pl-modality').value,
+    inicio_programa:inicio||null,
+    observacoes:document.getElementById('pl-obs').value.trim(),
+    updated_by:currentUser.name,
+    updated_at:new Date().toISOString()
+  };
+  const{error}=await sb.from('planos_patients').update(data).eq('id',currentPatientId);
+  if(error){toast('Erro ao salvar','error');return;}
+  Object.assign(currentPatientData,data);toast('Plano salvo!','success');renderHistoricoPlanos();
 }
 async function encerrarPlano(motivo){
   const label=motivo==='fim'?'Fim do Plano':'Desistência';
@@ -2707,77 +2704,101 @@ async function deleteContrato(id){await sb.from('planos_contratos').delete().eq(
 async function renderHistoricoPlanos(){
   const c=document.getElementById('patient-tab-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  const p=currentPatientData;
   const {data:planos}=await sb.from('planos_historico_planos').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false});
   const lista=planos||[];
+  const isEncerrado=!p.active&&p.motivo_encerramento;
+  const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
+  const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
 
-  // Se não tem histórico mas o paciente está encerrado, mostra os dados atuais como plano encerrado
-  const p=currentPatientData;
-  const planoAtualEncerrado=!p.active&&p.motivo_encerramento&&!lista.length;
+  let html='';
 
-  let html='<div class="section-header"><div class="section-title">&#128203; Histórico de Planos</div></div>';
-
-  if(!lista.length&&!planoAtualEncerrado){
-    html+='<div class="empty"><div class="empty-icon">&#128203;</div><div>Nenhum plano encerrado ainda</div><div style="font-size:12px;color:var(--text-muted);margin-top:8px">Os planos encerrados aparecerão aqui automaticamente.</div></div>';
-    c.innerHTML=html;return;
+  // PLANO ATUAL ATIVO
+  if(!isEncerrado){
+    html+='<div class="card" style="margin-bottom:12px">'
+      +'<div class="card-title">Plano Atual</div>'
+      +'<div class="grid-2">'
+      +'<div class="field"><label>Tipo de Plano</label><select id="pl-plan">'
+      +'<option value="Plano 3 meses" '+(p.plan_type==='Plano 3 meses'?'selected':'')+'>Plano 3 meses</option>'
+      +'<option value="Plano 6 meses" '+(p.plan_type==='Plano 6 meses'?'selected':'')+'>Plano 6 meses</option>'
+      +'<option value="Consulta Avulsa" '+(p.plan_type==='Consulta Avulsa'?'selected':'')+'>Consulta Avulsa</option>'
+      +'</select></div>'
+      +'<div class="field"><label>Modalidade</label><select id="pl-modality">'
+      +'<option value="Presencial" '+(p.modality==='Presencial'?'selected':'')+'>Presencial</option>'
+      +'<option value="Online" '+(p.modality==='Online'?'selected':'')+'>Online</option>'
+      +'</select></div>'
+      +'<div class="field"><label>Data de Início</label><input id="pl-inicio" value="'+fmtDate(p.inicio_programa||'')+'"/></div>'
+      +'<div class="field"><label>Fase Atual (automática)</label>'
+      +'<div style="padding:10px 13px;background:var(--bg);border-radius:var(--radius-sm);font-weight:700"><span class="phase-badge phase-'+phase+'">Fase '+phase+'</span> · Mês '+(p.inicio_programa?monthsSince(fmtDate(p.inicio_programa))+1:1)+'</div></div>'
+      +'</div>'
+      +'<div class="field"><label>Encerramento Estimado</label><div style="padding:10px 13px;background:var(--bg);border-radius:var(--radius-sm);font-size:14px">'+endDate+'</div></div>'
+      +'<div class="field"><label>Observações</label><textarea id="pl-obs" rows="3">'+(p.observacoes||p.observacao||'')+'</textarea></div>'
+      +'<div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">'
+      +'<button class="btn btn-primary btn-sm" onclick="savePlanInfo()">💾 Salvar Plano</button>'
+      +'</div>'
+      +'<div class="enc-box-ativo" style="margin-top:12px"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Encerramento do Plano</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<button class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:1.5px solid #93c5fd;font-weight:700" onclick="encerrarPlano(\'fim\')">✅ Fim do Plano</button>'
+      +'<button class="btn btn-sm" style="background:#fff7ed;color:#c2410c;border:1.5px solid #fdba74;font-weight:700" onclick="encerrarPlano(\'desistencia\')">❌ Desistência</button>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--text-muted);margin-top:8px">⚠️ Ao encerrar, as sessões de soroterapia serão arquivadas no histórico.</div>'
+      +'</div></div>';
+  } else {
+    // ENCERRADO — mostrar box com botão novo plano
+    html+='<div class="enc-box-encerrado" style="margin-bottom:12px">'
+      +'<div style="font-size:24px">🔒</div>'
+      +'<div style="flex:1"><div style="font-weight:700;font-size:14px;color:#1d4ed8;margin-bottom:4px">Plano Encerrado</div>'
+      +'<div style="font-size:13px;color:#1e40af">Motivo: <strong>'+(p.motivo_encerramento==='fim'?'Fim do Plano':'Desistência')+'</strong>'+(p.data_encerramento?' · <strong>'+isoToDisplay(p.data_encerramento)+'</strong>':'')+'</div>'
+      +'<div style="margin-top:10px"><button class="btn btn-sm" style="background:#1d4ed8;color:#fff;border:none" onclick="iniciarNovoPlano()">➕ Iniciar Novo Plano</button></div>'
+      +'</div></div>';
   }
 
-  // Montar lista final — incluindo plano atual se encerrado e não arquivado
+  // HISTÓRICO
+  const planoAtualEncerrado=isEncerrado&&!lista.length;
   let todosPlanos=[...lista];
   if(planoAtualEncerrado){
-    todosPlanos=[{
-      id:'current',
-      plan_type:p.plan_type,
-      modality:p.modality,
-      inicio_programa:p.inicio_programa,
-      encerramento_estimado:p.encerramento_estimado||null,
-      data_encerramento:p.data_encerramento,
-      motivo_encerramento:p.motivo_encerramento,
-      observacoes:p.observacoes||null,
-      total_pago:null,
-      registrado_por:p.updated_by||'--',
-      _nao_arquivado:true
-    },...todosPlanos];
+    todosPlanos=[{id:'current',plan_type:p.plan_type,modality:p.modality,inicio_programa:p.inicio_programa,encerramento_estimado:p.encerramento_estimado||null,data_encerramento:p.data_encerramento,motivo_encerramento:p.motivo_encerramento,observacoes:p.observacoes||p.observacao||null,total_pago:null,registrado_por:p.updated_by||'--',_nao_arquivado:true},...todosPlanos];
   }
 
-  html+='<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">';
-  todosPlanos.forEach(function(pl){
-    const motivoLabel=pl.motivo_encerramento==='fim'?'Fim do Plano':'Desistência';
-    const motivoColor=pl.motivo_encerramento==='fim'?'#1d4ed8':'#ea580c';
-    const motivoBg=pl.motivo_encerramento==='fim'?'#eff6ff':'#fff7ed';
-    const motivoBd=pl.motivo_encerramento==='fim'?'#93c5fd':'#fdba74';
-    const inicio=isoToDisplay(pl.inicio_programa||'');
-    const estimado=isoToDisplay(pl.encerramento_estimado||'');
-    const encerrado=isoToDisplay(pl.data_encerramento||'');
-    const total=pl.total_pago!=null?'R$ '+(parseFloat(pl.total_pago)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'--';
-    let duracao='--';
-    if(pl.inicio_programa&&pl.data_encerramento){
-      const d1=new Date(pl.inicio_programa);const d2=new Date(pl.data_encerramento);
-      const dias=Math.round((d2-d1)/(1000*60*60*24));
-      duracao=dias+' dias';
-    }
-    html+='<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px 20px;">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'
-      +'<div>'
-      +'<div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px">'+(pl.plan_type||'Plano')+'</div>'
-      +'<div style="font-size:12px;color:var(--text-muted)">'+(pl.modality||'')+'</div>'
-      +'</div>'
-      +'<div style="display:flex;gap:8px;align-items:center">'
-      +(pl._nao_arquivado?'<span style="font-size:10px;color:#7a7a7a;font-style:italic">Registrado antes do sistema de histórico</span>':'')
-      +'<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;background:'+motivoBg+';color:'+motivoColor+';border:1px solid '+motivoBd+'">'+motivoLabel+'</span>'
-      +'</div>'
-      +'</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">'
-      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Início</div><div style="font-size:13px;font-weight:600">'+inicio+'</div></div>'
-      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Encerramento Previsto</div><div style="font-size:13px;font-weight:600">'+estimado+'</div></div>'
-      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Encerramento Real</div><div style="font-size:13px;font-weight:600;color:'+motivoColor+'">'+encerrado+'</div></div>'
-      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Duração</div><div style="font-size:13px;font-weight:600">'+duracao+'</div></div>'
-      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Total Pago</div><div style="font-size:13px;font-weight:700;color:#059669">'+total+'</div></div>'
-      +'</div>'
-      +(pl.observacoes?'<div style="margin-top:10px;font-size:12px;color:var(--text-muted)"><strong>Observações:</strong> '+pl.observacoes+'</div>':'')
-      +'<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Registrado por '+(pl.registrado_por||'--')+'</div>'
-      +'</div>';
-  });
-  html+='</div>';
+  if(todosPlanos.length){
+    html+='<div class="section-header" style="margin-top:8px"><div class="section-title">📋 Histórico de Planos</div></div>';
+    html+='<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">';
+    todosPlanos.forEach(function(pl){
+      const motivoLabel=pl.motivo_encerramento==='fim'?'Fim do Plano':'Desistência';
+      const motivoColor=pl.motivo_encerramento==='fim'?'#1d4ed8':'#ea580c';
+      const motivoBg=pl.motivo_encerramento==='fim'?'#eff6ff':'#fff7ed';
+      const motivoBd=pl.motivo_encerramento==='fim'?'#93c5fd':'#fdba74';
+      const inicio=isoToDisplay(pl.inicio_programa||'');
+      const estimado=isoToDisplay(pl.encerramento_estimado||'');
+      const encerrado=isoToDisplay(pl.data_encerramento||'');
+      const total=pl.total_pago!=null?'R$ '+(parseFloat(pl.total_pago)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'--';
+      let duracao='--';
+      if(pl.inicio_programa&&pl.data_encerramento){
+        const d1=new Date(pl.inicio_programa);const d2=new Date(pl.data_encerramento);
+        duracao=Math.round((d2-d1)/(1000*60*60*24))+' dias';
+      }
+      html+='<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px 20px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'
+        +'<div><div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px">'+(pl.plan_type||'Plano')+'</div>'
+        +'<div style="font-size:12px;color:var(--text-muted)">'+(pl.modality||'')+'</div></div>'
+        +'<div style="display:flex;gap:8px;align-items:center">'
+        +(pl._nao_arquivado?'<span style="font-size:10px;color:#7a7a7a;font-style:italic">Anterior ao sistema de histórico</span>':'')
+        +'<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;background:'+motivoBg+';color:'+motivoColor+';border:1px solid '+motivoBd+'">'+motivoLabel+'</span>'
+        +'</div></div>'
+        +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">'
+        +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Início</div><div style="font-size:13px;font-weight:600">'+inicio+'</div></div>'
+        +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Enc. Previsto</div><div style="font-size:13px;font-weight:600">'+estimado+'</div></div>'
+        +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Enc. Real</div><div style="font-size:13px;font-weight:600;color:'+motivoColor+'">'+encerrado+'</div></div>'
+        +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Duração</div><div style="font-size:13px;font-weight:600">'+duracao+'</div></div>'
+        +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Total Pago</div><div style="font-size:13px;font-weight:700;color:#059669">'+total+'</div></div>'
+        +'</div>'
+        +(pl.observacoes?'<div style="margin-top:10px;font-size:12px;color:var(--text-muted)"><strong>Obs:</strong> '+pl.observacoes+'</div>':'')
+        +'<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Registrado por '+(pl.registrado_por||'--')+'</div>'
+        +'</div>';
+    });
+    html+='</div>';
+  }
+
   c.innerHTML=html;
 }
 
