@@ -654,33 +654,85 @@ async function encerrarPlano(motivo){
   if((envios||[]).length)await sb.from('planos_soro_envios').delete().eq('patient_id',currentPatientId);
   await sb.from('planos_patients').update({active:false,motivo_encerramento:motivo,data_encerramento:todayISO(),updated_by:currentUser.name,updated_at:new Date().toISOString()}).eq('id',currentPatientId);
   currentPatientData.active=false;currentPatientData.motivo_encerramento=motivo;currentPatientData.data_encerramento=todayISO();
-  toast('Plano encerrado e arquivado!','success');patTab('info');
+  toast('Plano encerrado e arquivado!','success');patTab('planos');
 }
 async function iniciarNovoPlano(){
-  if(!confirm('Iniciar um novo plano para este paciente?\n\nOs dados do plano anterior estão preservados no histórico.'))return;
-  // Limpa encerramento e reseta dados do plano para novo ciclo
-  await sb.from('planos_patients').update({
+  const c=document.getElementById('patient-tab-content');
+  const p=currentPatientData;
+  // Render new plan form inline
+  c.innerHTML=
+    '<div class="section-header"><div class="section-title">➕ Novo Plano de Acompanhamento</div></div>'
+    +'<div class="card" style="margin-top:12px">'
+    +'<div class="card-title">Dados do Novo Plano</div>'
+    +'<div class="grid-2">'
+    +'<div class="field"><label>Tipo de Plano *</label><select id="np-plan">'
+    +'<option value="">-- Selecione --</option>'
+    +'<option value="Plano 3 meses">Plano 3 meses</option>'
+    +'<option value="Plano 6 meses">Plano 6 meses</option>'
+    +'<option value="Consulta Avulsa">Consulta Avulsa</option>'
+    +'</select></div>'
+    +'<div class="field"><label>Modalidade *</label><select id="np-modality">'
+    +'<option value="Presencial">Presencial</option>'
+    +'<option value="Online">Online</option>'
+    +'</select></div>'
+    +'<div class="field"><label>Data de Início *</label><input id="np-inicio" placeholder="DD/MM/AAAA"/></div>'
+    +'<div class="field"><label>Encerramento Estimado</label><div id="np-fim-display" style="padding:10px 13px;background:var(--bg);border-radius:var(--radius-sm);font-size:14px;color:var(--text-muted)">Calculado automaticamente</div></div>'
+    +'</div>'
+    +'<div class="field"><label>Observações</label><textarea id="np-obs" rows="3" placeholder="Informações adicionais sobre o novo plano..."></textarea></div>'
+    +'<div style="display:flex;gap:10px;margin-top:12px">'
+    +'<button class="btn btn-primary" onclick="confirmarNovoPlano()">✅ Criar Novo Plano</button>'
+    +'<button class="btn btn-ghost" onclick="renderHistoricoPlanos()">Cancelar</button>'
+    +'</div></div>';
+
+  // Auto-calculate end date when start or plan type changes
+  function calcFim(){
+    const inicio=displayToISO(document.getElementById('np-inicio').value.trim());
+    const tipo=document.getElementById('np-plan').value;
+    const dur=tipo==='Plano 6 meses'?6:3;
+    const el=document.getElementById('np-fim-display');
+    if(inicio&&tipo&&tipo!=='Consulta Avulsa'){
+      el.textContent=addMonthsToDisplay(isoToDisplay(inicio),dur);
+      el.style.color='var(--text)';
+    } else if(tipo==='Consulta Avulsa'){
+      el.textContent='Consulta pontual';
+      el.style.color='var(--text-muted)';
+    } else {
+      el.textContent='Calculado automaticamente';
+      el.style.color='var(--text-muted)';
+    }
+  }
+  setTimeout(function(){
+    document.getElementById('np-inicio').addEventListener('input',calcFim);
+    document.getElementById('np-plan').addEventListener('change',calcFim);
+  },50);
+}
+
+async function confirmarNovoPlano(){
+  const planType=document.getElementById('np-plan').value;
+  const modality=document.getElementById('np-modality').value;
+  const inicio=displayToISO(document.getElementById('np-inicio').value.trim());
+  const obs=document.getElementById('np-obs').value.trim();
+  if(!planType){toast('Selecione o tipo de plano','error');return;}
+  if(!inicio){toast('Informe a data de início','error');return;}
+  const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
+  const data={
     active:true,
     motivo_encerramento:null,
     data_encerramento:null,
-    inicio_programa:null,
-    encerramento_estimado:null,
-    plan_type:null,
-    modality:null,
-    observacoes:null,
+    plan_type:planType,
+    duracao_programa:duracao,
+    modality:modality,
+    inicio_programa:inicio,
+    observacoes:obs,
+    observacao:obs,
     updated_by:currentUser.name,
     updated_at:new Date().toISOString()
-  }).eq('id',currentPatientId);
-  currentPatientData.active=true;
-  currentPatientData.motivo_encerramento=null;
-  currentPatientData.data_encerramento=null;
-  currentPatientData.inicio_programa=null;
-  currentPatientData.encerramento_estimado=null;
-  currentPatientData.plan_type=null;
-  currentPatientData.modality=null;
-  currentPatientData.observacoes=null;
-  toast('Novo plano iniciado! Preencha os dados do novo ciclo.','success');
-  patTab('info');
+  };
+  const{error}=await sb.from('planos_patients').update(data).eq('id',currentPatientId);
+  if(error){toast('Erro ao criar plano: '+error.message,'error');return;}
+  Object.assign(currentPatientData,data);
+  toast('Novo plano criado com sucesso!','success');
+  renderHistoricoPlanos();
 }
 
 async function renderFinanceiro(){
