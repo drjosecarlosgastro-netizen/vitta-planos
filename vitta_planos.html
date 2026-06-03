@@ -654,7 +654,7 @@ async function encerrarPlano(motivo){
   if((envios||[]).length)await sb.from('planos_soro_envios').delete().eq('patient_id',currentPatientId);
   await sb.from('planos_patients').update({active:false,motivo_encerramento:motivo,data_encerramento:todayISO(),updated_by:currentUser.name,updated_at:new Date().toISOString()}).eq('id',currentPatientId);
   currentPatientData.active=false;currentPatientData.motivo_encerramento=motivo;currentPatientData.data_encerramento=todayISO();
-  toast('Plano encerrado e arquivado!','success');patTab('planos');
+  toast('Plano encerrado e arquivado!','success');renderHistoricoPlanos();
 }
 async function iniciarNovoPlano(){
   const c=document.getElementById('patient-tab-content');
