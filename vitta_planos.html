@@ -1281,15 +1281,112 @@ async function gerarLaudoBio(id) {
     + '<span style="display:flex;align-items:center;gap:3px;font-size:8pt;color:#7a7a7a"><span style="width:9px;height:9px;background:#f59e0b;border-radius:2px;display:inline-block"></span>Gordura</span></div></div>'
     + '<div style="display:flex;gap:10px;align-items:flex-end;justify-content:space-around;padding:0 20px">' + barrasEvo(historico) + '</div></div>'
 
-    // GRÁFICO LINHAS
-    + '<div class="card" style="padding:6px 10px"><div class="ctop"></div>'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div class="ct" style="margin-bottom:0">Evolução — Acompanhamento Consulta a Consulta</div>'
-    + '<div style="display:flex;gap:12px"><span style="display:flex;align-items:center;gap:3px;font-size:8pt;color:#7a7a7a"><span style="width:14px;height:2px;background:#C9A84C;display:inline-block;border-radius:2px"></span>Gordura</span>'
-    + '<span style="display:flex;align-items:center;gap:3px;font-size:8pt;color:#7a7a7a"><span style="width:14px;height:2px;background:#34d399;display:inline-block;border-radius:2px"></span>Massa Magra</span>'
-    + '<span style="display:flex;align-items:center;gap:3px;font-size:8pt;color:#7a7a7a"><span style="width:14px;height:2px;border-top:2px dashed #60a5fa;display:inline-block"></span>Peso</span></div></div>'
-    + '<div style="position:relative;width:100%;height:130px"><canvas id="laudoEvo" role="img" aria-label="Evolução corporal">Dados históricos</canvas></div>'
-    + (deltaGord !== null && deltaGord < 0 ? '<div style="text-align:center;margin-top:6px"><span style="display:inline-block;padding:3px 14px;border-radius:14px;font-size:9pt;font-weight:600;background:#e8f8ee;color:#1a7a3e;border:1px solid #a3d9b8">Redução de ' + Math.abs(deltaGord).toFixed(1) + ' kg de gordura — excelente!</span></div>' : '')
-    + '</div>'
+    // GRÁFICO HISTÓRICO ESTILO INBODY
+    + (function(){
+      var hist = historico;
+      if (!hist.length) return '';
+
+      // Build SVG inline - InBody style track chart
+      var W = 680; var ROW_H = 80; var LABEL_W = 130; var CHART_W = W - LABEL_W - 10;
+      var ROWS = [
+        { label: 'Peso', unit: '(kg)', key: 'peso', color: '#1a1a1a', fmt: function(v){ return v ? v.toFixed(1) : '--'; } },
+        { label: 'Massa Muscular\nEsquelética', unit: '(kg)', key: 'magra', color: '#1a7a3e', fmt: function(v){ return v ? v.toFixed(1) : '--'; } },
+        { label: 'PGC', unit: '(%)\nPercentual de Gordura', key: 'gord_perc', color: '#a32d2d', fmt: function(v){ return v ? v.toFixed(1) : '--'; } }
+      ];
+
+      // Map data
+      var pts = hist.map(function(h) {
+        return {
+          label: fmtDate(h.data_exame),
+          peso: h.peso,
+          magra: h.massa_magra,
+          gord_perc: h.perc_gordura
+        };
+      });
+
+      var N = pts.length;
+      var colW = N > 1 ? Math.floor(CHART_W / N) : CHART_W;
+      var SVG_H = ROW_H * ROWS.length + 36;
+
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + SVG_H + '" style="font-family:Rajdhani,sans-serif;overflow:visible">';
+
+      // Title row background
+      svg += '<rect x="0" y="0" width="' + W + '" height="' + SVG_H + '" fill="#fff" rx="2"/>';
+
+      // Column date headers at bottom
+      var dateY = SVG_H - 4;
+      for (var ci = 0; ci < N; ci++) {
+        var cx = LABEL_W + ci * colW + colW / 2;
+        // vertical dashed line
+        svg += '<line x1="' + cx + '" y1="0" x2="' + cx + '" y2="' + (SVG_H - 28) + '" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="3,3"/>';
+        // date label
+        svg += '<text x="' + cx + '" y="' + dateY + '" text-anchor="middle" font-size="8" fill="#7a7a7a">' + (pts[ci].label || '') + '</text>';
+      }
+
+      // Row separators and content
+      ROWS.forEach(function(row, ri) {
+        var rowY = ri * ROW_H;
+        var midY = rowY + ROW_H / 2;
+
+        // Row separator
+        if (ri > 0) svg += '<line x1="0" y1="' + rowY + '" x2="' + W + '" y2="' + rowY + '" stroke="#e8e0d0" stroke-width="1"/>';
+
+        // Label area background
+        svg += '<rect x="0" y="' + rowY + '" width="' + LABEL_W + '" height="' + ROW_H + '" fill="#f9f6f0"/>';
+
+        // Row label
+        var labelLines = row.label.split('\n');
+        var unitLines = row.unit.split('\n');
+        var allLines = labelLines.concat(unitLines);
+        var startY = midY - ((allLines.length - 1) * 9);
+        allLines.forEach(function(ln, li) {
+          var isUnit = li >= labelLines.length;
+          svg += '<text x="8" y="' + (startY + li * 11) + '" font-size="' + (isUnit ? '7' : '8.5') + '" font-weight="' + (isUnit ? '400' : '600') + '" fill="' + (isUnit ? '#7a7a7a' : '#1a1a1a') + '">' + ln + '</text>';
+        });
+
+        // Collect valid points for this row
+        var rowPts = pts.map(function(p, ci) {
+          return { x: LABEL_W + ci * colW + colW / 2, v: p[row.key] };
+        });
+        var validPts = rowPts.filter(function(p){ return p.v != null; });
+
+        // Scale values to Y within row
+        var vals = validPts.map(function(p){ return p.v; });
+        var vMin = Math.min.apply(null, vals);
+        var vMax = Math.max.apply(null, vals);
+        var vRange = vMax - vMin || 1;
+        var PAD = 18;
+
+        function scaleY(v) {
+          return rowY + PAD + (1 - (v - vMin) / vRange) * (ROW_H - PAD * 2);
+        }
+
+        // Draw connecting line
+        if (validPts.length > 1) {
+          var linePts = validPts.map(function(p){ return p.x + ',' + scaleY(p.v); }).join(' ');
+          svg += '<polyline points="' + linePts + '" fill="none" stroke="' + row.color + '" stroke-width="1.5" stroke-linejoin="round"/>';
+        }
+
+        // Draw points and values
+        validPts.forEach(function(p) {
+          var py = scaleY(p.v);
+          svg += '<circle cx="' + p.x + '" cy="' + py + '" r="4" fill="' + row.color + '"/>';
+          svg += '<text x="' + p.x + '" y="' + (py - 7) + '" text-anchor="middle" font-size="8.5" font-weight="700" fill="' + row.color + '">' + row.fmt(p.v) + '</text>';
+        });
+      });
+
+      // Recent/Total legend
+      svg += '<text x="4" y="' + (SVG_H - 4) + '" font-size="8" fill="#7a7a7a">✓ Recente</text>';
+
+      svg += '</svg>';
+
+      return '<div class="card" style="padding:10px 12px"><div class="ctop"></div>'
+        + '<div style="font-size:7.5pt;font-weight:700;color:#1a1a1a;margin-bottom:8px;letter-spacing:0.5px">Histórico da Composição Corporal</div>'
+        + svg
+        + (deltaGord !== null && deltaGord < 0 ? '<div style="text-align:center;margin-top:10px"><span style="display:inline-block;padding:4px 16px;border-radius:14px;font-size:9pt;font-weight:600;background:#e8f8ee;color:#1a7a3e;border:1px solid #a3d9b8">Redução de ' + Math.abs(deltaGord).toFixed(1) + ' kg de gordura — excelente!</span></div>' : '')
+        + '</div>';
+    })()
+
 
     // NOTA MÉDICA (se existir)
 
@@ -1302,12 +1399,10 @@ async function gerarLaudoBio(id) {
 
     // SCRIPTS
     + '<script>'
-    + 'var _ed=' + JSON.stringify(historico.map(function(h) { return { label: fmtDate(h.data_exame), peso: h.peso, gord: h.gordura_corporal, magra: h.massa_magra }; })) + ';'
     + 'function initLaudo(){setTimeout(function(){'
     + 'var btn=document.createElement("div");btn.id="btn-bar";btn.style.cssText="position:fixed;top:0;left:0;right:0;z-index:9999;background:#1D2846;display:flex;align-items:center;gap:10px;padding:10px 24px;box-shadow:0 2px 8px rgba(0,0,0,0.2)";'
     + 'btn.innerHTML="<span style=\'color:rgba(255,255,255,0.6);font-size:12px;font-family:Rajdhani,sans-serif;flex:1\'>Cl\u00ednica Vitta | Bioimpedância</span><button onclick=\'window.print()\' style=\'background:#C9A84C;color:#1D2846;border:none;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer\'>\ud83d\udda8\ufe0f Imprimir</button><button onclick=\'salvarPDF()\' style=\'background:transparent;color:#C9A84C;border:2px solid #C9A84C;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer\'> Salvar PDF</button><button onclick=\'window.close()\' style=\'background:transparent;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.2);padding:8px 14px;border-radius:4px;font-size:12px;cursor:pointer\'>\u2715 Fechar</button>";'
     + 'document.body.insertBefore(btn,document.body.firstChild);document.body.style.paddingTop="52px";'
-    + 'if(document.getElementById("laudoEvo")&&_ed.length>=1){new Chart(document.getElementById("laudoEvo"),{type:"line",data:{labels:_ed.map(function(d){return d.label;}),datasets:[{label:"Gordura",data:_ed.map(function(d){return d.gord;}),borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.08)",borderWidth:2.5,pointBackgroundColor:"#C9A84C",pointRadius:7,tension:0.35,fill:true},{label:"Massa Magra",data:_ed.map(function(d){return d.magra;}),borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.08)",borderWidth:2.5,pointBackgroundColor:"#34d399",pointRadius:7,tension:0.35,fill:true},{label:"Peso",data:_ed.map(function(d){return d.peso;}),borderColor:"#60a5fa",borderDash:[5,4],borderWidth:2,pointBackgroundColor:"#60a5fa",pointRadius:7,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"#fff",borderColor:"rgba(139,106,26,0.3)",borderWidth:1,titleColor:"#8B6A1A",bodyColor:"#3a3a3a",padding:8}},scales:{x:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:10},autoSkip:false}},y:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:10}},min:20,max:90}}}}}); }'
     + '},300);}; if(typeof Chart!=="undefined")initLaudo();'
     + 'function salvarPDF(){var b=document.getElementById("btn-bar");if(b)b.style.display="none";document.body.style.paddingTop="0";window.print();setTimeout(function(){if(b){b.style.display="flex";document.body.style.paddingTop="52px";}},1200);}'
     + '<\/script><\/body><\/html>';
