@@ -180,7 +180,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
   body > *:not(#laudo-print-overlay){display:none!important}
   #laudo-print-overlay{display:block!important;position:static!important;background:#fff!important;padding:0!important}
   #laudo-print-page{box-shadow:none!important;margin:0!important;padding:10mm 14mm!important;max-width:none!important;width:100%!important}
-  @page{size:A4 portrait;margin:0}
+  @page{size:A4 portrait;margin:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 </style>
 </head>
@@ -1148,37 +1148,37 @@ async function gerarLaudoBio(id) {
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0}'
     + ':root{--gold:#8B6A1A;--goldm:#C9A84C;--goldf:#F5EDD8;--goldfb:#FDF8EE;--bd:rgba(139,106,26,0.2);--ok:#1a7a3e;--okb:#e8f8ee;--okbd:#a3d9b8;--warn:#9a5c00;--warnb:#fef3e2;--warnbd:#f0c97a}'
-    + '@page{size:A4 portrait;margin:0}'
+    + '@page{size:A4 portrait;margin:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     + 'body{width:210mm;min-height:297mm;background:#fff;font-family:Rajdhani,sans-serif;color:#1a1a1a;margin:0 auto}'
-    + '.page{width:210mm;min-height:297mm;display:flex;flex-direction:column;padding:0}'
-    + '.hdr{display:flex;justify-content:space-between;align-items:center;padding:8mm 9mm 6mm;border-bottom:2px solid var(--goldm)}'
-    + '.hclinic{font-family:"Playfair Display",serif;font-size:16pt;font-weight:700;color:var(--gold)}'
+    + '.page{width:210mm;height:297mm;max-height:297mm;display:flex;flex-direction:column;padding:0;overflow:hidden}'
+    + '.hdr{display:flex;justify-content:space-between;align-items:center;padding:4mm 8mm 3mm;border-bottom:1.5px solid var(--goldm)}'
+    + '.hclinic{font-family:"Playfair Display",serif;font-size:13pt;font-weight:700;color:var(--gold)}'
     + '.hsub{font-size:7pt;letter-spacing:3px;color:#7a7a7a;text-transform:uppercase;margin-top:2px}'
     + '.hresp{text-align:right}'
     + '.hrlbl{font-size:7pt;letter-spacing:2px;color:#7a7a7a;text-transform:uppercase}'
     + '.hrval{font-size:10pt;font-weight:600;color:var(--gold);margin-top:1px}'
-    + '.hero{display:flex;align-items:center;gap:12mm;padding:5mm 9mm;background:var(--goldfb);border-bottom:1px solid var(--bd)}'
-    + '.pname{font-family:"Playfair Display",serif;font-size:15pt;font-weight:500;color:#1a1a1a;margin-bottom:4px}'
+    + '.hero{display:flex;align-items:center;gap:6mm;padding:2.5mm 8mm;background:var(--goldfb);border-bottom:1px solid var(--bd)}'
+    + '.pname{font-family:"Playfair Display",serif;font-size:12pt;font-weight:500;color:#1a1a1a;margin-bottom:2px}'
     + '.meta{display:flex;gap:14px;flex-wrap:wrap}'
-    + '.ml{font-size:6.5pt;letter-spacing:2px;text-transform:uppercase;color:#7a7a7a;display:block}'
-    + '.mv{font-size:9pt;font-weight:600;color:#3a3a3a;display:block}'
-    + '.body{flex:1;display:flex;flex-direction:column;gap:4mm;padding:5mm 9mm}'
-    + '.g2{display:grid;grid-template-columns:1fr 1fr;gap:4mm}'
-    + '.card{background:#FAFAF7;border:1px solid var(--bd);border-radius:2px;padding:5mm;position:relative;overflow:hidden}'
+    + '.ml{font-size:5.5pt;letter-spacing:1.5px;text-transform:uppercase;color:#7a7a7a;display:block}'
+    + '.mv{font-size:8pt;font-weight:600;color:#3a3a3a;display:block}'
+    + '.body{flex:1;display:flex;flex-direction:column;gap:2mm;padding:2.5mm 8mm}'
+    + '.g2{display:grid;grid-template-columns:1fr 1fr;gap:2mm}'
+    + '.card{background:#FAFAF7;border:1px solid var(--bd);border-radius:2px;padding:2.5mm 3mm;position:relative;overflow:hidden}'
     + '.ctop{position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--goldm),transparent)}'
-    + '.ct{font-size:6.5pt;letter-spacing:2.5px;text-transform:uppercase;font-weight:600;color:var(--gold);margin-bottom:5px}'
-    + '.mr{display:flex;align-items:center;padding:2.5px 0;border-bottom:1px solid rgba(0,0,0,0.04)}'
+    + '.ct{font-size:5.5pt;letter-spacing:2px;text-transform:uppercase;font-weight:600;color:var(--gold);margin-bottom:3px}'
+    + '.mr{display:flex;align-items:center;padding:1.5px 0;border-bottom:1px solid rgba(0,0,0,0.04)}'
     + '.mr:last-child{border-bottom:none}'
-    + '.mnm{font-size:8pt;color:#7a7a7a;min-width:100px}'
+    + '.mnm{font-size:7pt;color:#7a7a7a;min-width:90px}'
     + '.mbar{flex:1;height:2px;background:rgba(0,0,0,0.07);border-radius:2px;overflow:hidden;margin:0 8px}'
     + '.mfil{height:100%;border-radius:2px}'
-    + '.mval{font-size:9pt;font-weight:600;min-width:55px;text-align:right}'
-    + '.dg{display:grid;grid-template-columns:1fr 1fr;gap:3mm}'
-    + '.di{padding:3mm;border-radius:2px;border:1px solid var(--bd);background:#fff}'
-    + '.dl{font-size:6pt;letter-spacing:2px;text-transform:uppercase;color:#7a7a7a;margin-bottom:2px}'
-    + '.dv{font-size:13pt;font-weight:700;color:#1a1a1a}'
+    + '.mval{font-size:8pt;font-weight:600;min-width:50px;text-align:right}'
+    + '.dg{display:grid;grid-template-columns:1fr 1fr;gap:1.5mm}'
+    + '.di{padding:2mm;border-radius:2px;border:1px solid var(--bd);background:#fff}'
+    + '.dl{font-size:5.5pt;letter-spacing:1.5px;text-transform:uppercase;color:#7a7a7a;margin-bottom:1px}'
+    + '.dv{font-size:11pt;font-weight:700;color:#1a1a1a}'
     + '.dr{font-size:7pt;color:#7a7a7a}'
-    + '.ftr{padding:4mm 9mm 6mm;border-top:1px solid var(--bd);display:flex;justify-content:flex-end}'
+    + '.ftr{padding:2mm 8mm 3mm;border-top:1px solid var(--bd);display:flex;justify-content:flex-end}'
     + '.no-print{display:none}'
     + '@media print{.no-print{display:none}}'
     + '<\/style><\/head><body><div class="page">'
@@ -1259,7 +1259,7 @@ async function gerarLaudoBio(id) {
     + '</div></div>'
 
     // SEGMENTAR + EQUILÍBRIO + DIAGNÓSTICO
-    + '<div style="display:grid;grid-template-columns:95px 1fr 1fr;gap:4mm;align-items:start">'
+    + '<div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:2mm;align-items:start">'
     + '<div class="card" style="padding:4px;display:flex;justify-content:center"><div class="ctop"></div>' + silhuetaSVG(atual) + '</div>'
     + '<div class="card"><div class="ctop"></div><div class="ct">Equilíbrio D / E</div>' + lrHtml(atual)
     + (simetria ? '<div style="margin-top:5px;padding:5px 8px;background:var(--goldf);border:1px solid var(--bd);border-radius:2px"><div style="font-size:6.5pt;letter-spacing:2px;text-transform:uppercase;color:#7a7a7a">Simetria</div><div style="font-size:14pt;font-weight:700;color:var(--gold)">' + simetria + '%</div></div>' : '')
@@ -1287,7 +1287,7 @@ async function gerarLaudoBio(id) {
       if (!hist.length) return '';
 
       // Build SVG inline - InBody style track chart
-      var W = 680; var ROW_H = 80; var LABEL_W = 130; var CHART_W = W - LABEL_W - 10;
+      var W = 680; var ROW_H = 62; var LABEL_W = 130; var CHART_W = W - LABEL_W - 10;
       var ROWS = [
         { label: 'Peso', unit: '(kg)', key: 'peso', color: '#1a1a1a', fmt: function(v){ return v ? v.toFixed(1) : '--'; } },
         { label: 'Massa Muscular\nEsquelética', unit: '(kg)', key: 'magra', color: '#1a7a3e', fmt: function(v){ return v ? v.toFixed(1) : '--'; } },
@@ -1869,7 +1869,7 @@ async function showLaudoTRHE(id) {
   // CSS do laudo A4 - 2 paginas
   const css = '<style id="laudo-print-style">'
     + '@media print{'
-    + ' @page{size:A4 portrait;margin:0}'
+    + ' @page{size:A4 portrait;margin:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     + ' body{background:#fff!important}'
     + ' #laudo-print-overlay,#laudo-print-page{display:block!important;position:static!important;background:#fff!important;box-shadow:none!important}'
     + ' .lp-pg{padding:8mm 12mm!important;page-break-after:always;min-height:0!important}'
@@ -2065,7 +2065,7 @@ async function showLaudoTRHE(id) {
       '*{box-sizing:border-box;margin:0;padding:0}',
       'body{background:#e5e5e5;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:Georgia,serif;font-size:11px;color:#1a1a1a}',
       '.pg{background:#fff;width:210mm;padding:10mm 14mm 8mm;box-sizing:border-box;min-height:297mm;margin:20px auto;box-shadow:0 4px 24px rgba(0,0,0,.3);line-height:1.45}',
-      '@media print{body{background:#fff}.pg{margin:0!important;box-shadow:none!important;padding:8mm 12mm!important;min-height:0!important;page-break-after:always}.pg:last-child{page-break-after:auto}.no-print{display:none!important}@page{size:A4 portrait;margin:0}}',
+      '@media print{body{background:#fff}.pg{margin:0!important;box-shadow:none!important;padding:8mm 12mm!important;min-height:0!important;page-break-after:always}.pg:last-child{page-break-after:auto}.no-print{display:none!important}@page{size:A4 portrait;margin:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}',
       '.hdr{border-bottom:2px solid #1D2846;padding-bottom:5px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-end}',
       '.clinic{font-size:14px;font-weight:700;color:#1D2846}',
       '.sub{font-size:11px;color:#555;margin-top:1px}',
