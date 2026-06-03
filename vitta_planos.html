@@ -240,6 +240,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="tab" onclick="patTab('implante')">Implante</button>
     <button class="tab" onclick="patTab('agenda')">Agenda</button>
     <button class="tab" onclick="patTab('contrato')">Contrato</button>
+    <button class="tab" onclick="patTab('planos')">&#128203; Planos</button>
     <button class="tab" onclick="patTab('historico')">Hist&#243;rico</button>
   </div>
   <div id="patient-tab-content" class="content"></div>
@@ -525,7 +526,7 @@ async function executarDeletePaciente(){
 function backToMain(){showScreen('app');mainNav(currentSection);}
 
 function patTab(tab){
-  const tabNames=['info','financeiro','clinica','soroterapia','implante','agenda','contrato','historico'];
+  const tabNames=['info','financeiro','clinica','soroterapia','implante','agenda','contrato','planos','historico'];
   document.querySelectorAll('#patient-tabs .tab').forEach((t,i)=>t.classList.toggle('active',tabNames[i]===tab));
   const c=document.getElementById('patient-tab-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
@@ -536,6 +537,7 @@ function patTab(tab){
   else if(tab==='implante')renderImplante();
   else if(tab==='agenda')renderPatAgenda();
   else if(tab==='contrato')renderContrato();
+  else if(tab==='planos')renderHistoricoPlanos();
   else if(tab==='historico')renderHistorico();
 }
 
@@ -559,7 +561,7 @@ async function renderPatInfo(){
   const lastSoro=(soro||[]).sort((a,b)=>parseDateInt(b.data_sessao||'')-parseDateInt(a.data_sessao||''))[0];
   const lastImpl=(impl||[]).sort((a,b)=>parseDateInt(b.data_implante||'')-parseDateInt(a.data_implante||''))[0];
   const encBlock=isEncerrado
-    ?'<div class="enc-box-encerrado"><div style="font-size:24px">\ud83d\udd12</div><div style="flex:1"><div style="font-weight:700;font-size:14px;color:#1d4ed8;margin-bottom:4px">Plano Encerrado</div><div style="font-size:13px;color:#1e40af">Motivo: <strong>'+(p.motivo_encerramento==='fim'?'Fim do Plano':'Desist\u00eancia')+'</strong>'+(p.data_encerramento?' \u00b7 <strong>'+isoToDisplay(p.data_encerramento)+'</strong>':'')+'</div><div style="margin-top:10px"><button class="btn btn-sm" style="background:#1d4ed8;color:#fff;border:none" onclick="reativarPlano()">\u21a9 Reativar Plano</button></div></div></div>'
+    ?'<div class="enc-box-encerrado"><div style="font-size:24px">\ud83d\udd12</div><div style="flex:1"><div style="font-weight:700;font-size:14px;color:#1d4ed8;margin-bottom:4px">Plano Encerrado</div><div style="font-size:13px;color:#1e40af">Motivo: <strong>'+(p.motivo_encerramento==='fim'?'Fim do Plano':'Desist\u00eancia')+'</strong>'+(p.data_encerramento?' \u00b7 <strong>'+isoToDisplay(p.data_encerramento)+'</strong>':'')+'</div><div style="margin-top:10px"><button class="btn btn-sm" style="background:#1d4ed8;color:#fff;border:none" onclick="iniciarNovoPlano()">\u2795 Iniciar Novo Plano</button></div></div></div>'
     :'<div class="enc-box-ativo"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Encerramento do Plano</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:1.5px solid #93c5fd;font-weight:700" onclick="encerrarPlano(\'fim\')">\u2705 Fim do Plano</button><button class="btn btn-sm" style="background:#fff7ed;color:#c2410c;border:1.5px solid #fdba74;font-weight:700" onclick="encerrarPlano(\'desistencia\')">\u274c Desist\u00eancia</button></div><div style="font-size:11px;color:var(--text-muted);margin-top:8px">\u26a0\ufe0f Ao encerrar, as sess\u00f5es de soroterapia ser\u00e3o arquivadas no hist\u00f3rico.</div></div>';
   const tagSelectHtml=allTags.map(tag=>{
     const sel=patTags.some(t=>t.name===tag.name);
@@ -641,21 +643,47 @@ async function savePatInfo(){
   Object.assign(currentPatientData,data);document.getElementById('pd-name-header').textContent=data.name;toast('Salvo!','success');
 }
 async function encerrarPlano(motivo){
-  const label=motivo==='fim'?'Fim do Plano':'Desist\u00eancia';
-  if(!confirm('Confirmar encerramento por "'+label+'"?\n\nAs sess\u00f5es de soroterapia ser\u00e3o arquivadas.'))return;
-  const [{data:sessoes},{data:envios}]=await Promise.all([sb.from('planos_soro_sessoes').select('*').eq('patient_id',currentPatientId),sb.from('planos_soro_envios').select('*').eq('patient_id',currentPatientId)]);
+  const label=motivo==='fim'?'Fim do Plano':'Desistência';
+  if(!confirm('Confirmar encerramento por "'+label+'"?\n\nAs sessões de soroterapia serão arquivadas.'))return;
+  const [{data:sessoes},{data:envios},{data:financeiro}]=await Promise.all([
+    sb.from('planos_soro_sessoes').select('*').eq('patient_id',currentPatientId),
+    sb.from('planos_soro_envios').select('*').eq('patient_id',currentPatientId),
+    sb.from('planos_financeiro').select('valor,tipo').eq('patient_id',currentPatientId)
+  ]);
+  const totalPago=(financeiro||[]).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
   await sb.from('planos_historico_ciclos').insert({patient_id:currentPatientId,data_encerramento:todayISO(),motivo,plan_type:currentPatientData.plan_type,inicio_programa:currentPatientData.inicio_programa,sessoes_count:(sessoes||[]).length,envios_count:(envios||[]).length,sessoes_data:JSON.stringify(sessoes||[]),envios_data:JSON.stringify(envios||[]),registrado_por:currentUser.name});
+  await sb.from('planos_historico_planos').insert({patient_id:currentPatientId,plan_type:currentPatientData.plan_type,modality:currentPatientData.modality,inicio_programa:currentPatientData.inicio_programa,encerramento_estimado:currentPatientData.encerramento_estimado||null,data_encerramento:todayISO(),motivo_encerramento:motivo,observacoes:currentPatientData.observacoes||null,total_pago:totalPago,registrado_por:currentUser.name,created_at:new Date().toISOString()});
   if((sessoes||[]).length)await sb.from('planos_soro_sessoes').delete().eq('patient_id',currentPatientId);
   if((envios||[]).length)await sb.from('planos_soro_envios').delete().eq('patient_id',currentPatientId);
   await sb.from('planos_patients').update({active:false,motivo_encerramento:motivo,data_encerramento:todayISO(),updated_by:currentUser.name,updated_at:new Date().toISOString()}).eq('id',currentPatientId);
   currentPatientData.active=false;currentPatientData.motivo_encerramento=motivo;currentPatientData.data_encerramento=todayISO();
-  toast('Plano encerrado!','success');patTab('info');
+  toast('Plano encerrado e arquivado!','success');patTab('info');
 }
-async function reativarPlano(){
-  if(!confirm('Reativar este plano?'))return;
-  await sb.from('planos_patients').update({active:true,motivo_encerramento:null,data_encerramento:null,updated_by:currentUser.name,updated_at:new Date().toISOString()}).eq('id',currentPatientId);
-  currentPatientData.active=true;currentPatientData.motivo_encerramento=null;currentPatientData.data_encerramento=null;
-  toast('Plano reativado!','success');patTab('info');
+async function iniciarNovoPlano(){
+  if(!confirm('Iniciar um novo plano para este paciente?\n\nOs dados do plano anterior estão preservados no histórico.'))return;
+  // Limpa encerramento e reseta dados do plano para novo ciclo
+  await sb.from('planos_patients').update({
+    active:true,
+    motivo_encerramento:null,
+    data_encerramento:null,
+    inicio_programa:null,
+    encerramento_estimado:null,
+    plan_type:null,
+    modality:null,
+    observacoes:null,
+    updated_by:currentUser.name,
+    updated_at:new Date().toISOString()
+  }).eq('id',currentPatientId);
+  currentPatientData.active=true;
+  currentPatientData.motivo_encerramento=null;
+  currentPatientData.data_encerramento=null;
+  currentPatientData.inicio_programa=null;
+  currentPatientData.encerramento_estimado=null;
+  currentPatientData.plan_type=null;
+  currentPatientData.modality=null;
+  currentPatientData.observacoes=null;
+  toast('Novo plano iniciado! Preencha os dados do novo ciclo.','success');
+  patTab('info');
 }
 
 async function renderFinanceiro(){
@@ -2675,6 +2703,56 @@ async function saveContrato(){
   closeModal('modal-generic');toast('Contrato salvo!','success');patTab('contrato');
 }
 async function deleteContrato(id){await sb.from('planos_contratos').delete().eq('id',id);patTab('contrato');}
+
+async function renderHistoricoPlanos(){
+  const c=document.getElementById('patient-tab-content');
+  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  const {data:planos}=await sb.from('planos_historico_planos').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false});
+  const lista=planos||[];
+  let html='<div class="section-header"><div class="section-title">&#128203; Histórico de Planos</div></div>';
+  if(!lista.length){
+    html+='<div class="empty"><div class="empty-icon">&#128203;</div><div>Nenhum plano encerrado ainda</div><div style="font-size:12px;color:var(--text-muted);margin-top:8px">Os planos encerrados aparecerão aqui automaticamente.</div></div>';
+    c.innerHTML=html;return;
+  }
+  html+='<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">';
+  lista.forEach(function(p,i){
+    const motivoLabel=p.motivo_encerramento==='fim'?'Fim do Plano':'Desistência';
+    const motivoColor=p.motivo_encerramento==='fim'?'#1d4ed8':'#ea580c';
+    const motivoBg=p.motivo_encerramento==='fim'?'#eff6ff':'#fff7ed';
+    const motivoBd=p.motivo_encerramento==='fim'?'#93c5fd':'#fdba74';
+    const inicio=isoToDisplay(p.inicio_programa||'');
+    const estimado=isoToDisplay(p.encerramento_estimado||'');
+    const encerrado=isoToDisplay(p.data_encerramento||'');
+    const total=p.total_pago?'R$ '+(parseFloat(p.total_pago)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'--';
+    // Duração real em dias
+    let duracao='--';
+    if(p.inicio_programa&&p.data_encerramento){
+      const d1=new Date(p.inicio_programa);const d2=new Date(p.data_encerramento);
+      const dias=Math.round((d2-d1)/(1000*60*60*24));
+      duracao=dias+' dias';
+    }
+    html+='<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px 20px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'
+      +'<div>'
+      +'<div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px">'+(p.plan_type||'Plano')+'</div>'
+      +'<div style="font-size:12px;color:var(--text-muted)">'+(p.modality||'')+'</div>'
+      +'</div>'
+      +'<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;background:'+motivoBg+';color:'+motivoColor+';border:1px solid '+motivoBd+'">'+motivoLabel+'</span>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">'
+      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Início</div><div style="font-size:13px;font-weight:600">'+inicio+'</div></div>'
+      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Encerramento Previsto</div><div style="font-size:13px;font-weight:600">'+estimado+'</div></div>'
+      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Encerramento Real</div><div style="font-size:13px;font-weight:600;color:'+motivoColor+'">'+encerrado+'</div></div>'
+      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Duração</div><div style="font-size:13px;font-weight:600">'+duracao+'</div></div>'
+      +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Total Pago</div><div style="font-size:13px;font-weight:700;color:#059669">'+total+'</div></div>'
+      +'</div>'
+      +(p.observacoes?'<div style="margin-top:10px;font-size:12px;color:var(--text-muted)"><strong>Observações:</strong> '+p.observacoes+'</div>':'')
+      +'<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Registrado por '+( p.registrado_por||'--')+'</div>'
+      +'</div>';
+  });
+  html+='</div>';
+  c.innerHTML=html;
+}
 
 async function renderHistorico(){
   const[{data:appts},{data:fin},{data:soro},{data:impl},{data:ciclos},{data:edicoes},{data:histOcorr}]=await Promise.all([
