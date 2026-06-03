@@ -2709,35 +2709,62 @@ async function renderHistoricoPlanos(){
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
   const {data:planos}=await sb.from('planos_historico_planos').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false});
   const lista=planos||[];
+
+  // Se não tem histórico mas o paciente está encerrado, mostra os dados atuais como plano encerrado
+  const p=currentPatientData;
+  const planoAtualEncerrado=!p.active&&p.motivo_encerramento&&!lista.length;
+
   let html='<div class="section-header"><div class="section-title">&#128203; Histórico de Planos</div></div>';
-  if(!lista.length){
+
+  if(!lista.length&&!planoAtualEncerrado){
     html+='<div class="empty"><div class="empty-icon">&#128203;</div><div>Nenhum plano encerrado ainda</div><div style="font-size:12px;color:var(--text-muted);margin-top:8px">Os planos encerrados aparecerão aqui automaticamente.</div></div>';
     c.innerHTML=html;return;
   }
+
+  // Montar lista final — incluindo plano atual se encerrado e não arquivado
+  let todosPlanos=[...lista];
+  if(planoAtualEncerrado){
+    todosPlanos=[{
+      id:'current',
+      plan_type:p.plan_type,
+      modality:p.modality,
+      inicio_programa:p.inicio_programa,
+      encerramento_estimado:p.encerramento_estimado||null,
+      data_encerramento:p.data_encerramento,
+      motivo_encerramento:p.motivo_encerramento,
+      observacoes:p.observacoes||null,
+      total_pago:null,
+      registrado_por:p.updated_by||'--',
+      _nao_arquivado:true
+    },...todosPlanos];
+  }
+
   html+='<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">';
-  lista.forEach(function(p,i){
-    const motivoLabel=p.motivo_encerramento==='fim'?'Fim do Plano':'Desistência';
-    const motivoColor=p.motivo_encerramento==='fim'?'#1d4ed8':'#ea580c';
-    const motivoBg=p.motivo_encerramento==='fim'?'#eff6ff':'#fff7ed';
-    const motivoBd=p.motivo_encerramento==='fim'?'#93c5fd':'#fdba74';
-    const inicio=isoToDisplay(p.inicio_programa||'');
-    const estimado=isoToDisplay(p.encerramento_estimado||'');
-    const encerrado=isoToDisplay(p.data_encerramento||'');
-    const total=p.total_pago?'R$ '+(parseFloat(p.total_pago)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'--';
-    // Duração real em dias
+  todosPlanos.forEach(function(pl){
+    const motivoLabel=pl.motivo_encerramento==='fim'?'Fim do Plano':'Desistência';
+    const motivoColor=pl.motivo_encerramento==='fim'?'#1d4ed8':'#ea580c';
+    const motivoBg=pl.motivo_encerramento==='fim'?'#eff6ff':'#fff7ed';
+    const motivoBd=pl.motivo_encerramento==='fim'?'#93c5fd':'#fdba74';
+    const inicio=isoToDisplay(pl.inicio_programa||'');
+    const estimado=isoToDisplay(pl.encerramento_estimado||'');
+    const encerrado=isoToDisplay(pl.data_encerramento||'');
+    const total=pl.total_pago!=null?'R$ '+(parseFloat(pl.total_pago)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'--';
     let duracao='--';
-    if(p.inicio_programa&&p.data_encerramento){
-      const d1=new Date(p.inicio_programa);const d2=new Date(p.data_encerramento);
+    if(pl.inicio_programa&&pl.data_encerramento){
+      const d1=new Date(pl.inicio_programa);const d2=new Date(pl.data_encerramento);
       const dias=Math.round((d2-d1)/(1000*60*60*24));
       duracao=dias+' dias';
     }
     html+='<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px 20px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'
       +'<div>'
-      +'<div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px">'+(p.plan_type||'Plano')+'</div>'
-      +'<div style="font-size:12px;color:var(--text-muted)">'+(p.modality||'')+'</div>'
+      +'<div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px">'+(pl.plan_type||'Plano')+'</div>'
+      +'<div style="font-size:12px;color:var(--text-muted)">'+(pl.modality||'')+'</div>'
       +'</div>'
+      +'<div style="display:flex;gap:8px;align-items:center">'
+      +(pl._nao_arquivado?'<span style="font-size:10px;color:#7a7a7a;font-style:italic">Registrado antes do sistema de histórico</span>':'')
       +'<span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;background:'+motivoBg+';color:'+motivoColor+';border:1px solid '+motivoBd+'">'+motivoLabel+'</span>'
+      +'</div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">'
       +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Início</div><div style="font-size:13px;font-weight:600">'+inicio+'</div></div>'
@@ -2746,8 +2773,8 @@ async function renderHistoricoPlanos(){
       +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Duração</div><div style="font-size:13px;font-weight:600">'+duracao+'</div></div>'
       +'<div><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Total Pago</div><div style="font-size:13px;font-weight:700;color:#059669">'+total+'</div></div>'
       +'</div>'
-      +(p.observacoes?'<div style="margin-top:10px;font-size:12px;color:var(--text-muted)"><strong>Observações:</strong> '+p.observacoes+'</div>':'')
-      +'<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Registrado por '+( p.registrado_por||'--')+'</div>'
+      +(pl.observacoes?'<div style="margin-top:10px;font-size:12px;color:var(--text-muted)"><strong>Observações:</strong> '+pl.observacoes+'</div>':'')
+      +'<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Registrado por '+(pl.registrado_por||'--')+'</div>'
       +'</div>';
   });
   html+='</div>';
