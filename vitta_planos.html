@@ -631,7 +631,7 @@ async function savePlanInfo(){
     duracao_programa:duracao,
     modality:document.getElementById('pl-modality').value,
     inicio_programa:inicio||null,
-    observacoes:document.getElementById('pl-obs').value.trim(),
+    observacao:document.getElementById('pl-obs').value.trim(),
     updated_by:currentUser.name,
     updated_at:new Date().toISOString()
   };
@@ -723,7 +723,6 @@ async function confirmarNovoPlano(){
     duracao_programa:duracao,
     modality:modality,
     inicio_programa:inicio,
-    observacoes:obs,
     observacao:obs,
     updated_by:currentUser.name,
     updated_at:new Date().toISOString()
