@@ -1031,12 +1031,6 @@ async function gerarLaudoBio(id) {
   const dataFmt = fmtDate(atual.data_exame);
 
   // SCORE calculado (0-100 baseado nos índices)
-  let score = 40;
-  if (atual.imc) { if (atual.imc < 25) score += 15; else if (atual.imc < 27) score += 10; else if (atual.imc < 30) score += 5; else if (atual.imc >= 35) score -= 10; }
-  if (atual.perc_gordura) { var _sx=(atual.sexo||'').toLowerCase(); var _lim=(_sx==='masculino')?20:33; if (atual.perc_gordura<=_lim) score+=20; else if (atual.perc_gordura<=_lim+5) score+=10; else score-=5; }
-  if (atual.gordura_visceral) { if (atual.gordura_visceral<=9) score+=15; else if (atual.gordura_visceral<=12) score+=5; else score-=10; }
-  if (atual.amg_musculo && atual.amg_peso) { var _mp=(atual.amg_musculo/atual.amg_peso)*100; if (_mp>=45) score+=10; else if (_mp>=38) score+=5; }
-  score = Math.min(99, Math.max(10, score));
 
   // Evolução (últimas 3 avaliações incluindo atual)
   var _altRef = parseFloat(atual.altura || 0);
@@ -1150,7 +1144,7 @@ async function gerarLaudoBio(id) {
   var laudoHTML = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
     + '<title>Laudo Bioimpedância — ' + nome + '</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">'
-    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"><\/script>'
+    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" onload="initLaudo()"><\/script>'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0}'
     + ':root{--gold:#8B6A1A;--goldm:#C9A84C;--goldf:#F5EDD8;--goldfb:#FDF8EE;--bd:rgba(139,106,26,0.2);--ok:#1a7a3e;--okb:#e8f8ee;--okbd:#a3d9b8;--warn:#9a5c00;--warnb:#fef3e2;--warnbd:#f0c97a}'
@@ -1197,9 +1191,6 @@ async function gerarLaudoBio(id) {
 
     // HERO
     + '<div class="hero">'
-    + '<div style="position:relative;flex-shrink:0">'
-    + '<svg width="70" height="70" viewBox="0 0 70 70"><circle cx="35" cy="35" r="29" fill="none" stroke="#F0E8D0" stroke-width="5"/><circle id="laudoArc" cx="35" cy="35" r="29" fill="none" stroke="#C9A84C" stroke-width="5" stroke-linecap="round" stroke-dasharray="182" stroke-dashoffset="182" transform="rotate(-90 35 35)"/></svg>'
-    + '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center"><span id="laudoScore" style="font-family:Playfair Display,serif;font-size:20pt;font-weight:700;color:#8B6A1A">0</span><br><span style="font-size:6pt;letter-spacing:2px;text-transform:uppercase;color:#7a7a7a">Score</span></div></div>'
     + '<div><div class="pname">' + nome + '</div>'
     + '<div class="meta">'
     + '<div><span class="ml">Idade</span><span class="mv">' + idade + '</span></div>'
@@ -1311,17 +1302,13 @@ async function gerarLaudoBio(id) {
 
     // SCRIPTS
     + '<script>'
-    + 'var _sc=' + score + ';'
     + 'var _ed=' + JSON.stringify(historico.map(function(h) { return { label: fmtDate(h.data_exame), peso: h.peso, gord: h.gordura_corporal, magra: h.massa_magra }; })) + ';'
-    + 'window.onload=function(){setTimeout(function(){'
-    + 'var circ=182,dur=900,t0=Date.now();'
-    + 'var arc=document.getElementById("laudoArc"),snum=document.getElementById("laudoScore");'
-    + 'if(arc&&snum){function anim(){var t=Math.min((Date.now()-t0)/dur,1),e=1-Math.pow(1-t,3);arc.setAttribute("stroke-dashoffset",circ-(circ*(_sc/100)*e));snum.textContent=Math.round(_sc*e);if(t<1)requestAnimationFrame(anim);}anim();}'
+    + 'function initLaudo(){setTimeout(function(){'
     + 'var btn=document.createElement("div");btn.id="btn-bar";btn.style.cssText="position:fixed;top:0;left:0;right:0;z-index:9999;background:#1D2846;display:flex;align-items:center;gap:10px;padding:10px 24px;box-shadow:0 2px 8px rgba(0,0,0,0.2)";'
     + 'btn.innerHTML="<span style=\'color:rgba(255,255,255,0.6);font-size:12px;font-family:Rajdhani,sans-serif;flex:1\'>Cl\u00ednica Vitta | Bioimpedância</span><button onclick=\'window.print()\' style=\'background:#C9A84C;color:#1D2846;border:none;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer\'>\ud83d\udda8\ufe0f Imprimir</button><button onclick=\'salvarPDF()\' style=\'background:transparent;color:#C9A84C;border:2px solid #C9A84C;padding:8px 20px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer\'> Salvar PDF</button><button onclick=\'window.close()\' style=\'background:transparent;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.2);padding:8px 14px;border-radius:4px;font-size:12px;cursor:pointer\'>\u2715 Fechar</button>";'
     + 'document.body.insertBefore(btn,document.body.firstChild);document.body.style.paddingTop="52px";'
     + 'if(document.getElementById("laudoEvo")&&_ed.length>=1){new Chart(document.getElementById("laudoEvo"),{type:"line",data:{labels:_ed.map(function(d){return d.label;}),datasets:[{label:"Gordura",data:_ed.map(function(d){return d.gord;}),borderColor:"#C9A84C",backgroundColor:"rgba(201,168,76,0.08)",borderWidth:2.5,pointBackgroundColor:"#C9A84C",pointRadius:7,tension:0.35,fill:true},{label:"Massa Magra",data:_ed.map(function(d){return d.magra;}),borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.08)",borderWidth:2.5,pointBackgroundColor:"#34d399",pointRadius:7,tension:0.35,fill:true},{label:"Peso",data:_ed.map(function(d){return d.peso;}),borderColor:"#60a5fa",borderDash:[5,4],borderWidth:2,pointBackgroundColor:"#60a5fa",pointRadius:7,tension:0.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:"#fff",borderColor:"rgba(139,106,26,0.3)",borderWidth:1,titleColor:"#8B6A1A",bodyColor:"#3a3a3a",padding:8}},scales:{x:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:10},autoSkip:false}},y:{grid:{color:"rgba(0,0,0,0.04)"},ticks:{color:"#7a7a7a",font:{size:10}},min:20,max:90}}}}}); }'
-    + '},300);};'
+    + '},300);}; if(typeof Chart!=="undefined")initLaudo();'
     + 'function salvarPDF(){var b=document.getElementById("btn-bar");if(b)b.style.display="none";document.body.style.paddingTop="0";window.print();setTimeout(function(){if(b){b.style.display="flex";document.body.style.paddingTop="52px";}},1200);}'
     + '<\/script><\/body><\/html>';
 
