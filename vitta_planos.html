@@ -2756,9 +2756,8 @@ async function renderHistoricoPlanos(){
   const c=document.getElementById('patient-tab-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
   const p=currentPatientData;
-  const {data:planos, error:plErr}=await sb.from('planos_historico_planos').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false});
+  const {data:planos}=await sb.from('planos_historico_planos').select('*').eq('patient_id',currentPatientId).order('created_at',{ascending:false});
   const lista=planos||[];
-  console.log('planos_historico_planos patient_id='+currentPatientId+' count='+lista.length, plErr);
   const isEncerrado=!p.active&&p.motivo_encerramento;
   const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
   const endDate=p.inicio_programa?addMonthsToDisplay(fmtDate(p.inicio_programa),p.duracao_programa||3):'—';
@@ -2820,7 +2819,7 @@ async function renderHistoricoPlanos(){
       +'</div>';
   }
 
-  // ── HISTÓRICO: cards colapsáveis fechados ──
+  // ── HISTÓRICO: sempre mostrar se houver registros ──
   const planoAtualEncerrado=isEncerrado&&!lista.length;
   let todosPlanos=[...lista];
   if(planoAtualEncerrado){
@@ -2828,14 +2827,14 @@ async function renderHistoricoPlanos(){
   }
 
   if(todosPlanos.length){
-    html+='<div class="section-header" style="margin-top:8px"><div class="section-title">📋 Histórico de Planos</div></div>';
+    html+='<div class="section-header" style="margin-top:8px"><div class="section-title">📋 Histórico de Planos ('+todosPlanos.length+')</div></div>';
     html+='<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">';
     todosPlanos.forEach(function(pl,idx){
       const cardId='hist-plano-'+idx;
-      const motivoLabel=pl.motivo_encerramento==='fim'?'Fim do Plano':'Desistência';
-      const motivoColor=pl.motivo_encerramento==='fim'?'#1d4ed8':'#ea580c';
-      const motivoBg=pl.motivo_encerramento==='fim'?'#eff6ff':'#fff7ed';
-      const motivoBd=pl.motivo_encerramento==='fim'?'#93c5fd':'#fdba74';
+      const motivoLabel=(pl.motivo_encerramento==='fim')?'Fim do Plano':'Desistência';
+      const motivoColor=(pl.motivo_encerramento==='fim')?'#1d4ed8':'#ea580c';
+      const motivoBg=(pl.motivo_encerramento==='fim')?'#eff6ff':'#fff7ed';
+      const motivoBd=(pl.motivo_encerramento==='fim')?'#93c5fd':'#fdba74';
       const inicio=isoToDisplay(pl.inicio_programa||'');
       const estimado=isoToDisplay(pl.encerramento_estimado||'');
       const encerrado=isoToDisplay(pl.data_encerramento||'');
