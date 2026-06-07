@@ -3118,7 +3118,7 @@ async function renderAgenda(){
     const cp=curDate.split('/');const cy=parseInt(cp[2]),cm=parseInt(cp[1])-1;
     const firstDay=new Date(cy,cm,1).getDay();const daysInMonth=new Date(cy,cm+1,0).getDate();
     const monthNames=['Janeiro','Fevereiro','Mar\u00e7o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const dayNames=['D','S','T','Q','Q','S','S'];
+    const dayNames=['S','T','Q','Q','S','S','D'];
     const apptDatesSet=new Set((appts||[]).map(a=>a.date_str));
     let calHtml='<div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px">';
     calHtml+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
