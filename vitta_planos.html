@@ -3566,29 +3566,30 @@ async function renderPendenciasTab(){
       const chkd=semPend?'checked':'';
       html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:'+(semPend?'#16a34a':'var(--text)')+'">';
       html+='<input type="checkbox" '+chkd+' style="width:16px;height:16px;cursor:pointer;accent-color:#22c55e" onchange="pendToggleSemPend('+rec.id+','+p.id+',this)">Sem Pend\u00eancias</label>';
-      html+='<button class="btn btn-sm btn-primary" onclick="pendAddItem('+rec.id+','+p.id+')">+ Pend\u00eancia</button>';
       html+='</div>';
-      // Items list
-      html+='<div id="pend-itens-'+rec.id+'">';
-      if(recItens.length){
-        recItens.forEach(it=>{
-          const concluida=it.concluida===true;
-          html+='<div id="pend-item-'+it.id+'" style="background:var(--bg-page);border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid '+(concluida?'#22c55e':'var(--border)')+'">';
-          html+='<div style="display:flex;align-items:flex-start;gap:8px">';
-          html+='<input type="checkbox" '+(concluida?'checked':'')+' style="margin-top:3px;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:#22c55e" onchange="pendItemConcluir('+it.id+','+rec.id+','+p.id+',this)">';
-          html+='<div style="flex:1">';
-          html+='<div contenteditable="true" style="font-size:13px;line-height:1.5;outline:none;'+(concluida?'text-decoration:line-through;color:var(--text-muted)':'')+';min-height:20px" onblur="pendItemSaveTexto('+it.id+',this)">'+escHtml(it.texto)+'</div>';
-          html+='<div style="margin-top:6px">';
-          html+='<input type="text" placeholder="Observa\u00e7\u00e3o (opcional)..." value="'+escHtml(it.obs||'')+'" style="width:100%;box-sizing:border-box;font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-family:inherit" onblur="pendItemSaveObs('+it.id+',this)">';
-          html+='</div></div>';
-          html+='<button onclick="pendItemDelete('+it.id+','+rec.id+','+p.id+')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;line-height:1;padding:0;flex-shrink:0" title="Remover">&#215;</button>';
-          html+='</div></div>';
-        });
-      } else {
-        html+='<div style="font-size:12px;color:var(--text-muted);padding:4px 2px;margin-bottom:8px">Nenhuma pend\u00eancia registrada. Clique em + Pend\u00eancia para adicionar.</div>';
-      }
+      // Saved items list
+      html+='<div id="pend-itens-'+rec.id+'" style="margin-bottom:10px">';
+      recItens.forEach(it=>{
+        const concluida=it.concluida===true;
+        html+='<div id="pend-item-'+it.id+'" style="background:var(--bg-page);border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid '+(concluida?'#22c55e':'var(--border)')+'">';
+        html+='<div style="display:flex;align-items:flex-start;gap:8px">';
+        html+='<input type="checkbox" '+(concluida?'checked':'')+' style="margin-top:3px;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:#22c55e" onchange="pendItemConcluir('+it.id+','+rec.id+','+p.id+',this)">';
+        html+='<div style="flex:1">';
+        html+='<div style="font-size:13px;line-height:1.5;'+(concluida?'text-decoration:line-through;color:var(--text-muted)':'')+'">'+escHtml(it.texto)+'</div>';
+        if(it.obs)html+='<div style="font-size:12px;color:var(--text-muted);margin-top:3px">&#128203; '+escHtml(it.obs)+'</div>';
+        html+='</div>';
+        html+='<button onclick="pendItemDelete('+it.id+','+rec.id+','+p.id+')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;line-height:1;padding:0;flex-shrink:0" title="Remover">&#215;</button>';
+        html+='</div></div>';
+      });
       html+='</div>';
-      html+='<div style="display:flex;justify-content:flex-end;margin-top:10px">';
+      // Input box always visible
+      html+='<div style="background:var(--bg-page);border-radius:8px;padding:12px;border:1.5px dashed var(--border);margin-bottom:10px">';
+      html+='<textarea id="pend-new-txt-'+rec.id+'" rows="2" placeholder="Descrever pend\u00eancia ou orienta\u00e7\u00e3o..." style="width:100%;box-sizing:border-box;font-size:13px;line-height:1.5;padding:8px 10px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text);resize:none;font-family:inherit"></textarea>';
+      html+='<input type="text" id="pend-new-obs-'+rec.id+'" placeholder="Observa\u00e7\u00e3o (opcional)..." style="width:100%;box-sizing:border-box;font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-family:inherit;margin-top:6px">';
+      html+='<div style="display:flex;justify-content:flex-end;margin-top:8px">';
+      html+='<button class="btn btn-primary btn-sm" onclick="pendSalvarItem('+rec.id+','+p.id+')">Salvar pend\u00eancia</button>';
+      html+='</div></div>';
+      html+='<div style="display:flex;justify-content:flex-end">';
       html+='<button onclick="pendRemovePat('+rec.id+','+p.id+')" style="background:none;border:1px solid var(--danger);cursor:pointer;font-size:12px;color:var(--danger);padding:4px 10px;border-radius:6px">Retirar da lista</button>';
       html+='</div>';
       html+='</div>';
@@ -3622,6 +3623,33 @@ async function pendToggleSemPend(recId,patId,chk){
   if(subEl){subEl.style.color=val?'#16a34a':'var(--text-muted)';subEl.style.fontWeight=val?'600':'400';subEl.innerHTML=val?'&#9989; Sem pend\u00eancias':'&#9888;&#65039; Com pend\u00eancias';}
   const lbl=card.querySelector('label');
   if(lbl)lbl.style.color=val?'#16a34a':'var(--text)';
+}
+
+async function pendSalvarItem(recId,patId){
+  const txtEl=document.getElementById('pend-new-txt-'+recId);
+  const obsEl=document.getElementById('pend-new-obs-'+recId);
+  const texto=(txtEl&&txtEl.value.trim())||'';
+  const obs=(obsEl&&obsEl.value.trim())||'';
+  if(!texto){txtEl&&txtEl.focus();return;}
+  const {data:nd,error}=await sb.from('planos_pendencias_itens').insert({pend_id:recId,texto,obs,concluida:false,created_at:new Date().toISOString()}).select().single();
+  if(error){toast('Erro: '+error.message,'error');return;}
+  if(txtEl)txtEl.value='';
+  if(obsEl)obsEl.value='';
+  const box=document.getElementById('pend-itens-'+recId);
+  if(box){
+    const div=document.createElement('div');
+    div.id='pend-item-'+nd.id;
+    div.style.cssText='background:var(--bg-page);border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border)';
+    div.innerHTML='<div style="display:flex;align-items:flex-start;gap:8px">'
+      +'<input type="checkbox" style="margin-top:3px;width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:#22c55e" onchange="pendItemConcluir('+nd.id+','+recId+','+patId+',this)">'
+      +'<div style="flex:1"><div style="font-size:13px;line-height:1.5">'+escHtml(texto)+'</div>'
+      +(obs?'<div style="font-size:12px;color:var(--text-muted);margin-top:3px">&#128203; '+escHtml(obs)+'</div>':'')
+      +'</div>'
+      +'<button onclick="pendItemDelete('+nd.id+','+recId+','+patId+')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;line-height:1;padding:0;flex-shrink:0">&#215;</button>'
+      +'</div>';
+    box.appendChild(div);
+  }
+  pendUpdateCounter();
 }
 
 async function pendAddItem(recId,patId){
