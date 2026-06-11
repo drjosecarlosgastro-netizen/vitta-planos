@@ -3498,7 +3498,7 @@ async function renderPendenciasTab(){
   const weekAgo=new Date(today);weekAgo.setDate(weekAgo.getDate()-7);
   const todayInt=parseInt(today.toISOString().slice(0,10).replace(/-/g,''));
   const weekInt=parseInt(weekAgo.toISOString().slice(0,10).replace(/-/g,''));
-  const res3=await sb.from('planos_appointments').select('patient_id,date_str,modality,status');
+  const res3=await sb.from('planos_appointments').select('patient_id,date_str,status');
   const appts=res3.data||[];
   const weekAppts=appts.filter(a=>{
     if(!a.date_str)return false;
