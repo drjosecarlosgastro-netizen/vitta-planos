@@ -3492,14 +3492,39 @@ async function renderPendenciasTab(){
   if(res[1].error)throw res[1].error;
   allPatients=patients||[];
   const pendList=pends||[];
+  // Auto-add patients seen in the last 7 days if not already in list
+  const today=new Date();
+  const weekAgo=new Date(today);weekAgo.setDate(weekAgo.getDate()-7);
+  const todayInt=parseInt(today.toISOString().slice(0,10).replace(/-/g,''));
+  const weekInt=parseInt(weekAgo.toISOString().slice(0,10).replace(/-/g,''));
+  const res3=await sb.from('planos_appointments').select('patient_id,date_str');
+  const appts=res3.data||[];
+  const weekPatIds=[...new Set(appts.filter(a=>{
+    if(!a.date_str)return false;
+    const d=parseDateInt(a.date_str);return d>=weekInt&&d<=todayInt;
+  }).map(a=>a.patient_id))];
+  // Insert missing patients into planos_pendencias
+  const existIds=pendList.map(p=>p.patient_id);
+  const toInsert=weekPatIds.filter(id=>!existIds.includes(id));
+  if(toInsert.length){
+    const rows=toInsert.map(id=>({patient_id:id,texto:'',sem_pendencias:false,criado_por:'auto',updated_at:new Date().toISOString()}));
+    const ins=await sb.from('planos_pendencias').insert(rows).select();
+    if(ins.data)(ins.data).forEach(r=>pendList.push(r));
+  }
   const patIds=[...new Set(pendList.map(p=>p.patient_id))];
-  const pendPats=allPatients.filter(p=>patIds.includes(p.id));
+  // Sort: sem_pendencias=false first, then by name
+  const pendPats=allPatients.filter(p=>patIds.includes(p.id)).sort((a,b)=>{
+    const ra=pendList.find(p=>p.patient_id===a.id);const rb=pendList.find(p=>p.patient_id===b.id);
+    const sa=ra&&ra.sem_pendencias?1:0;const sb2=rb&&rb.sem_pendencias?1:0;
+    if(sa!==sb2)return sa-sb2;
+    return a.name.localeCompare(b.name);
+  });
   let html='<div class="section-header">'
     +'<div class="section-title">&#128204; Pend\u00eancias e Orienta\u00e7\u00f5es</div>'
-    +'<button class="btn btn-primary btn-sm" onclick="pendAddPatient()">+ Paciente</button>'
+    +'<button class="btn btn-primary btn-sm" onclick="pendAddPatient()">+ Paciente avulso</button>'
     +'</div>';
   if(!pendPats.length){
-    html+='<div class="empty"><div class="empty-icon">&#128204;</div>Nenhum paciente nesta lista.<br><span style="font-size:13px;color:var(--text-muted)">Clique em + Paciente para adicionar.</span></div>';
+    html+='<div class="empty"><div class="empty-icon">&#128204;</div>Nenhuma pend\u00eancia esta semana.</div>';
   } else {
     pendPats.forEach(p=>{
       const rec=pendList.find(pd=>pd.patient_id===p.id);
