@@ -3521,12 +3521,12 @@ async function renderPendenciasTab(){
     if(sa!==sb2)return sa-sb2;
     return a.name.localeCompare(b.name);
   });
-  const totalAbertos=(itens||[]).length;
+  const totalAbertos=pendList.filter(p=>!p.sem_pendencias).length;
   const totalPats=pendList.length;
   let html='<div class="section-header">'
     +'<div style="display:flex;align-items:center;gap:10px">'
     +'<div class="section-title">&#128204; Pend\u00eancias e Orienta\u00e7\u00f5es</div>'
-    +(totalAbertos>0?'<span class="pend-counter-badge" style="background:#ef4444;color:#fff;border-radius:20px;padding:2px 10px;font-size:13px;font-weight:700">'+totalAbertos+' aberta'+(totalAbertos>1?'s':'')+'</span>':'')
+    +(totalAbertos>0?'<span class="pend-counter-badge" style="background:#ef4444;color:#fff;border-radius:20px;padding:2px 10px;font-size:13px;font-weight:700">'+totalAbertos+' n\u00e3o verificado'+(totalAbertos>1?'s':'')+'</span>':'')
     +(totalPats>0&&totalAbertos===0?'<span style="background:#22c55e;color:#fff;border-radius:20px;padding:2px 10px;font-size:13px;font-weight:700">&#9989; Tudo ok</span>':'')
     +'</div>'
     +'<button class="btn btn-primary btn-sm" onclick="pendAddPatient()">+ Paciente avulso</button>'
