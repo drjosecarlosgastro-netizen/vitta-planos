@@ -367,8 +367,7 @@ async function renderDashboard(){
     '<div class="dash-card" onclick="showPatientListModal(\'120 dias\','+p120ids+')"><div class="dash-card-num">'+p120.length+'</div><div class="dash-card-label">\u00daltimos 120 dias</div></div>'+
     '<div class="dash-card" onclick="showPatientListModal(\'365 dias\','+p365ids+')"><div class="dash-card-num">'+p365.length+'</div><div class="dash-card-label">\u00daltimos 365 dias</div></div>'+
     '</div>'+
-    '<div class="dash-card" style="margin-bottom:16px" onclick="mainNav(\'patients\')"><div class="dash-card-num">'+allPatients.length+'</div><div class="dash-card-label">Total de Pacientes</div></div>'+
-    (active.length?active.map(p=>patientRowHtml(p)).join(''):'<div class="empty"><div class="empty-icon">\ud83d\udc64</div>Nenhum paciente ativo</div>');
+    '<div class="dash-card" onclick="mainNav(\'patients\')"><div class="dash-card-num">'+allPatients.length+'</div><div class="dash-card-label">Total de Pacientes</div></div>';
 }
 
 function showPatientListModal(title,ids){
@@ -3491,6 +3490,17 @@ async function renderPendenciasTab(){
   const patients=res[0].data;const pends=res[1].data;const itens=res[2].data||[];
   if(res[0].error)throw res[0].error;
   if(res[1].error)throw res[1].error;
+  // Auto-remove patients marked sem_pendencias whose updated_at is from a previous day
+  const todayStr=new Date().toISOString().slice(0,10);
+  const toAutoRemove=(pends||[]).filter(p=>{
+    if(!p.sem_pendencias)return false;
+    if(!p.updated_at)return false;
+    return p.updated_at.slice(0,10)<todayStr;
+  });
+  if(toAutoRemove.length){
+    await Promise.all(toAutoRemove.map(p=>sb.from('planos_pendencias').delete().eq('id',p.id)));
+    toAutoRemove.forEach(p=>{const idx=(pends||[]).findIndex(x=>x.id===p.id);if(idx>-1)pends.splice(idx,1);});
+  }
   allPatients=patients||[];
   const pendList=pends||[];
   // Auto-add patients seen in the last 7 days if not already in list
