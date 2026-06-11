@@ -3481,10 +3481,14 @@ function fmtDatetime(iso){if(!iso)return '';try{const d=new Date(iso);return d.t
 async function renderPendenciasTab(){
   const c=document.getElementById('main-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
-  const [{data:patients},{data:pends}]=await Promise.all([
+  try{
+  const res=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
     sb.from('planos_pendencias').select('*').order('updated_at',{ascending:false})
   ]);
+  const patients=res[0].data;const pends=res[1].data;
+  if(res[0].error)throw res[0].error;
+  if(res[1].error)throw res[1].error;
   allPatients=patients||[];
   const pendList=pends||[];
   const patIds=[...new Set(pendList.map(p=>p.patient_id))];
@@ -3531,6 +3535,7 @@ async function renderPendenciasTab(){
     });
   }
   c.innerHTML=html;
+  }catch(e){c.innerHTML='<div class="empty"><div class="empty-icon">&#9888;</div>Erro ao carregar: '+e.message+'</div>';console.error('pendencias error:',e);}
 }
 
 function pendToggle(patId){
