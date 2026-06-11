@@ -241,7 +241,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="tab" onclick="patTab('agenda')">Agenda</button>
     <button class="tab" onclick="patTab('contrato')">Contrato</button>
     <button class="tab" onclick="patTab('planos')">&#128203; Planos</button>
-    <button class="tab" onclick="patTab('pendencias')">&#128204; Pend&#234;ncias</button>
     <button class="tab" onclick="patTab('historico')">Hist&#243;rico</button>
   </div>
   <div id="patient-tab-content" class="content"></div>
@@ -367,209 +366,8 @@ async function renderDashboard(){
     '<div class="dash-card" onclick="showPatientListModal(\'365 dias\','+p365ids+')"><div class="dash-card-num">'+p365.length+'</div><div class="dash-card-label">\u00daltimos 365 dias</div></div>'+
     '</div>'+
     '<div class="dash-card" style="margin-bottom:16px" onclick="mainNav(\'patients\')"><div class="dash-card-num">'+allPatients.length+'</div><div class="dash-card-label">Total de Pacientes</div></div>'+
-    '<div id="dash-pendencias-area"></div>';
-  renderDashPendencias();
+    (active.length?active.map(p=>patientRowHtml(p)).join(''):'<div class="empty"><div class="empty-icon">\ud83d\udc64</div>Nenhum paciente ativo</div>');
 }
-// ========== PENDENCIAS MODULE ==========
-async function renderDashPendencias(){
-  const area=document.getElementById('dash-pendencias-area');
-  if(!area)return;
-  area.innerHTML='<div class="loading"><div class="spinner"></div>Carregando pend\u00eancias...</div>';
-  const today=new Date();
-  const weekAgo=new Date(today);weekAgo.setDate(weekAgo.getDate()-7);
-  const weekStr=weekAgo.toISOString().slice(0,10).split('-').reverse().join('/');
-  const [{data:pends},{data:appts2}]=await Promise.all([
-    sb.from('planos_pendencias').select('*').eq('concluida',false).order('created_at',{ascending:false}),
-    sb.from('planos_appointments').select('*')
-  ]);
-  const apptList=appts2||[];
-  const pendList=pends||[];
-  // Pacientes com consulta nos ultimos 7 dias
-  const weekAppts=apptList.filter(a=>{
-    if(!a.date_str)return false;
-    const d=parseDateInt(a.date_str);
-    const wInt=parseInt(weekAgo.toISOString().slice(0,10).replace(/-/g,''));
-    const todayInt=parseInt(today.toISOString().slice(0,10).replace(/-/g,''));
-    return d>=wInt&&d<=todayInt;
-  });
-  const weekPatIds=[...new Set(weekAppts.map(a=>a.patient_id))];
-  const weekPats=allPatients.filter(p=>weekPatIds.includes(p.id));
-  // Pacientes com pendencia ativa que nao consultaram na semana
-  const extraPendIds=[...new Set(pendList.map(p=>p.patient_id).filter(id=>!weekPatIds.includes(id)))];
-  const extraPats=allPatients.filter(p=>extraPendIds.includes(p.id));
-  const allPendPats=[...weekPats,...extraPats];
-  let html='<div class="section-header" style="margin-top:16px">'
-    +'<div class="section-title">\ud83d\udccc Pend\u00eancias e Orienta\u00e7\u00f5es</div>'
-    +'<button class="btn btn-sm btn-ghost" onclick="dashAddPendAvulsa()" style="border:1.5px dashed var(--border)">+ Paciente avulso</button>'
-    +'</div>';
-  if(!allPendPats.length&&!pendList.length){
-    html+='<div class="empty" style="margin-bottom:24px"><div class="empty-icon">\u2705</div>Nenhuma pend\u00eancia esta semana</div>';
-  } else {
-    allPendPats.forEach(p=>{
-      const patPends=pendList.filter(pd=>pd.patient_id===p.id);
-      const hasWeek=weekPatIds.includes(p.id);
-      html+='<div class="card" style="margin-bottom:10px;padding:14px 16px" id="pend-pat-'+p.id+'">';
-      html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
-      html+='<div class="patient-avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0">'+p.name.charAt(0)+'</div>';
-      html+='<div style="flex:1"><div style="font-weight:700;font-size:14px">'+p.name+'</div>';
-      html+='<div style="font-size:12px;color:var(--text-muted)">'+(hasWeek?'\u2705 Consultou esta semana':'\u23f0 Sem consulta na semana')+'</div></div>';
-      html+='<button class="btn btn-sm btn-ghost" style="padding:4px 10px;font-size:12px" onclick="dashAddPend('+p.id+',\''+p.name.replace(/'/g,"\\'")+'\')">+ Orienta\u00e7\u00e3o</button>';
-      html+='</div>';
-      if(patPends.length){
-        patPends.forEach(pd=>{
-          html+='<div class="pend-item" id="pend-item-'+pd.id+'" style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:var(--bg-page);border-radius:8px;margin-bottom:6px">';
-          html+='<input type="checkbox" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;cursor:pointer" onchange="dashConcluirPend('+pd.id+',this)" title="Marcar como feito">';
-          html+='<div style="flex:1;font-size:13px;color:var(--text);line-height:1.4" contenteditable="true" '
-            +'onblur="dashSavePendText('+pd.id+',this)" '
-            +'style="outline:none;min-height:20px;cursor:text">'+escHtml(pd.texto)+'</div>';
-          html+='<button onclick="dashDeletePend('+pd.id+')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:15px;padding:0 2px;flex-shrink:0" title="Excluir">\u00d7</button>';
-          html+='</div>';
-        });
-      } else {
-        html+='<div style="font-size:12px;color:var(--text-muted);padding:4px 2px">Nenhuma orienta\u00e7\u00e3o pendente.</div>';
-      }
-      html+='</div>';
-    });
-  }
-  area.innerHTML=html;
-}
-
-async function dashAddPend(patientId, patientName){
-  const {data:nd,error}=await sb.from('planos_pendencias').insert({
-    patient_id:patientId,texto:'',concluida:false,criado_por:currentUser.name
-  }).select().single();
-  if(error){toast('Erro ao criar pend\u00eancia','error');return;}
-  await renderDashPendencias();
-  // focus new item
-  setTimeout(()=>{
-    const el=document.querySelector('#pend-item-'+nd.id+' [contenteditable]');
-    if(el){el.focus();const r=document.createRange();r.selectNodeContents(el);r.collapse(false);const s=window.getSelection();s.removeAllRanges();s.addRange(r);}
-  },100);
-}
-
-async function dashAddPendAvulsa(){
-  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  const html='<div class="modal-title">Adicionar Paciente Avulso</div>'
-    +'<div class="field"><label>Buscar paciente</label>'
-    +'<input id="pend-search" placeholder="Nome do paciente..." oninput="pendSearchFilter(this.value)"/>'
-    +'</div><div id="pend-search-results" style="max-height:300px;overflow-y:auto"></div>';
-  document.getElementById('modal-generic-content').innerHTML=html;
-  openModal('modal-generic');
-  window.pendSearchFilter=function(q){
-    const matches=allPatients.filter(p=>norm(p.name).includes(norm(q))).slice(0,10);
-    document.getElementById('pend-search-results').innerHTML=matches.map(p=>
-      '<div class="patient-row" style="cursor:pointer" onclick="closeModal(\'modal-generic\');dashAddPend('+p.id+',\''+p.name.replace(/\'/g,"\\\'")+'\')">'
-      +'<div class="patient-avatar" style="width:32px;height:32px;font-size:13px">'+p.name.charAt(0)+'</div>'
-      +'<div class="patient-info"><div class="patient-name">'+p.name+'</div></div></div>'
-    ).join('');
-  };
-  window.pendSearchFilter('');
-}
-
-async function dashSavePendText(pendId, el){
-  const texto=el.innerText.trim();
-  await sb.from('planos_pendencias').update({texto}).eq('id',pendId);
-}
-
-async function dashConcluirPend(pendId, chk){
-  if(!chk.checked)return;
-  chk.disabled=true;
-  const {data:pd}=await sb.from('planos_pendencias').select('*').eq('id',pendId).single();
-  if(pd){
-    await sb.from('planos_historico_edicoes').insert({
-      patient_id:pd.patient_id,
-      campo:'Pendencia concluida',
-      valor_novo:pd.texto||'(sem texto)',
-      editado_por:currentUser.name,
-      editado_em:new Date().toISOString()
-    });
-    await sb.from('planos_pendencias').update({concluida:true,concluida_por:currentUser.name,concluida_em:new Date().toISOString()}).eq('id',pendId);
-  }
-  const item=document.getElementById('pend-item-'+pendId);
-  if(item){item.style.opacity='0.4';item.style.transition='opacity 0.4s';setTimeout(()=>renderDashPendencias(),500);}
-}
-
-async function dashDeletePend(pendId){
-  const {data:pd}=await sb.from('planos_pendencias').select('*').eq('id',pendId).single();
-  if(pd){
-    await sb.from('planos_historico_edicoes').insert({
-      patient_id:pd.patient_id,
-      campo:'Pendencia excluida',
-      valor_novo:pd.texto||'(sem texto)',
-      editado_por:currentUser.name,
-      editado_em:new Date().toISOString()
-    });
-    await sb.from('planos_pendencias').delete().eq('id',pendId);
-  }
-  await renderDashPendencias();
-}
-
-async function renderPendencias(){
-  const c=document.getElementById('patient-tab-content');
-  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
-  const pid=currentPatientId;
-  const [{data:pends},{data:hist}]=await Promise.all([
-    sb.from('planos_pendencias').select('*').eq('patient_id',pid).eq('concluida',false).order('created_at',{ascending:false}),
-    sb.from('planos_pendencias').select('*').eq('patient_id',pid).eq('concluida',true).order('concluida_em',{ascending:false})
-  ]);
-  const ativas=pends||[];
-  const concluidas=hist||[];
-  let html='<div class="section-header"><div class="section-title">\ud83d\udccc Pend\u00eancias e Orienta\u00e7\u00f5es</div>'
-    +'<button class="btn btn-primary btn-sm" onclick="patAddPend('+pid+')">+ Nova</button></div>';
-  if(!ativas.length){
-    html+='<div class="empty"><div class="empty-icon">\u2705</div>Nenhuma pend\u00eancia ativa</div>';
-  } else {
-    html+='<div style="margin-bottom:16px">';
-    ativas.forEach(pd=>{
-      html+='<div class="card pend-item" id="pend-item-'+pd.id+'" style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;margin-bottom:8px">';
-      html+='<input type="checkbox" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;cursor:pointer" onchange="dashConcluirPend('+pd.id+',this)">';
-      html+='<div style="flex:1">';
-      html+='<div style="font-size:13px;color:var(--text);line-height:1.5" contenteditable="true" onblur="dashSavePendText('+pd.id+',this)" style="outline:none;cursor:text">'+escHtml(pd.texto)+'</div>';
-      html+='<div style="font-size:11px;color:var(--text-muted);margin-top:4px">Criado por '+escHtml(pd.criado_por||'')+'\u00b7 '+fmtDatetime(pd.created_at)+'</div>';
-      html+='</div>';
-      html+='<button onclick="dashDeletePend('+pd.id+')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;padding:0 2px;flex-shrink:0" title="Excluir">\u00d7</button>';
-      html+='</div>';
-    });
-    html+='</div>';
-  }
-  if(concluidas.length){
-    html+='<div class="section-header" style="margin-top:8px"><div class="section-title" style="font-size:13px;color:var(--text-muted)">Conclu\u00eddas / Exclu\u00eddas</div></div>';
-    concluidas.forEach(pd=>{
-      html+='<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--bg-page);border-radius:8px;margin-bottom:6px;opacity:0.7">';
-      html+='<span style="font-size:16px;margin-top:1px">\u2705</span>';
-      html+='<div style="flex:1"><div style="font-size:13px;text-decoration:line-through;color:var(--text-muted)">'+escHtml(pd.texto)+'</div>';
-      html+='<div style="font-size:11px;color:var(--text-muted);margin-top:3px">Conclu\u00eddo por '+(pd.concluida_por||'')+(pd.concluida_em?' \u00b7 '+fmtDatetime(pd.concluida_em):'')+'</div>';
-      html+='</div></div>';
-    });
-  }
-  c.innerHTML=html;
-}
-
-async function patAddPend(patientId){
-  const {data:nd,error}=await sb.from('planos_pendencias').insert({
-    patient_id:patientId,texto:'',concluida:false,criado_por:currentUser.name
-  }).select().single();
-  if(error){toast('Erro ao criar pend\u00eancia','error');return;}
-  await renderPendencias();
-  setTimeout(()=>{
-    const el=document.querySelector('#pend-item-'+nd.id+' [contenteditable]');
-    if(el){el.focus();}
-  },100);
-}
-
-function fmtDatetime(iso){
-  if(!iso)return '';
-  try{
-    const d=new Date(iso);
-    return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){return '';}
-}
-
-function escHtml(s){
-  if(!s)return '';
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-// ========== END PENDENCIAS MODULE ==========
 
 function showPatientListModal(title,ids){
   const patients=allPatients.filter(p=>ids.includes(p.id));
@@ -728,7 +526,7 @@ async function executarDeletePaciente(){
 function backToMain(){showScreen('app');mainNav(currentSection);}
 
 function patTab(tab){
-  const tabNames=['info','financeiro','clinica','soroterapia','implante','agenda','contrato','planos','pendencias','historico'];
+  const tabNames=['info','financeiro','clinica','soroterapia','implante','agenda','contrato','planos','historico'];
   document.querySelectorAll('#patient-tabs .tab').forEach((t,i)=>t.classList.toggle('active',tabNames[i]===tab));
   const c=document.getElementById('patient-tab-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
@@ -740,7 +538,6 @@ function patTab(tab){
   else if(tab==='agenda')renderPatAgenda();
   else if(tab==='contrato')renderContrato();
   else if(tab==='planos')renderHistoricoPlanos();
-  else if(tab==='pendencias')renderPendencias();
   else if(tab==='historico')renderHistorico();
 }
 
@@ -3675,6 +3472,141 @@ async function renderImplantes(){
   window.rebuildImpl=function(){implFilter=window._if;implSort=window._isort;c.innerHTML=buildImpl();};
   c.innerHTML=buildImpl();
 }
+
+// ========== PENDENCIAS TAB ==========
+function escHtml(s){if(!s)return '';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDatetime(iso){if(!iso)return '';try{const d=new Date(iso);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+
+async function renderPendenciasTab(){
+  const c=document.getElementById('main-content');
+  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  const [{data:patients},{data:pends}]=await Promise.all([
+    sb.from('planos_patients').select('*').order('name'),
+    sb.from('planos_pendencias').select('*').order('updated_at',{ascending:false})
+  ]);
+  allPatients=patients||[];
+  const pendList=pends||[];
+  const patIds=[...new Set(pendList.map(p=>p.patient_id))];
+  const pendPats=allPatients.filter(p=>patIds.includes(p.id));
+  let html='<div class="section-header">'
+    +'<div class="section-title">&#128204; Pend\u00eancias e Orienta\u00e7\u00f5es</div>'
+    +'<button class="btn btn-primary btn-sm" onclick="pendAddPatient()">+ Paciente</button>'
+    +'</div>';
+  if(!pendPats.length){
+    html+='<div class="empty"><div class="empty-icon">&#128204;</div>Nenhum paciente nesta lista.<br><span style="font-size:13px;color:var(--text-muted)">Clique em + Paciente para adicionar.</span></div>';
+  } else {
+    pendPats.forEach(p=>{
+      const rec=pendList.find(pd=>pd.patient_id===p.id);
+      if(!rec)return;
+      const semPend=rec.sem_pendencias===true;
+      const borderColor=semPend?'#22c55e':'var(--border)';
+      const bgHeader=semPend?'#f0fdf4':'var(--bg-card)';
+      const avatarBg=semPend?'#22c55e':'var(--accent)';
+      const subColor=semPend?'#16a34a':'var(--text-muted)';
+      const subWeight=semPend?'600':'400';
+      const subText=semPend?'&#9989; Sem pend\u00eancias':'&#9888;&#65039; Com pend\u00eancias';
+      html+='<div class="card" style="margin-bottom:10px;border-radius:12px;overflow:hidden;border:1.5px solid '+borderColor+'" id="pend-card-'+p.id+'">';
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;background:'+bgHeader+'" onclick="pendToggle('+p.id+')">';
+      html+='<div class="patient-avatar" style="width:36px;height:36px;font-size:14px;flex-shrink:0;background:'+avatarBg+'">'+p.name.charAt(0)+'</div>';
+      html+='<div style="flex:1"><div style="font-weight:700;font-size:14px">'+escHtml(p.name)+'</div>';
+      html+='<div style="font-size:12px;color:'+subColor+';font-weight:'+subWeight+'">'+subText+'</div></div>';
+      html+='<span id="pend-arrow-'+p.id+'" style="font-size:18px;color:var(--text-muted);transition:transform 0.2s">&#8250;</span>';
+      html+='</div>';
+      html+='<div id="pend-body-'+p.id+'" style="display:none;padding:0 16px 16px">';
+      html+='<div style="display:flex;align-items:center;gap:8px;margin:12px 0 10px">';
+      html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600">';
+      const chkd=semPend?'checked':'';
+      html+='<input type="checkbox" id="pend-chk-'+p.id+'" '+chkd+' style="width:16px;height:16px;cursor:pointer;accent-color:#22c55e" onchange="pendToggleSemPend('+rec.id+','+p.id+',this)">';
+      html+='Sem Pend\u00eancias</label></div>';
+      const textoEsc=escHtml(rec.texto||'');
+      html+='<textarea id="pend-txt-'+rec.id+'" rows="4" placeholder="Descreva as orienta\u00e7\u00f5es e pend\u00eancias..." style="width:100%;box-sizing:border-box;font-size:13px;line-height:1.5;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg-page);color:var(--text);resize:vertical;font-family:inherit" onblur="pendSaveTexto('+rec.id+',this)">'+textoEsc+'</textarea>';
+      const tsText=rec.updated_at?'\u00daltima altera\u00e7\u00e3o: '+fmtDatetime(rec.updated_at):'';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">';
+      html+='<span style="font-size:11px;color:var(--text-muted)">'+tsText+'</span>';
+      html+='<button onclick="pendRemovePat('+rec.id+','+p.id+')" style="background:none;border:1px solid var(--danger);cursor:pointer;font-size:12px;color:var(--danger);padding:4px 10px;border-radius:6px">Retirar da lista</button>';
+      html+='</div>';
+      html+='</div>';
+      html+='</div>';
+    });
+  }
+  c.innerHTML=html;
+}
+
+function pendToggle(patId){
+  const body=document.getElementById('pend-body-'+patId);
+  const arrow=document.getElementById('pend-arrow-'+patId);
+  if(!body)return;
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(arrow)arrow.style.transform=open?'none':'rotate(90deg)';
+}
+
+async function pendToggleSemPend(recId,patId,chk){
+  const val=chk.checked;
+  await sb.from('planos_pendencias').update({sem_pendencias:val,updated_at:new Date().toISOString()}).eq('id',recId);
+  const card=document.getElementById('pend-card-'+patId);
+  if(!card)return;
+  card.style.border='1.5px solid '+(val?'#22c55e':'var(--border)');
+  const header=card.querySelector('div[onclick]');
+  if(header)header.style.background=val?'#f0fdf4':'var(--bg-card)';
+  const avatar=card.querySelector('.patient-avatar');
+  if(avatar)avatar.style.background=val?'#22c55e':'var(--accent)';
+  const subEl=card.querySelectorAll('div[onclick] > div > div')[1];
+  if(subEl){subEl.style.color=val?'#16a34a':'var(--text-muted)';subEl.style.fontWeight=val?'600':'400';subEl.innerHTML=val?'&#9989; Sem pend\u00eancias':'&#9888;&#65039; Com pend\u00eancias';}
+  const lbl=card.querySelector('label');
+  if(lbl)lbl.style.color=val?'#16a34a':'var(--text)';
+}
+
+async function pendSaveTexto(recId,el){
+  const texto=el.value;
+  await sb.from('planos_pendencias').update({texto,updated_at:new Date().toISOString()}).eq('id',recId);
+  const span=el.nextElementSibling&&el.nextElementSibling.querySelector('span');
+  if(span)span.textContent='\u00daltima altera\u00e7\u00e3o: '+fmtDatetime(new Date().toISOString());
+}
+
+async function pendRemovePat(recId,patId){
+  if(!confirm('Retirar este paciente da lista de pend\u00eancias?'))return;
+  await sb.from('planos_pendencias').delete().eq('id',recId);
+  const card=document.getElementById('pend-card-'+patId);
+  if(card){card.style.opacity='0';card.style.transition='opacity 0.3s';setTimeout(()=>{card.remove();},350);}
+}
+
+async function pendAddPatient(){
+  if(!allPatients.length){const{data}=await sb.from('planos_patients').select('*').order('name');allPatients=data||[];}
+  const {data:existing}=await sb.from('planos_pendencias').select('patient_id');
+  const existIds=(existing||[]).map(e=>e.patient_id);
+  const available=allPatients.filter(p=>!existIds.includes(p.id));
+  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const html='<div class="modal-title">Adicionar Paciente</div>'
+    +'<div class="field"><label>Buscar paciente</label>'
+    +'<input id="pend-search" placeholder="Nome do paciente..." oninput="pendSearchFilter(this.value)"/>'
+    +'</div><div id="pend-search-results" style="max-height:300px;overflow-y:auto"></div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+  window._pendAvailable=available;
+  window.pendSearchFilter=function(q){
+    const matches=window._pendAvailable.filter(p=>norm(p.name).includes(norm(q))).slice(0,10);
+    document.getElementById('pend-search-results').innerHTML=matches.map(p=>
+      '<div class="patient-row" style="cursor:pointer;padding:10px 8px" onclick="pendConfirmAdd('+p.id+')">'
+      +'<div class="patient-avatar" style="width:32px;height:32px;font-size:13px">'+p.name.charAt(0)+'</div>'
+      +'<div class="patient-info"><div class="patient-name">'+escHtml(p.name)+'</div>'
+      +'<div class="patient-meta">'+(p.plan_type||'')+'</div></div></div>'
+    ).join('');
+  };
+  window.pendSearchFilter('');
+}
+
+async function pendConfirmAdd(patientId){
+  closeModal('modal-generic');
+  const {error}=await sb.from('planos_pendencias').insert({
+    patient_id:patientId,texto:'',sem_pendencias:false,
+    criado_por:currentUser.name,updated_at:new Date().toISOString()
+  });
+  if(error){toast('Erro ao adicionar: '+error.message,'error');return;}
+  await renderPendenciasTab();
+  setTimeout(()=>pendToggle(patientId),200);
+}
+// ========== END PENDENCIAS TAB ==========
 
 async function renderAvulsas(){
   const[{data:patients},{data:appts},{data:fin}]=await Promise.all([
