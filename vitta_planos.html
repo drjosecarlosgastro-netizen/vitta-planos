@@ -344,11 +344,13 @@ function mainNav(section){
 }
 
 async function renderDashboard(){
-  const[{data:patients},{data:appts},{data:sessoes},{data:envios}]=await Promise.all([
+  const[{data:patients},{data:appts},{data:sessoes},{data:envios},{data:pends},{data:pendItens}]=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
     sb.from('planos_appointments').select('*'),
     sb.from('planos_soro_sessoes').select('*'),
-    sb.from('planos_soro_envios').select('*')
+    sb.from('planos_soro_envios').select('*'),
+    sb.from('planos_pendencias').select('*'),
+    sb.from('planos_pendencias_itens').select('*').eq('concluida',false)
   ]);
   allPatients=patients||[];
   const c=document.getElementById('main-content');
@@ -364,6 +366,14 @@ async function renderDashboard(){
       if(rest<=1)alertItems.push({id:p.id,name:p.name,msg:'\ud83d\ude9a Enviar protocolo agora!',type:'danger'});
       else if(rest<=2)alertItems.push({id:p.id,name:p.name,msg:'\u26a0\ufe0f Preparar pr\u00f3ximo envio',type:'warning'});
     }
+  });
+  // Alertas de pend\u00eancias em aberto
+  (pendItens||[]).forEach(it=>{
+    const rec=(pends||[]).find(p=>p.id===it.pend_id);
+    if(!rec)return;
+    const pat=allPatients.find(p=>p.id===rec.patient_id);
+    if(!pat)return;
+    alertItems.push({id:pat.id,name:pat.name,msg:'\ud83d\udccc '+escHtml(it.texto||'Pend\u00eancia em aberto'),type:'warning'});
   });
   function lastConsultDays(pid){const pa=(appts||[]).filter(a=>a.patient_id===pid&&a.status==='Compareceu'&&!a.origem_tabela);if(!pa.length)return null;return daysAgo(pa.sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str))[0].date_str);}
   const p90=allPatients.filter(p=>{const d=lastConsultDays(p.id);return d!==null&&d<=90;});
