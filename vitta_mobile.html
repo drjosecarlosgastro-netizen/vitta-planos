@@ -90,6 +90,25 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .enc-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
 .enc-fim{background:#dbeafe;color:#1d4ed8}
 .enc-des{background:#fff7ed;color:#c2410c}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal-overlay.hidden{display:none}
+.modal-sheet{background:var(--bg);width:100%;max-height:88vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:0 auto 12px}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:2px}
+.modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:14px}
+.modal-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--border);border:none;font-size:16px;color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+/* Collapsible */
+.coll-header{display:flex;align-items:center;gap:10px;cursor:pointer}
+.coll-arrow{margin-left:auto;color:var(--text-muted);font-size:18px;transition:transform .2s;flex-shrink:0}
+.coll-arrow.open{transform:rotate(90deg)}
+.coll-body{display:none;padding-top:10px;margin-top:10px;border-top:1px solid var(--border)}
+.coll-body.open{display:block}
+.clickable{cursor:pointer}
+.pend-item{background:var(--bg);border-radius:10px;padding:10px 12px;margin-top:8px;border:1px solid var(--border);display:flex;gap:8px;align-items:flex-start}
+.pend-item.done{background:#f0faf9;border-color:var(--success)}
+.pend-chk{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--text-muted);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff}
+.pend-chk.done{background:var(--success);border-color:var(--success)}
 </style>
 </head>
 <body>
@@ -117,6 +136,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
   <button class="tab" onclick="showTab('pacientes')">Pacientes</button>
   <button class="tab" onclick="showTab('soro')">Soroterapia</button>
   <button class="tab" onclick="showTab('alertas')">Alertas</button>
+  <button class="tab" onclick="showTab('pendencias')">Pend\u00eancias</button>
   <button class="tab" onclick="showTab('financeiro')">Financeiro</button>
 </div>
 
@@ -125,6 +145,14 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 </div>
 
 <button class="refresh-btn" onclick="loadAll()" title="Atualizar">&#8635;</button>
+
+<div class="modal-overlay hidden" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL='https://tzsamyaobtzswpklxpzx.supabase.co';
@@ -145,6 +173,10 @@ const daysAgo=dateStr=>{if(!dateStr)return null;const p=dateStr.split('/');if(p.
 const currMonthStart=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),1);};
 const currMonthEnd=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth()+1,0);};
 const dateInCurrMonth=s=>{if(!s)return false;const p=s.split('/');if(p.length!==3)return false;const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));return d>=currMonthStart()&&d<=currMonthEnd();};
+function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDatetime(iso){if(!iso)return'';try{const d=new Date(iso);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return'';}}
+function closeModal(){document.getElementById('modal-overlay').classList.add('hidden');document.getElementById('modal-content').innerHTML='';}
+function toggleColl(id){const body=document.getElementById('body-'+id);const arrow=document.getElementById('arrow-'+id);if(!body)return;const open=body.classList.contains('open');body.classList.toggle('open',!open);if(arrow)arrow.classList.toggle('open',!open);}
 
 function updateClock(){
   const n=new Date();
@@ -157,17 +189,21 @@ setInterval(updateClock,1000);updateClock();
 
 async function loadAll(){
   document.getElementById('main-content').innerHTML='<div class="loading"><div class="spinner"></div>Atualizando...</div>';
-  const[{data:patients},{data:appts},{data:sessoes},{data:envios},{data:fin},{data:impl}]=await Promise.all([
+  const[{data:patients},{data:appts},{data:sessoes},{data:envios},{data:fin},{data:impl},{data:pends},{data:pendItens},{data:hist}]=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
     sb.from('planos_appointments').select('*').order('created_at'),
     sb.from('planos_soro_sessoes').select('*').order('created_at'),
     sb.from('planos_soro_envios').select('*').order('created_at'),
     sb.from('planos_financeiro').select('*').order('created_at'),
-    sb.from('planos_implantes').select('*').order('created_at')
+    sb.from('planos_implantes').select('*').order('created_at'),
+    sb.from('planos_pendencias').select('*'),
+    sb.from('planos_pendencias_itens').select('*'),
+    sb.from('planos_historico_edicoes').select('*').order('editado_em',{ascending:false}).limit(300)
   ]);
   allData={
     patients:patients||[],appts:appts||[],sessoes:sessoes||[],
-    envios:envios||[],fin:fin||[],impl:impl||[]
+    envios:envios||[],fin:fin||[],impl:impl||[],
+    pends:pends||[],pendItens:pendItens||[],hist:hist||[]
   };
   updateSummaryBar();
   showTab(currentTab);
@@ -196,13 +232,14 @@ function updateSummaryBar(){
 
 function showTab(tab){
   currentTab=tab;
-  const tabNames=['inicio','agenda','pacientes','soro','alertas','financeiro'];
+  const tabNames=['inicio','agenda','pacientes','soro','alertas','pendencias','financeiro'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabNames[i]===tab));
   if(tab==='inicio')renderInicio();
   else if(tab==='agenda')renderAgenda();
   else if(tab==='pacientes')renderPacientes();
   else if(tab==='soro')renderSoro();
   else if(tab==='alertas')renderAlertas();
+  else if(tab==='pendencias')renderPendenciasMobile();
   else if(tab==='financeiro')renderFinanceiro();
 }
 
@@ -254,7 +291,7 @@ function renderInicio(){
   // Alertas
   if(alertItems.length){
     html+='<div class="section-label">\ud83d\udd14 Alertas</div>';
-    alertItems.forEach(a=>{html+='<div class="alert alert-'+a.type+'"><div><strong>'+a.name+'</strong><br/>'+a.msg+'</div></div>';});
+    alertItems.forEach(a=>{html+='<div class="alert alert-'+a.type+' clickable" onclick="openPatientDetail('+a.id+')"><div><strong>'+a.name+'</strong><br/>'+a.msg+'</div></div>';});
   }
 
   // Agenda de hoje (consultas)
@@ -296,7 +333,7 @@ function renderInicio(){
   if(ending.length){
     html+='<div class="section-label">\u23f3 Encerrando em Breve (Fase 3)</div><div class="card">';
     ending.forEach(p=>{
-      html+='<div class="pat-row">'
+      html+='<div class="pat-row clickable" onclick="openPatientDetail('+p.id+')">'
         +'<div class="avatar">'+p.name.charAt(0)+'</div>'
         +'<div class="pat-info">'
         +'<div class="pat-name">'+p.name+'</div>'
@@ -397,7 +434,7 @@ function renderPacientes(){
     const patImpl=impl.filter(i=>i.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_implante)-parseDateInt(a.data_implante));
     const lastImpl=patImpl[0];
     const encBadge=p.motivo_encerramento?'<span class="enc-badge '+(p.motivo_encerramento==='fim'?'enc-fim':'enc-des')+'">'+(p.motivo_encerramento==='fim'?'Fim':'Desist\u00eancia')+'</span>':'';
-    html+='<div class="card" style="margin-bottom:10px">'
+    html+='<div class="card clickable" style="margin-bottom:10px" onclick="openPatientDetail('+p.id+')">'
       +'<div class="pat-row" style="padding-bottom:10px">'
       +'<div class="avatar">'+p.name.charAt(0)+'</div>'
       +'<div class="pat-info">'
@@ -465,7 +502,7 @@ function renderSoro(){
   if(envioAlerts.length){
     html+='<div class="section-label">\ud83d\udce6 Alertas de Envio</div>';
     envioAlerts.sort((a,b)=>a.rest-b.rest).forEach(({p,rest,lastEnvio})=>{
-      html+='<div class="alert alert-'+(rest<=1?'danger':'warning')+'">'
+      html+='<div class="alert alert-'+(rest<=1?'danger':'warning')+' clickable" onclick="openPatientDetail('+p.id+')">'
         +'<div style="flex:1"><strong>'+p.name+'</strong>'
         +'<div style="font-size:12px;margin-top:3px">'+(rest<=1?'\ud83d\udea9 Enviar protocolo AGORA!':'\u26a0\ufe0f Preparar pr\u00f3ximo envio')+'</div>'
         +'<div style="font-size:11px;margin-top:3px;opacity:.8">\u00daltimo envio: '+fmtDate(lastEnvio.data_envio)+' \u00b7 '+rest+' sess\u00e3o(oes) restante(s)</div>'
@@ -486,7 +523,7 @@ function renderSoro(){
   if(sorted.length){
     html+='<div class="card">';
     sorted.slice(0,10).forEach(s=>{
-      html+='<div class="pat-row">'
+      html+='<div class="pat-row clickable" onclick="openPatientDetail('+s.patient_id+')">'
         +'<div class="avatar">'+(patMap[s.patient_id]||'?').charAt(0)+'</div>'
         +'<div class="pat-info">'
         +'<div class="pat-name">'+(patMap[s.patient_id]||'Paciente #'+s.patient_id)+'</div>'
@@ -523,7 +560,7 @@ function renderAlertas(){
   if(envioAlerts.length){
     html+='<div class="section-label">\ud83d\udce6 Alertas de Envio ('+envioAlerts.length+')</div>';
     envioAlerts.forEach(({p,rest,lastEnvio})=>{
-      html+='<div class="alert alert-'+(rest<=1?'danger':'warning')+'">'
+      html+='<div class="alert alert-'+(rest<=1?'danger':'warning')+' clickable" onclick="openPatientDetail('+p.id+')">'
         +'<div style="flex:1"><strong>'+p.name+'</strong>'
         +'<div style="font-size:12px;margin-top:3px">'+(rest<=1?'\ud83d\udea9 Enviar protocolo AGORA!':'\u26a0\ufe0f Preparar pr\u00f3ximo envio')+'</div>'
         +'<div style="font-size:11px;margin-top:3px;opacity:.8">\u00daltimo envio: '+fmtDate(lastEnvio.data_envio)+' \u00b7 '+rest+' sess\u00e3o(oes) restante(s)</div>'
@@ -536,7 +573,7 @@ function renderAlertas(){
   if(overdue.length){
     html+='<div class="section-label">\ud83d\udcc5 Consultas sem Status ('+overdue.length+')</div>';
     overdue.sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str)).forEach(a=>{
-      html+='<div class="alert alert-warning">'
+      html+='<div class="alert alert-warning clickable" onclick="openPatientDetail('+a.patient_id+')">'
         +'<div><strong>'+(patMap[a.patient_id]||'\u2014')+'</strong>'
         +'<div style="font-size:12px;margin-top:2px">'+fmtDate(a.date_str)+' \u00b7 '+(a.procedimento||'')+' \u00b7 <strong>'+daysAgo(a.date_str)+'d atr\u00e1s</strong></div>'
         +'</div></div>';
@@ -548,7 +585,7 @@ function renderAlertas(){
   if(ending.length){
     html+='<div class="section-label">\u23f3 Encerrando em Breve \u2014 Fase 3 ('+ending.length+')</div><div class="card">';
     ending.forEach(p=>{
-      html+='<div class="pat-row">'
+      html+='<div class="pat-row clickable" onclick="openPatientDetail('+p.id+')">'
         +'<div class="avatar">'+p.name.charAt(0)+'</div>'
         +'<div class="pat-info">'
         +'<div class="pat-name">'+p.name+'</div>'
@@ -563,7 +600,7 @@ function renderAlertas(){
   if(renovacao.length){
     html+='<div class="section-label">\ud83d\udd04 Renova\u00e7\u00e3o Pr\u00f3xima ('+renovacao.length+')</div><div class="card">';
     renovacao.forEach(p=>{
-      html+='<div class="pat-row">'
+      html+='<div class="pat-row clickable" onclick="openPatientDetail('+p.id+')">'
         +'<div class="avatar">'+p.name.charAt(0)+'</div>'
         +'<div class="pat-info">'
         +'<div class="pat-name">'+p.name+'</div>'
@@ -597,7 +634,7 @@ function renderFinanceiro(){
     +'<div class="section-label">\u00daltimos Pagamentos</div><div class="card">';
   recent.forEach(f=>{
     const icon=f.forma==='PIX'?'\ud83d\udca0':'\ud83d\udcb3';
-    html+='<div class="fin-row">'
+    html+='<div class="fin-row clickable" onclick="openPatientDetail('+f.patient_id+')">'
       +'<div><div style="font-weight:600;font-size:13px">'+(patMap[f.patient_id]||'\u2014')+'</div>'
       +'<div style="font-size:11px;color:var(--text-muted)">'+(f.data_pagamento||'')+' \u00b7 '+icon+' '+(f.forma||'')+(f.parcelas?' ('+f.parcelas+')':'')+'</div>'
       +(f.observacao?'<div style="font-size:11px;color:var(--text-muted)">'+f.observacao+'</div>':'')
@@ -607,6 +644,181 @@ function renderFinanceiro(){
   });
   if(!recent.length)html+='<div class="empty">Sem pagamentos</div>';
   html+='</div>';
+  document.getElementById('main-content').innerHTML=html;
+}
+
+
+// PATIENT DETAIL MODAL
+function openPatientDetail(patientId){
+  const{patients,appts,sessoes,envios,fin,impl,pends,pendItens,hist}=allData;
+  const p=patients.find(x=>x.id===patientId);
+  if(!p)return;
+  const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
+  const months=p.inicio_programa?monthsSince(fmtDate(p.inicio_programa)):0;
+  const endDate=p.inicio_programa?addMonths(fmtDate(p.inicio_programa),p.duracao_programa||3):'\u2014';
+  const phaseColors=['','phase-1','phase-2','phase-3'];
+  let html='<div class="modal-title">'+escHtml(p.name)+'</div>';
+  html+='<div class="modal-sub">'+(p.cpf?'CPF '+escHtml(p.cpf)+' \u00b7 ':'')+(p.telefone||'')+'</div>';
+  html+='<div class="pat-meta" style="margin-bottom:14px">'
+    +'<span class="phase-badge '+phaseColors[phase]+'">Fase '+phase+'</span>'
+    +'<span class="pill pill-'+(p.modality==='Presencial'?'blue':'purple')+'">'+(p.modality||'\u2014')+'</span>'
+    +'<span style="font-size:11px;color:var(--text-muted)">'+(p.plan_type||'')+' \u00b7 M\u00eas '+(months+1)+'</span>'
+    +(p.active?'':'<span class="enc-badge enc-des">Inativo</span>')
+    +'</div>';
+  if(p.inicio_programa){
+    html+='<div class="card" style="margin-bottom:10px;padding:12px 14px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">'
+      +'<div><div style="color:var(--text-muted);font-size:10px">In\u00edcio do Programa</div><div style="font-weight:600">'+fmtDate(p.inicio_programa)+'</div></div>'
+      +'<div><div style="color:var(--text-muted);font-size:10px">Fim Estimado</div><div style="font-weight:600">'+endDate+'</div></div>'
+      +'</div></div>';
+  }
+  const patConsultas=(appts||[]).filter(a=>a.patient_id===patientId&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+  html+=collSection('cons-'+patientId,'\ud83d\udcc5 Consultas ('+patConsultas.length+')',()=>{
+    if(!patConsultas.length)return'<div class="empty" style="padding:12px">Sem consultas registradas</div>';
+    let h='';
+    patConsultas.slice(0,15).forEach(a=>{
+      const statusCls='status-'+(a.status||'agendado').toLowerCase().replace(/\s/g,'-');
+      h+='<div class="appt-item">'
+        +'<div class="appt-time">'+fmtDate(a.date_str)+'</div>'
+        +'<div class="appt-info"><div class="appt-name">'+(a.procedimento||a.tipo||'Consulta')+'</div>'
+        +'<div class="appt-sub">'+(a.time_str||'')+(a.tipo?' \u00b7 '+a.tipo:'')+'</div></div>'
+        +'<span class="appt-status '+statusCls+'">'+(a.status||'Agendado')+'</span>'
+        +'</div>';
+    });
+    return h;
+  });
+  const patSoro=(sessoes||[]).filter(s=>s.patient_id===patientId).sort((a,b)=>parseDateInt(b.data_sessao)-parseDateInt(a.data_sessao));
+  const patEnvios=(envios||[]).filter(e=>e.patient_id===patientId).sort((a,b)=>parseDateInt(b.data_envio)-parseDateInt(a.data_envio));
+  html+=collSection('soro-'+patientId,'\ud83d\udc89 Soroterapia ('+patSoro.length+' sess\u00f5es)',()=>{
+    let h='';
+    if(patEnvios.length){
+      const le=patEnvios[0];
+      const total=(le.sessoes_ev||0)+(le.sessoes_im||0);
+      const feitas=(sessoes||[]).filter(s=>s.patient_id===patientId&&s.envio_id===le.id).length;
+      h+='<div style="font-size:12px;margin-bottom:8px"><strong>\u00daltimo envio:</strong> '+fmtDate(le.data_envio)+' \u2014 '+feitas+'/'+total+' sess\u00f5es realizadas</div>';
+      if(le.substancias)h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;white-space:pre-wrap">'+escHtml(le.substancias)+'</div>';
+    }
+    if(!patSoro.length)return h+'<div class="empty" style="padding:12px">Sem sess\u00f5es registradas</div>';
+    patSoro.slice(0,10).forEach(s=>{
+      h+='<div class="appt-item"><div class="appt-time">'+fmtDate(s.data_sessao)+'</div>'
+        +'<div class="appt-info"><div class="appt-name">'+(s.tipo_sessao||'Sess\u00e3o')+'</div>'
+        +(s.observacao?'<div class="appt-sub">'+escHtml(s.observacao)+'</div>':'')+'</div></div>';
+    });
+    return h;
+  });
+  const patImpl=(impl||[]).filter(i=>i.patient_id===patientId).sort((a,b)=>parseDateInt(b.data_implante)-parseDateInt(a.data_implante));
+  if(patImpl.length){
+    html+=collSection('impl-'+patientId,'\ud83e\uddec Implantes ('+patImpl.length+')',()=>{
+      let h='';
+      patImpl.forEach(i=>{
+        h+='<div class="appt-item"><div class="appt-time">'+fmtDate(i.data_implante)+'</div>'
+          +'<div class="appt-info"><div class="appt-name">'+(i.tipo||'Implante')+'</div>'
+          +(i.observacao?'<div class="appt-sub">'+escHtml(i.observacao)+'</div>':'')+'</div></div>';
+      });
+      return h;
+    });
+  }
+  const patFin=(fin||[]).filter(f=>f.patient_id===patientId).sort((a,b)=>parseDateInt(b.data_pagamento)-parseDateInt(a.data_pagamento));
+  const totalFin=patFin.reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
+  html+=collSection('fin-'+patientId,'\ud83d\udcb0 Financeiro \u2014 R$ '+totalFin.toLocaleString('pt-BR',{minimumFractionDigits:2}),()=>{
+    if(!patFin.length)return'<div class="empty" style="padding:12px">Sem pagamentos</div>';
+    let h='';
+    patFin.slice(0,10).forEach(f=>{
+      const icon=f.forma==='PIX'?'\ud83d\udca0':'\ud83d\udcb3';
+      h+='<div class="fin-row"><div><div style="font-weight:600;font-size:13px">'+fmtDate(f.data_pagamento)+'</div>'
+        +'<div style="font-size:11px;color:var(--text-muted)">'+icon+' '+(f.forma||'')+(f.parcelas?' ('+f.parcelas+')':'')+'</div></div>'
+        +'<div style="font-weight:700;font-size:14px;color:var(--success)">R$ '+parseFloat(f.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>';
+    });
+    return h;
+  });
+  const rec=(pends||[]).find(pd=>pd.patient_id===patientId);
+  const itens=rec?(pendItens||[]).filter(it=>it.pend_id===rec.id&&!it.concluida):[];
+  const semPend=rec&&rec.sem_pendencias;
+  html+=collSection('pend-'+patientId,'\ud83d\udccc Pend\u00eancias '+(rec?(semPend?'\u2014 \u2705 Sem pend\u00eancias':'\u2014 '+itens.length+' em aberto'):''),()=>{
+    if(!rec)return'<div class="empty" style="padding:12px">Paciente n\u00e3o est\u00e1 na lista de pend\u00eancias</div>';
+    if(!itens.length)return'<div class="empty" style="padding:12px">'+(semPend?'\u2705 Sem pend\u00eancias registradas':'Nenhuma pend\u00eancia em aberto')+'</div>';
+    let h='';
+    itens.forEach(it=>{
+      h+='<div class="pend-item"><div class="pend-chk"></div><div style="flex:1">'
+        +'<div style="font-size:13px">'+escHtml(it.texto)+'</div>'
+        +(it.obs?'<div style="font-size:11px;color:var(--text-muted);margin-top:2px">\ud83d\udccb '+escHtml(it.obs)+'</div>':'')
+        +'</div></div>';
+    });
+    return h;
+  });
+  const patHist=(hist||[]).filter(h=>h.patient_id===patientId).slice(0,10);
+  if(patHist.length){
+    html+=collSection('hist-'+patientId,'\ud83d\udcdc Hist\u00f3rico Recente',()=>{
+      let h='';
+      patHist.forEach(x=>{
+        h+='<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">'
+          +'<div style="font-weight:600">'+escHtml(x.campo||'')+'</div>'
+          +'<div style="color:var(--text-muted);margin-top:2px">'+escHtml((x.valor_novo||'').slice(0,120))+'</div>'
+          +'<div style="font-size:10px;color:var(--text-muted);margin-top:3px">'+escHtml(x.editado_por||'')+' \u00b7 '+fmtDatetime(x.editado_em)+'</div>'
+          +'</div>';
+      });
+      return h;
+    });
+  }
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function collSection(id,title,bodyFn){
+  const body=bodyFn();
+  return '<div class="card" style="margin-bottom:10px;padding:12px 14px">'
+    +'<div class="coll-header" onclick="toggleColl(\''+id+'\')">'
+    +'<div style="font-size:13px;font-weight:700;flex:1">'+title+'</div>'
+    +'<span class="coll-arrow" id="arrow-'+id+'">\u203a</span>'
+    +'</div>'
+    +'<div class="coll-body" id="body-'+id+'">'+body+'</div>'
+    +'</div>';
+}
+
+// PENDENCIAS (mobile, read-only)
+function renderPendenciasMobile(){
+  const{patients,pends,pendItens}=allData;
+  const recs=(pends||[]).slice().sort((a,b)=>{
+    const sa=a.sem_pendencias?1:0,sb=b.sem_pendencias?1:0;
+    if(sa!==sb)return sa-sb;
+    const pa=patients.find(p=>p.id===a.patient_id),pb=patients.find(p=>p.id===b.patient_id);
+    return (pa?pa.name:'').localeCompare(pb?pb.name:'');
+  });
+  if(!recs.length){document.getElementById('main-content').innerHTML='<div class="empty">Nenhum paciente na lista de pend\u00eancias</div>';return;}
+  const totalAbertos=recs.filter(r=>!r.sem_pendencias).length;
+  let html='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+    +'<div style="font-size:13px;color:var(--text-muted)">'+recs.length+' paciente(s) na lista</div>';
+  if(totalAbertos>0)html+='<span style="background:var(--danger);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">'+totalAbertos+' n\u00e3o verificado'+(totalAbertos>1?'s':'')+'</span>';
+  else html+='<span style="background:var(--success);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">\u2705 Tudo ok</span>';
+  html+='</div>';
+  recs.forEach(rec=>{
+    const p=patients.find(x=>x.id===rec.patient_id);
+    if(!p)return;
+    const itens=(pendItens||[]).filter(it=>it.pend_id===rec.id&&!it.concluida);
+    const semPend=rec.sem_pendencias===true;
+    const cid='dpend-'+rec.id;
+    html+='<div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;border:1.5px solid '+(semPend?'var(--success)':'var(--border)')+'">';
+    html+='<div class="coll-header" style="padding:12px 14px;background:'+(semPend?'#f0faf9':'var(--white)')+'" onclick="toggleColl(\''+cid+'\')">';
+    html+='<div class="avatar" style="width:34px;height:34px;font-size:13px;background:'+(semPend?'var(--success)':'var(--navy)')+'">'+p.name.charAt(0)+'</div>';
+    html+='<div style="flex:1"><div style="font-weight:700;font-size:13px">'+escHtml(p.name)+'</div>';
+    html+='<div style="font-size:11px;'+(semPend?'color:var(--success);font-weight:600':'color:var(--warning)')+'">'+(semPend?'\u2705 Sem pend\u00eancias':'\u26a0\ufe0f '+itens.length+' em aberto')+'</div></div>';
+    html+='<span class="coll-arrow" id="arrow-'+cid+'">\u203a</span>';
+    html+='</div>';
+    html+='<div class="coll-body" id="body-'+cid+'" style="padding:0 14px 12px;margin-top:0;border-top:none">';
+    if(itens.length){
+      itens.forEach(it=>{
+        html+='<div class="pend-item"><div class="pend-chk"></div><div style="flex:1">'
+          +'<div style="font-size:13px">'+escHtml(it.texto)+'</div>'
+          +(it.obs?'<div style="font-size:11px;color:var(--text-muted);margin-top:2px">\ud83d\udccb '+escHtml(it.obs)+'</div>':'')
+          +'</div></div>';
+      });
+    } else {
+      html+='<div style="font-size:12px;color:var(--text-muted);padding-top:8px">'+(semPend?'Sem pend\u00eancias registradas.':'Nenhuma pend\u00eancia em aberto.')+'</div>';
+    }
+    html+='<div style="margin-top:8px"><button onclick="event.stopPropagation();openPatientDetail('+p.id+')" style="font-size:12px;font-weight:600;color:var(--accent);background:none;border:none;cursor:pointer;padding:6px 0">Ver prontu\u00e1rio completo \u203a</button></div>';
+    html+='</div>';
+    html+='</div>';
+  });
   document.getElementById('main-content').innerHTML=html;
 }
 
