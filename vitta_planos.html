@@ -344,11 +344,27 @@ function mainNav(section){
 }
 
 async function renderDashboard(){
-  const{data:patients}=await sb.from('planos_patients').select('*').order('name');
+  const[{data:patients},{data:appts},{data:sessoes},{data:envios}]=await Promise.all([
+    sb.from('planos_patients').select('*').order('name'),
+    sb.from('planos_appointments').select('*'),
+    sb.from('planos_soro_sessoes').select('*'),
+    sb.from('planos_soro_envios').select('*')
+  ]);
   allPatients=patients||[];
-  const{data:appts}=await sb.from('planos_appointments').select('*');
   const c=document.getElementById('main-content');
   const active=allPatients.filter(p=>p.active),finished=allPatients.filter(p=>!p.active);
+  // Alertas de envio (soroterapia online)
+  let alertItems=[];
+  active.filter(p=>p.modality==='Online').forEach(p=>{
+    const lastEnvio=(envios||[]).filter(e=>e.patient_id===p.id).sort((a,b)=>parseDateInt(b.data_envio)-parseDateInt(a.data_envio))[0];
+    if(lastEnvio){
+      const total=(lastEnvio.sessoes_ev||0)+(lastEnvio.sessoes_im||0);
+      const feitas=(sessoes||[]).filter(s=>s.patient_id===p.id&&s.envio_id===lastEnvio.id).length;
+      const rest=total-feitas;
+      if(rest<=1)alertItems.push({id:p.id,name:p.name,msg:'\ud83d\ude9a Enviar protocolo agora!',type:'danger'});
+      else if(rest<=2)alertItems.push({id:p.id,name:p.name,msg:'\u26a0\ufe0f Preparar pr\u00f3ximo envio',type:'warning'});
+    }
+  });
   function lastConsultDays(pid){const pa=(appts||[]).filter(a=>a.patient_id===pid&&a.status==='Compareceu'&&!a.origem_tabela);if(!pa.length)return null;return daysAgo(pa.sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str))[0].date_str);}
   const p90=allPatients.filter(p=>{const d=lastConsultDays(p.id);return d!==null&&d<=90;});
   const p120=allPatients.filter(p=>{const d=lastConsultDays(p.id);return d!==null&&d<=120;});
@@ -358,8 +374,20 @@ async function renderDashboard(){
   const p90ids=JSON.stringify(p90.map(p=>p.id));
   const p120ids=JSON.stringify(p120.map(p=>p.id));
   const p365ids=JSON.stringify(p365.map(p=>p.id));
+  let alertsHtml='';
+  if(alertItems.length){
+    alertsHtml+='<div class="section-title" style="font-size:14px;margin-bottom:10px">&#128276; Alertas</div>';
+    alertItems.forEach(a=>{
+      const isDanger=a.type==='danger';
+      alertsHtml+='<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;margin-bottom:8px;font-size:13px;cursor:pointer;background:'+(isDanger?'#fff5f5':'#fffbeb')+';border:1px solid '+(isDanger?'#fca5a5':'#fcd34d')+';color:'+(isDanger?'#991b1b':'#92400e')+'" onclick="openPatient('+a.id+')">';
+      alertsHtml+='<div><strong>'+escHtml(a.name)+'</strong><br/>'+a.msg+'</div>';
+      alertsHtml+='</div>';
+    });
+    alertsHtml+='<div style="height:8px"></div>';
+  }
   c.innerHTML=
     '<div class="section-header"><div class="section-title">Vis\u00e3o Geral</div><button class="btn btn-primary btn-sm" onclick="showNewPatientModal()">+ Novo Paciente</button></div>'+
+    alertsHtml+
     '<div class="dash-grid-2">'+
     '<div class="dash-card" onclick="showPatientListModal(\'Planos Ativos\','+activeIds+')"><div class="dash-card-num">'+active.length+'</div><div class="dash-card-label">Planos Ativos</div></div>'+
     '<div class="dash-card" onclick="showPatientListModal(\'Planos Finalizados\','+finIds+')"><div class="dash-card-num">'+finished.length+'</div><div class="dash-card-label">Planos Finalizados</div></div>'+
