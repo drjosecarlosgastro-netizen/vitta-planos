@@ -271,8 +271,8 @@ function renderInicio(){
       const total=(lastEnvio.sessoes_ev||0)+(lastEnvio.sessoes_im||0);
       const feitas=sessoes.filter(s=>s.patient_id===p.id&&s.envio_id===lastEnvio.id).length;
       const rest=total-feitas;
-      if(rest<=1)alertItems.push({name:p.name,msg:'\ud83d\udea9 Enviar protocolo agora!',type:'danger'});
-      else if(rest<=2)alertItems.push({name:p.name,msg:'\u26a0\ufe0f Preparar pr\u00f3ximo envio',type:'warning'});
+      if(rest<=1)alertItems.push({id:p.id,name:p.name,msg:'\ud83d\udea9 Enviar protocolo agora!',type:'danger'});
+      else if(rest<=2)alertItems.push({id:p.id,name:p.name,msg:'\u26a0\ufe0f Preparar pr\u00f3ximo envio',type:'warning'});
     }
   });
 
@@ -283,10 +283,10 @@ function renderInicio(){
 
   // Métricas
   html+='<div class="metric-grid">'
-    +'<div class="metric-card"><div class="metric-num">'+active.length+'</div><div class="metric-label">Pacientes Ativos</div></div>'
-    +'<div class="metric-card"><div class="metric-num" style="color:var(--success)">R$'+(totalMes/1000).toFixed(1)+'k</div><div class="metric-label">Faturamento M\u00eas</div><div class="metric-sub">'+finMes.length+' pagamento(s)</div></div>'
-    +'<div class="metric-card"><div class="metric-num">'+sessoes.filter(s=>dateInCurrMonth(s.data_sessao)).length+'</div><div class="metric-label">Sess\u00f5es no M\u00eas</div></div>'
-    +'<div class="metric-card"><div class="metric-num" style="color:'+(overdueCount>0?'var(--danger)':'var(--text)')+'">'+overdueCount+'</div><div class="metric-label">Consultas Pendentes</div><div class="metric-sub">sem status</div></div>'
+    +'<div class="metric-card clickable" onclick="showTab(\'pacientes\')" title="Ver pacientes"><div class="metric-num">'+active.length+'</div><div class="metric-label">Pacientes Ativos</div></div>'
+    +'<div class="metric-card clickable" onclick="showTab(\'financeiro\')" title="Ver financeiro"><div class="metric-num" style="color:var(--success)">R$'+(totalMes/1000).toFixed(1)+'k</div><div class="metric-label">Faturamento M\u00eas</div><div class="metric-sub">'+finMes.length+' pagamento(s)</div></div>'
+    +'<div class="metric-card clickable" onclick="showTab(\'soro\')" title="Ver soroterapia"><div class="metric-num">'+sessoes.filter(s=>dateInCurrMonth(s.data_sessao)).length+'</div><div class="metric-label">Sess\u00f5es no M\u00eas</div></div>'
+    +'<div class="metric-card clickable" onclick="showTab(\'agenda\')" title="Ver agenda"><div class="metric-num" style="color:'+(overdueCount>0?'var(--danger)':'var(--text)')+'">'+overdueCount+'</div><div class="metric-label">Consultas Pendentes</div><div class="metric-sub">sem status</div></div>'
     +'</div>';
 
   // Alertas
@@ -301,7 +301,7 @@ function renderInicio(){
     html+='<div class="card">';
     todayAppts.forEach(a=>{
       const statusCls='status-'+(a.status||'agendado').toLowerCase().replace(/\s/g,'-');
-      html+='<div class="appt-item">'
+      html+='<div class="appt-item clickable" onclick="openPatientDetail('+a.patient_id+')">'
         +'<div class="appt-time">'+(a.time_str||'--:--')+'</div>'
         +'<div class="appt-info">'
         +'<div class="appt-name">'+(patMap[a.patient_id]||'\u2014')+'</div>'
@@ -317,7 +317,7 @@ function renderInicio(){
   if(todayProcedimentos.length){
     html+='<div class="section-label">\ud83d\udc89 Procedimentos Hoje (Soro/Implante)</div><div class="card">';
     todayProcedimentos.forEach(a=>{
-      html+='<div class="appt-item">'
+      html+='<div class="appt-item clickable" onclick="openPatientDetail('+a.patient_id+')">'
         +'<div class="appt-time">'+(a.time_str||'--:--')+'</div>'
         +'<div class="appt-info">'
         +'<div class="appt-name">'+(patMap[a.patient_id]||'\u2014')+'</div>'
@@ -374,7 +374,7 @@ function renderAgenda(){
   if(overdue.length){
     html+='<div class="section-label" style="color:var(--danger)">\u26a0\ufe0f Consultas sem Status ('+overdue.length+')</div>';
     overdue.forEach(a=>{
-      html+='<div class="overdue">'
+      html+='<div class="overdue clickable" onclick="openPatientDetail('+a.patient_id+')">'
         +'<div style="font-weight:700;font-size:13px">'+(patMap[a.patient_id]||'\u2014')+'</div>'
         +'<div style="font-size:12px;color:var(--text-muted)">'+fmtDate(a.date_str)+' \u00b7 '+(a.procedimento||'')+' \u00b7 <strong style="color:var(--danger)">'+daysAgo(a.date_str)+'d atr\u00e1s</strong></div>'
         +'</div>';
@@ -388,7 +388,7 @@ function renderAgenda(){
     // Consultas diretas
     (byDate[date]||[]).forEach(a=>{
       const statusCls='status-'+(a.status||'agendado').toLowerCase().replace(/\s/g,'-');
-      html+='<div class="appt-item">'
+      html+='<div class="appt-item clickable" onclick="openPatientDetail('+a.patient_id+')">'
         +'<div class="appt-time">'+(a.time_str||'--')+'</div>'
         +'<div class="appt-info">'
         +'<div class="appt-name">'+(patMap[a.patient_id]||'\u2014')+'</div>'
@@ -399,7 +399,7 @@ function renderAgenda(){
     });
     // Procedimentos vinculados
     (byDateProc[date]||[]).forEach(a=>{
-      html+='<div class="appt-item" style="border-left:3px solid var(--success);padding-left:8px">'
+      html+='<div class="appt-item clickable" style="border-left:3px solid var(--success);padding-left:8px" onclick="openPatientDetail('+a.patient_id+')">'
         +'<div class="appt-time">'+(a.time_str||'--')+'</div>'
         +'<div class="appt-info">'
         +'<div class="appt-name">'+(patMap[a.patient_id]||'\u2014')+'</div>'
