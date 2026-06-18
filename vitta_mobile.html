@@ -349,19 +349,23 @@ function renderInicio(){
 }
 
 // ── AGENDA ─────────────────────────────────────────────────────
-function renderAgenda(){
+function renderAgenda(fromDate,toDate){
   const{appts,patients}=allData;
   const patMap={};patients.forEach(p=>patMap[p.id]=p.name);
   const todayInt=parseDateInt(todayStr());
+  const fromInt=fromDate?parseInt(fromDate.replace(/-/g,'')):null;
+  const toInt=toDate?parseInt(toDate.replace(/-/g,'')):null;
+  const filtered=!!(fromDate||toDate);
+  const inRange=d=>{const di=parseDateInt(d);if(fromInt&&di<fromInt)return false;if(toInt&&di>toInt)return false;return true;};
 
   // Consultas diretas (não vinculadas a soro/implante)
   const upcoming=appts.filter(a=>parseDateInt(a.date_str)>=todayInt&&!a.origem_tabela)
     .sort((a,b)=>{const di=parseDateInt(a.date_str)-parseDateInt(b.date_str);return di!==0?di:(a.time_str||'').localeCompare(b.time_str||'');});
-  const overdue=appts.filter(a=>parseDateInt(a.date_str)<todayInt&&(!a.status||a.status==='Agendado')&&!a.origem_tabela)
+  const overdue=filtered?[]:appts.filter(a=>parseDateInt(a.date_str)<todayInt&&(!a.status||a.status==='Agendado')&&!a.origem_tabela)
     .sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
 
   // Procedimentos vinculados (soro/implante)
-  const procedimentos=appts.filter(a=>parseDateInt(a.date_str)>=todayInt&&a.origem_tabela)
+  const procedimentos=appts.filter(a=>a.origem_tabela&&(filtered?inRange(a.date_str):parseDateInt(a.date_str)>=todayInt))
     .sort((a,b)=>parseDateInt(a.date_str)-parseDateInt(b.date_str));
 
   const byDate={};
@@ -370,6 +374,13 @@ function renderAgenda(){
   procedimentos.forEach(a=>{if(!byDateProc[a.date_str])byDateProc[a.date_str]=[];byDateProc[a.date_str].push(a);});
 
   let html='';
+  html+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">'
+    +'<input type="date" id="ag-from" value="'+(fromDate||'')+'" style="flex:1;min-width:120px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:var(--font);background:var(--white);color:var(--text)">'
+    +'<span style="font-size:12px;color:var(--text-muted)">at\u00e9</span>'
+    +'<input type="date" id="ag-to" value="'+(toDate||'')+'" style="flex:1;min-width:120px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:var(--font);background:var(--white);color:var(--text)">'
+    +'<button onclick="renderAgenda(document.getElementById(\'ag-from\').value,document.getElementById(\'ag-to\').value)" style="padding:8px 14px;background:var(--deep-ocean);color:var(--ivory);border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Filtrar</button>'
+    +(filtered?'<button onclick="renderAgenda()" style="padding:8px 10px;background:none;border:1.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-muted);cursor:pointer">Limpar</button>':'')
+    +'</div>';
 
   if(overdue.length){
     html+='<div class="section-label" style="color:var(--danger)">\u26a0\ufe0f Consultas sem Status ('+overdue.length+')</div>';
@@ -412,7 +423,7 @@ function renderAgenda(){
     html+='</div>';
   });
 
-  if(!overdue.length&&!allDates.length)html='<div class="empty">Agenda vazia</div>';
+  if(!overdue.length&&!allDates.length)html+='<div class="empty">Sem consultas no per\u00edodo</div>';
   document.getElementById('main-content').innerHTML=html;
 }
 
@@ -616,23 +627,36 @@ function renderAlertas(){
 }
 
 // ── FINANCEIRO ─────────────────────────────────────────────────
-function renderFinanceiro(){
+function renderFinanceiro(fromDate,toDate){
   const{fin,patients}=allData;
   const patMap={};patients.forEach(p=>patMap[p.id]=p.name);
-  const mes=fin.filter(f=>dateInCurrMonth(f.data_pagamento));
+  const fromInt=fromDate?parseInt(fromDate.replace(/-/g,'')):null;
+  const toInt=toDate?parseInt(toDate.replace(/-/g,'')):null;
+  const filtered=!!(fromDate||toDate);
+  const inRange=d=>{const di=parseDateInt(d);if(fromInt&&di<fromInt)return false;if(toInt&&di>toInt)return false;return true;};
+  const mes=filtered?fin.filter(f=>inRange(f.data_pagamento)):fin.filter(f=>dateInCurrMonth(f.data_pagamento));
   const totalMes=mes.reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
   const pix=mes.filter(f=>f.forma==='PIX').reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
   const cartao=mes.filter(f=>f.forma==='Cart\u00e3o').reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
   const misto=mes.filter(f=>f.forma==='Misto').reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
-  const recent=fin.slice().sort((a,b)=>parseDateInt(b.data_pagamento)-parseDateInt(a.data_pagamento)).slice(0,8);
+  const recent=mes.slice().sort((a,b)=>parseDateInt(b.data_pagamento)-parseDateInt(a.data_pagamento));
   const perPat={};mes.forEach(f=>{perPat[f.patient_id]=(perPat[f.patient_id]||0)+(parseFloat(f.valor)||0);});
   const avgPat=Object.keys(perPat).length?totalMes/Object.keys(perPat).length:0;
-  let html='<div class="metric-grid">'
-    +'<div class="metric-card" style="grid-column:1/-1"><div class="metric-num" style="font-size:32px;color:var(--success)">R$ '+totalMes.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="metric-label">Faturamento \u2014 M\u00eas Atual</div><div class="metric-sub">'+mes.length+' pagamento(s) \u00b7 M\u00e9dia R$ '+avgPat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/paciente</div></div>'
+  const periodLabel=filtered?(fromDate&&toDate?fromDate+' \u00e0 '+toDate:fromDate||toDate):'M\u00eas Atual';
+  let html='';
+  html+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">'
+    +'<input type="date" id="fin-from" value="'+(fromDate||'')+'" style="flex:1;min-width:120px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:var(--font);background:var(--white);color:var(--text)">'
+    +'<span style="font-size:12px;color:var(--text-muted)">at\u00e9</span>'
+    +'<input type="date" id="fin-to" value="'+(toDate||'')+'" style="flex:1;min-width:120px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:var(--font);background:var(--white);color:var(--text)">'
+    +'<button onclick="renderFinanceiro(document.getElementById(\'fin-from\').value,document.getElementById(\'fin-to\').value)" style="padding:8px 14px;background:var(--deep-ocean);color:var(--ivory);border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Filtrar</button>'
+    +(filtered?'<button onclick="renderFinanceiro()" style="padding:8px 10px;background:none;border:1.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-muted);cursor:pointer">Limpar</button>':'')
+    +'</div>';
+  html+='<div class="metric-grid">'
+    +'<div class="metric-card" style="grid-column:1/-1"><div class="metric-num" style="font-size:32px;color:var(--success)">R$ '+totalMes.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="metric-label">Faturamento \u2014 '+periodLabel+'</div><div class="metric-sub">'+mes.length+' pagamento(s) \u00b7 M\u00e9dia R$ '+avgPat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/paciente</div></div>'
     +'<div class="metric-card"><div class="metric-num" style="font-size:20px">R$ '+pix.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="metric-label">PIX</div></div>'
     +'<div class="metric-card"><div class="metric-num" style="font-size:20px">R$ '+(cartao+misto).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div class="metric-label">Cart\u00e3o / Misto</div></div>'
     +'</div>'
-    +'<div class="section-label">\u00daltimos Pagamentos</div><div class="card">';
+    +'<div class="section-label">'+(filtered?'Pagamentos no per\u00edodo':'\u00daltimos Pagamentos')+'</div><div class="card">';
   recent.forEach(f=>{
     const icon=f.forma==='PIX'?'\ud83d\udca0':'\ud83d\udcb3';
     html+='<div class="fin-row clickable" onclick="openPatientDetail('+f.patient_id+')">'
