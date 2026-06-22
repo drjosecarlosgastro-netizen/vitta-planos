@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Clinica Vitta | Formulario de Pre-consulta</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --deep:#154C56;--tidal:#19807f;--ivory:#FFFAE5;--gold:#C9B382;--sky:#9CB7C7;
+  --midnight:#1F2033;--ash:#5A7381;--bg:#f4f7f8;--white:#fff;
+  --border:#e4eaed;--danger:#ef4444;--success:#19807f;--warning:#C9B382;
+  --font:'DM Sans',sans-serif;--font-display:'Cormorant Garamond',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--midnight);min-height:100vh}
+.topbar{background:#13141f;border-bottom:2px solid var(--tidal);padding:16px 20px;display:flex;align-items:center;gap:10px}
+.logo{font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ivory)}
+.logo-mark{width:28px;height:28px;border-radius:6px;background:var(--tidal);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ivory)}
+.container{max-width:680px;margin:0 auto;padding:24px 16px 48px}
+.hero{background:var(--deep);border-radius:14px;padding:24px 24px 20px;margin-bottom:24px;color:var(--ivory)}
+.hero-title{font-family:var(--font-display);font-size:24px;font-weight:600;margin-bottom:6px}
+.hero-sub{font-size:13px;color:var(--sky);line-height:1.6}
+.progress-bar{height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin-top:16px;overflow:hidden}
+.progress-fill{height:4px;background:var(--tidal);border-radius:2px;transition:width .4s}
+.progress-label{font-size:11px;color:var(--sky);margin-top:6px}
+.section-card{background:var(--white);border-radius:12px;border:1px solid var(--border);padding:20px;margin-bottom:16px}
+.section-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ash);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-badge{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-size:10px;color:var(--ash)}
+.q-item{margin-bottom:20px}
+.q-item:last-child{margin-bottom:0}
+.q-text{font-size:14px;font-weight:500;color:var(--midnight);margin-bottom:10px;line-height:1.5}
+.q-num{font-size:11px;color:var(--ash);margin-right:6px}
+.q-options{display:flex;flex-direction:column;gap:6px}
+.q-opt{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;transition:border-color .15s,background .15s;background:var(--white)}
+.q-opt:hover{border-color:var(--tidal);background:#f0faf9}
+.q-opt.selected{border-color:var(--deep);background:#f0f7f8}
+.q-opt input[type=radio]{width:15px;height:15px;flex-shrink:0;margin-top:1px;accent-color:var(--deep)}
+.q-opt-text{font-size:13px;color:var(--midnight);line-height:1.4}
+.btn-submit{width:100%;padding:14px;background:var(--deep);color:var(--ivory);border:none;border-radius:10px;font-size:15px;font-weight:600;font-family:var(--font);cursor:pointer;transition:background .15s;margin-top:8px}
+.btn-submit:hover{background:var(--tidal)}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed}
+.msg-box{text-align:center;padding:48px 24px}
+.msg-icon{font-size:48px;margin-bottom:16px}
+.msg-title{font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--midnight);margin-bottom:8px}
+.msg-sub{font-size:14px;color:var(--ash);line-height:1.6}
+.unanswered{border-color:var(--danger)!important;background:#fff5f5!important}
+.error-msg{color:var(--danger);font-size:12px;margin-top:6px}
+.loading-box{text-align:center;padding:48px 24px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--tidal);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo-mark">V</div>
+  <div class="logo">Clinica Vitta</div>
+</div>
+
+<div class="container" id="app">
+  <div class="loading-box"><div class="spinner"></div><div style="font-size:13px;color:var(--ash)">Carregando formulario...</div></div>
+</div>
+
+<script>
+const SUPABASE_URL='https://tzsamyaobtzswpklxpzx.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6c2FteWFvYnR6c3dwa2x4cHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkxNjEsImV4cCI6MjA5NDg1NTE2MX0.okDoh3yP2HHPQKIUFf64X0UzBp0aWK_5WirprPsL8vM';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const params=new URLSearchParams(window.location.search);
+const patientId=parseInt(params.get('t'));
+let patient=null;
+let perguntas=[];
+const respostas={};
+
+async function init(){
+  const app=document.getElementById('app');
+  if(!patientId){
+    app.innerHTML='<div class="msg-box"><div class="msg-icon">&#128274;</div><div class="msg-title">Link invalido</div><div class="msg-sub">Este link nao e valido. Solicite um novo link a clinica.</div></div>';
+    return;
+  }
+  // Load patient and questions
+  const [{data:pat},{data:qs}]=await Promise.all([
+    sb.from('planos_patients').select('id,name').eq('id',patientId).single(),
+    sb.from('planos_form_perguntas').select('*').order('secao').order('ordem')
+  ]);
+  if(!pat){
+    app.innerHTML='<div class="msg-box"><div class="msg-icon">&#128274;</div><div class="msg-title">Paciente nao encontrado</div><div class="msg-sub">Por favor, solicite um novo link a clinica.</div></div>';
+    return;
+  }
+  patient=pat;
+  // Use Supabase questions or fallback
+  if(qs&&qs.length){perguntas=qs;}
+  else{
+    // fetch default from localStorage fallback - just show error
+    app.innerHTML='<div class="msg-box"><div class="msg-icon">&#9888;&#65039;</div><div class="msg-title">Questionario nao configurado</div><div class="msg-sub">A clinica ainda nao configurou o questionario. Entre em contato.</div></div>';
+    return;
+  }
+  renderForm();
+}
+
+function renderForm(){
+  const secoes=[...new Set(perguntas.map(p=>p.secao))];
+  const total=perguntas.length;
+  const nome=patient.name.split(' ')[0];
+  let html='<div class="hero">'
+    +'<div class="hero-title">Formulario de Pre-consulta</div>'
+    +'<div class="hero-sub">Ola, '+escHtml(nome)+'! Responda as perguntas abaixo com base em como voce tem se sentido nos <strong>ultimos 30 dias</strong>. Suas respostas nos ajudam a preparar uma consulta mais precisa e personalizada.</div>'
+    +'<div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>'
+    +'<div class="progress-label" id="prog-label">0 de '+total+' perguntas respondidas</div>'
+    +'</div>';
+  let num=0;
+  secoes.forEach(sec=>{
+    const qs=perguntas.filter(p=>p.secao===sec);
+    html+='<div class="section-card" id="sec-'+sec+'">';
+    html+='<div class="section-label">'+escHtml(sec)+'<span class="section-badge">'+qs.length+' pergunta'+(qs.length>1?'s':'')+'</span></div>';
+    qs.forEach(q=>{
+      num++;
+      html+='<div class="q-item" id="qi-'+q.id+'">';
+      html+='<div class="q-text"><span class="q-num">'+num+'.</span>'+escHtml(q.texto)+'</div>';
+      html+='<div class="q-options" id="qo-'+q.id+'">';
+      (q.opcoes||[]).forEach((op,i)=>{
+        html+='<label class="q-opt" id="ql-'+q.id+'-'+i+'" onclick="selectOpt('+q.id+','+i+')">'
+          +'<input type="radio" name="q'+q.id+'" value="'+i+'" onchange="selectOpt('+q.id+','+i+')">'
+          +'<span class="q-opt-text">'+escHtml(op)+'</span>'
+          +'</label>';
+      });
+      html+='</div></div>';
+    });
+    html+='</div>';
+  });
+  html+='<div id="submit-error" class="error-msg" style="display:none;text-align:center;margin-bottom:8px">Por favor, responda todas as perguntas antes de enviar.</div>';
+  html+='<button class="btn-submit" onclick="submitForm()">Enviar respostas</button>';
+  document.getElementById('app').innerHTML=html;
+}
+
+function selectOpt(qId,optIdx){
+  respostas[qId]=optIdx;
+  // Update UI
+  const q=perguntas.find(p=>p.id===qId);
+  (q.opcoes||[]).forEach((_,i)=>{
+    const lbl=document.getElementById('ql-'+qId+'-'+i);
+    if(lbl){lbl.classList.toggle('selected',i===optIdx);}
+  });
+  // Remove unanswered highlight
+  const qi=document.getElementById('qi-'+qId);
+  if(qi)qi.querySelector('.q-options').classList.remove('unanswered');
+  // Update progress
+  updateProgress();
+}
+
+function updateProgress(){
+  const total=perguntas.length;
+  const answered=Object.keys(respostas).length;
+  const pct=Math.round((answered/total)*100);
+  const fill=document.getElementById('prog-fill');
+  const label=document.getElementById('prog-label');
+  if(fill)fill.style.width=pct+'%';
+  if(label)label.textContent=answered+' de '+total+' perguntas respondidas';
+}
+
+async function submitForm(){
+  // Validate all answered
+  const unanswered=perguntas.filter(q=>respostas[q.id]===undefined);
+  if(unanswered.length){
+    document.getElementById('submit-error').style.display='block';
+    unanswered.forEach(q=>{
+      const qo=document.getElementById('qo-'+q.id);
+      if(qo)qo.classList.add('unanswered');
+      const qi=document.getElementById('qi-'+q.id);
+      if(qi)qi.scrollIntoView({behavior:'smooth',block:'center'});
+    });
+    return;
+  }
+  const btn=document.querySelector('.btn-submit');
+  btn.disabled=true;btn.textContent='Enviando...';
+  // Build answers array
+  const answers=perguntas.map(q=>({
+    pergunta_id:q.id,
+    secao:q.secao,
+    resposta_idx:respostas[q.id],
+    pontos:(q.pontos||[])[respostas[q.id]]||0
+  }));
+  // Save to Supabase
+  const {error}=await sb.from('planos_form_respostas').upsert({
+    patient_id:patientId,
+    status:'respondido',
+    respostas:answers,
+    created_at:new Date().toISOString()
+  },{onConflict:'patient_id'});
+  if(error){btn.disabled=false;btn.textContent='Enviar respostas';alert('Erro ao enviar. Tente novamente.');return;}
+  // Calculate scores by section
+  const secoes=['Estomago','Intestino','Figado','Hormonios','Cerebro'];
+  const scores={patient_id:patientId,created_at:new Date().toISOString(),analise_ia:null};
+  secoes.forEach(sec=>{
+    const secAnswers=answers.filter(a=>a.secao===sec);
+    if(!secAnswers.length){scores['score_'+sec.toLowerCase()]=5;return;}
+    const maxPts=secAnswers.length*10;
+    const got=secAnswers.reduce((s,a)=>s+a.pontos,0);
+    scores['score_'+sec.toLowerCase()]=parseFloat(((got/maxPts)*10).toFixed(1));
+  });
+  // Habitos score contributes to all eixos slightly
+  const habAnswers=answers.filter(a=>a.secao==='Habitos');
+  if(habAnswers.length){
+    const maxH=habAnswers.length*10;
+    const gotH=habAnswers.reduce((s,a)=>s+a.pontos,0);
+    const habScore=(gotH/maxH)*10;
+    secoes.forEach(sec=>{
+      const orig=scores['score_'+sec.toLowerCase()];
+      scores['score_'+sec.toLowerCase()]=parseFloat(((orig*0.85+habScore*0.15)).toFixed(1));
+    });
+  }
+  await sb.from('planos_form_scores').insert(scores);
+  // Update status
+  await sb.from('planos_form_respostas').update({status:'respondido'}).eq('patient_id',patientId);
+  // Show success
+  document.getElementById('app').innerHTML='<div class="msg-box">'
+    +'<div class="msg-icon">&#10003;</div>'
+    +'<div class="msg-title">Obrigado, '+escHtml(patient.name.split(' ')[0])+'!</div>'
+    +'<div class="msg-sub">Suas respostas foram recebidas com sucesso.<br>Nossa equipe vai analisar as informacoes antes da sua consulta.<br><br><strong>Ate logo!</strong></div>'
+    +'</div>';
+}
+
+function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+init();
+</script>
+</body>
+</html>
