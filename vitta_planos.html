@@ -221,6 +221,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="ntab" id="ntab-implantes" onclick="mainNav('implantes')">Implantes</button>
     <button class="ntab" id="ntab-avulsas" onclick="mainNav('avulsas')">Consultas Avulsas</button>
     <button class="ntab" id="ntab-pendencias" onclick="mainNav('pendencias')">Pend&#234;ncias</button>
+    <button class="ntab" id="ntab-relacionamento" onclick="mainNav('relacionamento')">Relacionamento</button>
     <button class="ntab" id="ntab-financeiro-global" onclick="mainNav('financeiro-global')">Financeiro</button>
     <button class="ntab" id="ntab-relatorios" onclick="mainNav('relatorios')">Relat&#243;rios</button>
     <button class="ntab" id="ntab-config" onclick="mainNav('config')">&#9881; Configura&#231;&#245;es</button>
@@ -338,6 +339,7 @@ function mainNav(section){
   else if(section==='implantes')renderImplantes();
   else if(section==='avulsas')renderAvulsas();
   else if(section==='pendencias')renderPendenciasTab();
+  else if(section==='relacionamento')renderRelacionamento();
   else if(section==='financeiro-global')renderFinanceiroGlobal();
   else if(section==='config')renderConfig();
   else if(section==='relatorios')renderRelatorios();
@@ -610,6 +612,7 @@ async function renderPatInfo(){
     +'<div class="field"><label>Data de Nascimento</label><input id="pi-dob" value="'+fmtDate(p.dob||'')+'"/></div>'
     +'<div class="field"><label>CPF</label><input id="pi-cpf" value="'+(p.cpf||'')+'" placeholder="000.000.000-00"/></div>'
     +'<div class="field"><label>Telefone</label><input id="pi-tel" value="'+(p.telefone||'')+'" placeholder="(00) 00000-0000"/></div>'
+    +'<div class="field"><label>E-mail</label><input id="pi-email" type="email" value="'+(p.email||'')+'" placeholder="email@exemplo.com"/></div>'
     +'</div></div>'
     +'<div class="card"><div class="card-title" style="margin-bottom:10px">Resumo do Plano</div>'
     +'<div class="resumo-mini">'
@@ -655,6 +658,7 @@ async function savePatInfo(){
     dob:displayToISO(document.getElementById('pi-dob').value.trim())||null,
     cpf:document.getElementById('pi-cpf').value.trim(),
     telefone:document.getElementById('pi-tel').value.trim(),
+    email:document.getElementById('pi-email').value.trim(),
     etiquetas:JSON.parse(document.getElementById('pi-tags').value||'[]'),
     updated_by:currentUser.name,
     updated_at:new Date().toISOString()
@@ -4237,6 +4241,7 @@ function showNewPatientModal(){
     '<div class="field"><label>Nome Completo *</label><input id="np-name" oninput="this.value=titleCase(this.value)" placeholder="Nome do paciente"/></div>'
     +'<div class="grid-2"><div class="field"><label>Data de Nascimento</label><input id="np-dob" placeholder="DD/MM/AAAA"/></div><div class="field"><label>CPF</label><input id="np-cpf" placeholder="000.000.000-00"/></div></div>'
     +'<div class="field"><label>Telefone</label><input id="np-tel" placeholder="(00) 00000-0000"/></div>'
+    +'<div class="field"><label>E-mail</label><input id="np-email" type="email" placeholder="email@exemplo.com"/></div>'
     +'<div class="grid-2"><div class="field"><label>Tipo de Plano</label><select id="np-plan"><option>Plano 3 meses</option><option>Plano 6 meses</option><option>Consulta Avulsa</option></select></div><div class="field"><label>Modalidade</label><select id="np-modality"><option>Presencial</option><option>Online</option></select></div></div>'
     +'<div class="field"><label>Data de In\u00edcio</label><input id="np-inicio" value="'+todayStr()+'"/></div>'
     +'<div class="field"><label>Observa\u00e7\u00e3o</label><textarea id="np-obs" rows="2"></textarea></div>'
@@ -4251,7 +4256,7 @@ async function saveNewPatient(){
   if(!name){toast('Nome obrigat\u00f3rio','error');if(btn){btn.disabled=false;btn.textContent='Criar Paciente';}return;}
   const planType=document.getElementById('np-plan').value;
   const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
-  const{error,data:newPat}=await sb.from('planos_patients').insert({name,dob:displayToISO(document.getElementById('np-dob').value)||null,cpf:document.getElementById('np-cpf').value.trim(),telefone:document.getElementById('np-tel').value.trim(),plan_type:planType,duracao_programa:duracao,modality:document.getElementById('np-modality').value,inicio_programa:displayToISO(document.getElementById('np-inicio').value)||null,observacao:document.getElementById('np-obs').value.trim(),active:true,etiquetas:[],created_by:currentUser.name,created_at:new Date().toISOString()}).select().single();
+  const{error,data:newPat}=await sb.from('planos_patients').insert({name,dob:displayToISO(document.getElementById('np-dob').value)||null,cpf:document.getElementById('np-cpf').value.trim(),telefone:document.getElementById('np-tel').value.trim(),email:document.getElementById('np-email').value.trim(),plan_type:planType,duracao_programa:duracao,modality:document.getElementById('np-modality').value,inicio_programa:displayToISO(document.getElementById('np-inicio').value)||null,observacao:document.getElementById('np-obs').value.trim(),active:true,etiquetas:[],created_by:currentUser.name,created_at:new Date().toISOString()}).select().single();
   if(error){toast('Erro: '+error.message,'error');const b=document.querySelector('#new-patient-form .btn-primary');if(b){b.disabled=false;b.textContent='Criar Paciente';}return;}
   closeModal('modal-new-patient');toast('Paciente criado!','success');await openPatient(newPat.id);
 }
@@ -4278,6 +4283,241 @@ function dateInRange(dateStr,start,end){
 }
 
 let _relTab='financeiro';
+// ========== RELACIONAMENTO ==========
+const FORM_PERGUNTAS_DEFAULT=[
+  {id:1,secao:'Estomago',ordem:1,texto:'Com que frequencia voce sente desconforto, queimacao ou dor na regiao do estomago?',opcoes:['Nunca ou raramente','As vezes (1-2x por semana)','Frequentemente (3-4x por semana)','Quase todo dia'],pontos:[10,6,3,0]},
+  {id:2,secao:'Estomago',ordem:2,texto:'Voce sente estufamento, empachamento ou sensacao de peso apos as refeicoes?',opcoes:['Nao, me sinto bem apos comer','As vezes, em refeicoes maiores','Com frequencia, independente da quantidade','Quase sempre, mesmo em pequenas quantidades'],pontos:[10,6,3,0]},
+  {id:3,secao:'Estomago',ordem:3,texto:'Voce regurgita alimentos ou sente gosto azedo/amargo na boca (refluxo)?',opcoes:['Nao','Raramente','Algumas vezes por semana','Diariamente'],pontos:[10,6,3,0]},
+  {id:4,secao:'Estomago',ordem:4,texto:'Seu apetite ao longo do dia e?',opcoes:['Regular e equilibrado','Com algumas variacoes','Muito diminuido ou muito aumentado','Completamente desregulado'],pontos:[10,6,3,0]},
+  {id:5,secao:'Estomago',ordem:5,texto:'Voce usa antiacidos, omeprazol ou medicamentos para estomago com frequencia?',opcoes:['Nao, nunca precisei','Raramente ou esporadicamente','Sim, algumas vezes por mes','Sim, uso regularmente ou diariamente'],pontos:[10,6,3,0]},
+  {id:6,secao:'Intestino',ordem:1,texto:'Como e o seu habito intestinal habitual?',opcoes:['Regular, 1x por dia sem esforco','Irregular mas sem sintomas','Constipacao ou diarreia ocasional','Constipacao cronica ou diarreia frequente'],pontos:[10,6,3,0]},
+  {id:7,secao:'Intestino',ordem:2,texto:'Voce sente gases, flatos ou distensao abdominal com frequencia?',opcoes:['Raramente','As vezes','Com frequencia','Todo dia, intensamente'],pontos:[10,6,3,0]},
+  {id:8,secao:'Intestino',ordem:3,texto:'Voce notou alteracoes na aparencia ou consistencia das suas fezes recentemente?',opcoes:['Nao, tudo normal','Pequenas variacoes ocasionais','Variacoes frequentes','Alteracoes constantes ou preocupantes'],pontos:[10,6,3,0]},
+  {id:9,secao:'Intestino',ordem:4,texto:'Voce sente urgencia intestinal ou dificuldade de controlar o momento de ir ao banheiro?',opcoes:['Nao','Raramente','As vezes','Com frequencia'],pontos:[10,6,3,0]},
+  {id:10,secao:'Intestino',ordem:5,texto:'Voce tem intolerancia ou sensibilidade a algum grupo de alimentos (gluten, lactose, etc.)?',opcoes:['Nao tenho sensibilidades conhecidas','Suspeito, mas nao confirmei','Sim, tenho 1 intolerancia confirmada','Sim, multiplas intolerancias'],pontos:[10,6,3,0]},
+  {id:11,secao:'Intestino',ordem:6,texto:'Ja fez uso prolongado de antibioticos, corticoides, laxantes ou outros medicamentos de longo prazo?',opcoes:['Nao','Uma vez, ha mais de 2 anos','Sim, mais de uma vez','Sim, uso prolongado ou recente'],pontos:[10,6,3,0]},
+  {id:12,secao:'Figado',ordem:1,texto:'Voce sente fadiga persistente, mesmo dormindo bem?',opcoes:['Nao, tenho energia satisfatoria','Cansaco ocasional','Cansaco frequente','Fadiga intensa e constante'],pontos:[10,6,3,0]},
+  {id:13,secao:'Figado',ordem:2,texto:'Voce notou amarelamento leve na pele, olhos ou urina muito escura?',opcoes:['Nao','Urina as vezes mais escura, sem outros sinais','Sim, ja notei mudancas','Sim, com frequencia'],pontos:[10,6,3,0]},
+  {id:14,secao:'Figado',ordem:3,texto:'Voce consome alcool? Se sim, com que frequencia?',opcoes:['Nao consumo','Socialmente, menos de 1x por semana','2 a 3 vezes por semana','Diariamente ou em grandes quantidades'],pontos:[10,6,3,0]},
+  {id:15,secao:'Figado',ordem:4,texto:'Voce tem ou ja teve diagnostico de esteatose hepatica, hepatite ou outro problema hepatico?',opcoes:['Nao','Tenho historico familiar, sem diagnostico proprio','Ja tive, mas tratado','Sim, diagnosticado atualmente'],pontos:[10,6,3,0]},
+  {id:16,secao:'Figado',ordem:5,texto:'Voce sente desconforto ou peso no lado direito do abdomen (regiao do figado)?',opcoes:['Nao','Raramente','As vezes','Com frequencia'],pontos:[10,6,3,0]},
+  {id:17,secao:'Hormonios',ordem:1,texto:'Voce tem ciclos menstruais irregulares, muito intensos ou com sintomas fortes de TPM? (Se homem: pule para a proxima)',opcoes:['Ciclos regulares e sem sintomas significativos','Ciclos regulares mas com TPM moderada','Irregulares ou TPM intensa','Muito irregulares com sintomas severos ou ausentes'],pontos:[10,6,3,0]},
+  {id:18,secao:'Hormonios',ordem:2,texto:'Voce percebe alteracoes significativas de peso sem mudancas na dieta ou atividade fisica?',opcoes:['Nao, meu peso e estavel','Pequenas variacoes ocasionais','Variacoes moderadas frequentes','Ganho ou perda significativa sem causa aparente'],pontos:[10,6,3,0]},
+  {id:19,secao:'Hormonios',ordem:3,texto:'Voce sente intolerancia ao calor ou ao frio, sudorese excessiva ou ressecamento da pele/cabelo?',opcoes:['Nao percebo alteracoes','Algo ocasional e leve','Moderado e frequente','Intenso e constante'],pontos:[10,6,3,0]},
+  {id:20,secao:'Hormonios',ordem:4,texto:'Voce tem dificuldade para dormir, acorda frequentemente ou nao se sente descansado ao acordar?',opcoes:['Durmo bem e acordo descansado','Sono regular com eventuais noites ruins','Dificuldade frequente para dormir ou manter o sono','Insonia frequente ou sono nao restaurador'],pontos:[10,6,3,0]},
+  {id:21,secao:'Hormonios',ordem:5,texto:'Voce percebe queda de libido, disfuncao sexual ou alteracoes na fertilidade?',opcoes:['Nao','Mudancas leves recentes','Alteracoes moderadas','Alteracoes significativas e persistentes'],pontos:[10,6,3,0]},
+  {id:22,secao:'Hormonios',ordem:6,texto:'Voce ja fez ou faz uso de reposicao hormonal, anticoncepcional ou corticoide por longo periodo?',opcoes:['Nao','Ja usei mas parei ha mais de 1 ano','Uso atual por menos de 1 ano','Uso prolongado atual (mais de 2 anos)'],pontos:[10,6,3,0]},
+  {id:23,secao:'Cerebro',ordem:1,texto:'Voce tem dificuldade de concentracao, memoria ou brain fog?',opcoes:['Nao, minha concentracao e boa','Ocasionalmente','Com frequencia','Constantemente, prejudica meu dia a dia'],pontos:[10,6,3,0]},
+  {id:24,secao:'Cerebro',ordem:2,texto:'Voce sente ansiedade, irritabilidade ou mudancas de humor frequentes?',opcoes:['Nao, sou emocionalmente estavel','Ocasionalmente, em situacoes de estresse','Com frequencia, mesmo sem causa aparente','Constante, interferindo no meu cotidiano'],pontos:[10,6,3,0]},
+  {id:25,secao:'Cerebro',ordem:3,texto:'Voce sente seu nivel de energia mental ao longo do dia como?',opcoes:['Estavel e adequado','Boa de manha, cai a tarde','Baixo na maior parte do dia','Muito baixo, dificulta atividades basicas'],pontos:[10,6,3,0]},
+  {id:26,secao:'Cerebro',ordem:4,texto:'Voce tem ou ja teve diagnostico de depressao, ansiedade generalizada ou outro transtorno de saude mental?',opcoes:['Nao','Historico no passado, sem tratamento atual','Sim, em tratamento ou acompanhamento','Sim, diagnostico atual sem tratamento adequado'],pontos:[10,6,3,0]},
+  {id:27,secao:'Cerebro',ordem:5,texto:'Voce percebe sensibilidade aumentada a luz, barulho ou estimulos sensoriais?',opcoes:['Nao','Levemente, em dias de maior estresse','Com frequencia moderada','Constantemente e de forma intensa'],pontos:[10,6,3,0]},
+  {id:28,secao:'Cerebro',ordem:6,texto:'Como voce avalia seu nivel de estresse no cotidiano?',opcoes:['Baixo e administravel','Moderado mas consigo lidar','Alto e frequente','Muito alto, sinto que nao consigo controlar'],pontos:[10,6,3,0]},
+  {id:29,secao:'Habitos',ordem:1,texto:'Quantas horas de sono voce tem por noite, em media?',opcoes:['7 a 9 horas, acordo descansado','6 a 7 horas, razoavel','5 a 6 horas, insuficiente','Menos de 5 horas ou sono muito irregular'],pontos:[10,6,3,0]},
+  {id:30,secao:'Habitos',ordem:2,texto:'Como voce descreveria sua alimentacao habitual?',opcoes:['Equilibrada, com frutas, legumes e proteinas diariamente','Relativamente boa, mas com excessos ocasionais','Irregular, com muito processado ou fast food','Muito desequilibrada, quase sem alimentos naturais'],pontos:[10,6,3,0]},
+  {id:31,secao:'Habitos',ordem:3,texto:'Voce consome refrigerantes, sucos industrializados ou bebidas acucaradas?',opcoes:['Nao consumo','Raramente, menos de 1x por semana','2 a 4 vezes por semana','Diariamente ou em grandes quantidades'],pontos:[10,6,3,0]},
+  {id:32,secao:'Habitos',ordem:4,texto:'Quantos copos de agua voce bebe por dia?',opcoes:['Mais de 8 copos (2 litros ou mais)','5 a 8 copos','3 a 4 copos','Menos de 3 copos'],pontos:[10,6,3,0]},
+  {id:33,secao:'Habitos',ordem:5,texto:'Voce pratica atividade fisica regularmente?',opcoes:['Sim, 3 vezes ou mais por semana','Sim, 1 a 2 vezes por semana','Raramente, de forma esporadica','Nao pratico nenhuma atividade fisica'],pontos:[10,6,3,0]},
+  {id:34,secao:'Habitos',ordem:6,texto:'Voce fuma ou esteve exposto a fumaca de cigarro de forma frequente?',opcoes:['Nao fumo e nao sou exposto','Nao fumo, mas ha exposicao passiva ocasional','Ja fumei mas parei ha mais de 1 ano','Fumo atualmente'],pontos:[10,6,3,0]},
+  {id:35,secao:'Habitos',ordem:7,texto:'Voce consome cafe, cha preto ou energeticos? Se sim, em que quantidade?',opcoes:['Nao consumo ou consumo minimo (1x por dia)','2 a 3 por dia, sem sintomas','4 ou mais por dia','Uso elevado de estimulantes, inclusive energeticos'],pontos:[10,6,3,0]},
+  {id:36,secao:'Habitos',ordem:8,texto:'Voce tem uma rotina regular de horarios para acordar, dormir e se alimentar?',opcoes:['Sim, rotina bem estabelecida','Parcialmente, com algumas variacoes','Pouco regular, horarios muito variaveis','Sem rotina definida'],pontos:[10,6,3,0]},
+  {id:37,secao:'Habitos',ordem:9,texto:'Voce usa tela (celular, computador, TV) na cama ou na hora de dormir?',opcoes:['Nao, evito telas pelo menos 1h antes de dormir','Uso ocasionalmente','Com frequencia, mas consigo dormir bem','Sempre, ate o momento de dormir'],pontos:[10,6,3,0]}
+];
+
+let _relPerguntas=null;
+
+async function getPerguntas(){
+  if(_relPerguntas)return _relPerguntas;
+  const{data}=await sb.from('planos_form_perguntas').select('*').order('secao').order('ordem');
+  if(data&&data.length){_relPerguntas=data;return data;}
+  _relPerguntas=FORM_PERGUNTAS_DEFAULT;
+  return FORM_PERGUNTAS_DEFAULT;
+}
+
+async function renderRelacionamento(){
+  const c=document.getElementById('main-content');
+  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  const[perguntas,{data:patients},{data:respostas}]=await Promise.all([
+    getPerguntas(),
+    sb.from('planos_patients').select('id,name,email,telefone,active').order('name'),
+    sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false})
+  ]);
+  allPatients=patients||[];
+  const resList=respostas||[];
+  const total=perguntas.length;
+  const enviados=resList.filter(r=>r.status==='enviado'||r.status==='respondido').length;
+  const respondidos=resList.filter(r=>r.status==='respondido').length;
+  let html='<div class="section-header">'
+    +'<div class="section-title">Relacionamento</div>'
+    +'<button class="btn btn-ghost btn-sm" onclick="renderRelEditor()">Editar questionario</button>'
+    +'</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">';
+  html+='<div class="dash-card"><div class="dash-card-num">'+total+'</div><div class="dash-card-label">Perguntas ativas</div></div>';
+  html+='<div class="dash-card"><div class="dash-card-num">'+enviados+'</div><div class="dash-card-label">Formularios enviados</div></div>';
+  html+='<div class="dash-card"><div class="dash-card-num">'+respondidos+'</div><div class="dash-card-label">Respondidos</div></div>';
+  html+='</div>';
+  html+='<div class="section-header" style="margin-top:4px"><div style="font-size:14px;font-weight:600;color:var(--text)">Pre-consulta \u2014 Enviar formulario</div></div>';
+  const active=(patients||[]).filter(p=>p.active);
+  active.forEach(p=>{
+    const lastResp=resList.find(r=>r.patient_id===p.id);
+    const status=lastResp?lastResp.status:'nao_enviado';
+    const statusLabel={'nao_enviado':'Nao enviado','enviado':'Aguardando resposta','respondido':'Respondido'}[status]||status;
+    const statusColor={'nao_enviado':'var(--text-muted)','enviado':'var(--warning)','respondido':'var(--success)'}[status];
+    html+='<div class="card" style="margin-bottom:8px;padding:12px 16px;display:flex;align-items:center;gap:12px">';
+    html+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px">'+p.name.charAt(0)+'</div>';
+    html+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
+    html+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+(p.email?' \u00b7 '+p.email:'')+'</div>';
+    html+='<div style="font-size:11px;margin-top:2px;color:'+statusColor+'">'+statusLabel+(lastResp?' \u00b7 '+fmtDatetime(lastResp.created_at):'')+'</div></div>';
+    html+='<div style="display:flex;gap:6px">';
+    if(status==='respondido')html+='<button class="btn btn-sm btn-ghost" onclick="verRespostas('+p.id+')">Ver resultado</button>';
+    html+='<button class="btn btn-sm btn-primary" onclick="enviarFormWhatsApp('+p.id+',\''+escHtml(p.name)+'\',\''+escHtml(p.telefone||'')+'\')">Enviar via WhatsApp</button>';
+    html+='</div></div>';
+  });
+  c.innerHTML=html;
+}
+
+async function enviarFormWhatsApp(patId,patName,telefone){
+  const base=window.location.href.replace(/vitta_planos\.html.*/,'vitta_form.html');
+  const formUrl=base+'?t='+patId;
+  const nome=patName.split(' ')[0];
+  const msg='Ol\u00e1 '+nome+'! Antes da sua consulta, pedimos que preencha nosso formul\u00e1rio de pr\u00e9-atendimento:%0A%0A'+encodeURIComponent(formUrl)+'%0A%0AEle nos ajudar\u00e1 a entender melhor sua sa\u00fade. Obrigado!';
+  const tel='55'+telefone.replace(/\D/g,'');
+  window.open('https://wa.me/'+tel+'?text='+msg,'_blank');
+  await sb.from('planos_form_respostas').upsert({patient_id:patId,status:'enviado',created_at:new Date().toISOString()},{onConflict:'patient_id'});
+  toast('Link aberto no WhatsApp!','success');
+  setTimeout(()=>renderRelacionamento(),600);
+}
+
+async function verRespostas(patId){
+  const [{data:sc}]= await Promise.all([
+    sb.from('planos_form_scores').select('*').eq('patient_id',patId).order('created_at',{ascending:false}).limit(1)
+  ]);
+  const p=allPatients.find(x=>x.id===patId);
+  if(!sc||!sc.length){toast('Sem resultados ainda','error');return;}
+  const score=sc[0];
+  const eixos=['estomago','intestino','figado','hormonios','cerebro'];
+  const labels=['Est\u00f4mago','Intestino','F\u00edgado','Horm\u00f4nios','C\u00e9rebro'];
+  let html='<div class="modal-title">Resultado Pr\u00e9-consulta</div>';
+  html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">'+escHtml(p?p.name:'')+' \u00b7 '+fmtDatetime(score.created_at)+'</div>';
+  html+='<canvas id="pentagon-canvas" width="280" height="280" style="display:block;margin:0 auto 16px"></canvas>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
+  eixos.forEach((e,i)=>{
+    const val=score['score_'+e]||0;
+    const color=val>=7?'var(--success)':val>=4?'var(--warning)':'var(--danger)';
+    html+='<div style="background:var(--bg-page);border-radius:8px;padding:10px 12px;border:1px solid var(--border)">';
+    html+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">'+labels[i]+'</div>';
+    html+='<div style="font-size:22px;font-weight:700;color:'+color+'">'+val.toFixed(1)+'</div>';
+    html+='<div style="height:4px;border-radius:2px;background:var(--border);margin-top:6px"><div style="height:4px;border-radius:2px;background:'+color+';width:'+Math.round(val*10)+'%"></div></div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  if(score.analise_ia)html+='<div style="background:var(--bg-page);border-radius:8px;padding:12px;font-size:13px;line-height:1.6;border:1px solid var(--border)"><div style="font-weight:600;font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase">An\u00e1lise da IA</div>'+escHtml(score.analise_ia)+'</div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+  setTimeout(()=>{
+    const canvas=document.getElementById('pentagon-canvas');
+    if(!canvas)return;
+    const ctx=canvas.getContext('2d');
+    const cx=140,cy=140,R=100;
+    const scores=eixos.map(e=>score['score_'+e]||0);
+    ctx.clearRect(0,0,280,280);
+    for(let g=1;g<=5;g++){
+      ctx.beginPath();
+      for(let i=0;i<5;i++){const a=-Math.PI/2+(2*Math.PI*i/5);const rr=(g/5)*R;if(i===0)ctx.moveTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a));else ctx.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a));}
+      ctx.closePath();ctx.strokeStyle='rgba(0,0,0,0.08)';ctx.lineWidth=1;ctx.stroke();
+    }
+    for(let i=0;i<5;i++){const a=-Math.PI/2+(2*Math.PI*i/5);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.stroke();}
+    ctx.beginPath();
+    for(let i=0;i<5;i++){const a=-Math.PI/2+(2*Math.PI*i/5);const rr=(scores[i]/10)*R;if(i===0)ctx.moveTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a));else ctx.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a));}
+    ctx.closePath();ctx.fillStyle='rgba(21,76,86,0.2)';ctx.fill();ctx.strokeStyle='#154C56';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#333';ctx.font='11px DM Sans,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    labels.forEach((lb,i)=>{const a=-Math.PI/2+(2*Math.PI*i/5);const rr=R+22;ctx.fillText(lb,cx+rr*Math.cos(a),cy+rr*Math.sin(a));});
+  },150);
+}
+
+async function renderRelEditor(){
+  const c=document.getElementById('main-content');
+  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  const perguntas=await getPerguntas();
+  const secoes=[...new Set(perguntas.map(p=>p.secao))];
+  let html='<div class="section-header">'
+    +'<div class="section-title">Editor de Question\u00e1rio</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn btn-ghost btn-sm" onclick="renderRelacionamento()">Voltar</button>'
+    +'<button class="btn btn-primary btn-sm" onclick="addPergunta()">+ Pergunta</button>'
+    +'</div></div>';
+  secoes.forEach(sec=>{
+    const qs=perguntas.filter(p=>p.secao===sec);
+    html+='<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">'+sec+' ('+qs.length+')</div>';
+    qs.forEach(q=>{
+      const qJson=JSON.stringify(q).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html+='<div class="card" style="margin-bottom:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px">';
+      html+='<div style="flex:1"><div style="font-size:13px;font-weight:600;margin-bottom:6px">'+escHtml(q.texto)+'</div>';
+      html+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+      (q.opcoes||[]).forEach((op,i)=>{html+='<span style="font-size:11px;background:var(--bg-page);border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--text-muted)">'+escHtml(op)+' ('+((q.pontos||[])[i]||0)+'pts)</span>';});
+      html+='</div></div>';
+      html+='<div style="display:flex;gap:6px;flex-shrink:0">';
+      html+='<button class="btn btn-ghost btn-sm" onclick="editPerguntaById('+q.id+')" style="font-size:12px">Editar</button>';
+      html+='<button class="btn btn-ghost btn-sm" onclick="deletePergunta('+q.id+')" style="font-size:12px;color:var(--danger)">Excluir</button>';
+      html+='</div></div>';
+    });
+  });
+  c.innerHTML=html;
+}
+
+async function editPerguntaById(id){
+  const perguntas=await getPerguntas();
+  const q=perguntas.find(p=>p.id===id);
+  if(q)editPergunta(q);
+}
+
+function editPergunta(q){
+  const secoes=['Estomago','Intestino','Figado','Hormonios','Cerebro','Habitos'];
+  let html='<div class="modal-title">'+(q.id?'Editar Pergunta':'Nova Pergunta')+'</div>';
+  html+='<div class="field"><label>Se\u00e7\u00e3o</label><select id="pq-secao" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font)">';
+  secoes.forEach(s=>{html+='<option value="'+s+'"'+(q.secao===s?' selected':'')+'>'+s+'</option>';});
+  html+='</select></div>';
+  html+='<div class="field"><label>Texto da pergunta</label><textarea id="pq-texto" rows="3" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px;box-sizing:border-box">'+escHtml(q.texto||'')+'</textarea></div>';
+  html+='<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px">Op\u00e7\u00f5es (da melhor para pior) \u00b7 Pontos de 0 a 10</div>';
+  for(let i=0;i<4;i++){
+    const op=(q.opcoes||[])[i]||'';const pt=(q.pontos||[])[i]!==undefined?(q.pontos||[])[i]:[10,6,3,0][i];
+    html+='<div style="display:flex;gap:8px;margin-bottom:6px">';
+    html+='<input id="pq-op'+i+'" value="'+escHtml(op)+'" placeholder="Op\u00e7\u00e3o '+(i+1)+'" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/>';
+    html+='<input id="pq-pt'+i+'" type="number" value="'+pt+'" min="0" max="10" style="width:60px;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);text-align:center" title="Pontos"/>';
+    html+='</div>';
+  }
+  html+='<input type="hidden" id="pq-id" value="'+(q.id||'')+'"/>';
+  html+='<input type="hidden" id="pq-ordem" value="'+(q.ordem||99)+'"/>';
+  html+='<button class="btn btn-primary btn-full" onclick="savePergunta()" style="margin-top:12px">Salvar</button>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+
+function addPergunta(){editPergunta({id:null,secao:'Estomago',ordem:99,texto:'',opcoes:['','','',''],pontos:[10,6,3,0]});}
+
+async function savePergunta(){
+  const id=document.getElementById('pq-id').value;
+  const opcoes=[0,1,2,3].map(i=>document.getElementById('pq-op'+i).value.trim());
+  const pontos=[0,1,2,3].map(i=>parseInt(document.getElementById('pq-pt'+i).value)||0);
+  const data={secao:document.getElementById('pq-secao').value,texto:document.getElementById('pq-texto').value.trim(),ordem:parseInt(document.getElementById('pq-ordem').value)||99,opcoes,pontos};
+  if(!data.texto){toast('Digite o texto da pergunta','error');return;}
+  if(id){await sb.from('planos_form_perguntas').update(data).eq('id',id);}
+  else{await sb.from('planos_form_perguntas').insert(data);}
+  _relPerguntas=null;
+  closeModal('modal-generic');
+  toast('Pergunta salva!','success');
+  renderRelEditor();
+}
+
+async function deletePergunta(id){
+  if(!confirm('Excluir esta pergunta?'))return;
+  await sb.from('planos_form_perguntas').delete().eq('id',id);
+  _relPerguntas=null;
+  toast('Pergunta exclu\u00edda','success');
+  renderRelEditor();
+}
+// ========== END RELACIONAMENTO ==========
+
 function renderRelatorios(period){
   _relTab=_relTab||'financeiro';
   period=period||'mes';
