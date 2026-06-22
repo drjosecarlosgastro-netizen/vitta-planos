@@ -4338,10 +4338,14 @@ async function renderRelacionamento(tab){
   if(tab)_relRelTab=tab;
   const c=document.getElementById('main-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
-  const[perguntas,{data:patients},{data:respostas}]=await Promise.all([
+  // Get start of current month
+  const now=new Date();const mesStr=(now.getMonth()+1).toString().padStart(2,'0');
+  const mesAno=now.getFullYear().toString()+mesStr;
+  const[perguntas,{data:patients},{data:respostas},{data:apptsMes}]=await Promise.all([
     getPerguntas(),
     sb.from('planos_patients').select('id,name,email,telefone,active').order('name'),
-    sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false})
+    sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false}),
+    sb.from('planos_appointments').select('patient_id,date_str').order('date_str',{ascending:false})
   ]);
   allPatients=patients||[];
   const resList=respostas||[];
@@ -4362,24 +4366,32 @@ async function renderRelacionamento(tab){
   html+='<button class="subtab '+(_relRelTab==='pre'?'active':'')+' " onclick="renderRelacionamento(\'pre\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_relRelTab==='pre'?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_relRelTab==='pre'?'var(--accent)':'transparent')+';margin-bottom:-2px">Pré-consulta — Envio de Formulário</button>';
   html+='<button class="subtab '+(_relRelTab==='pos'?'active':'')+' " onclick="renderRelacionamento(\'pos\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_relRelTab==='pos'?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_relRelTab==='pos'?'var(--accent)':'transparent')+';margin-bottom:-2px">Pós-consulta — Follow-up</button>';
   html+='</div>';
+  // Build patient map for quick lookup
+  window._relAllPatients=patients||[];
+  window._relResList=resList;
   if(_relRelTab==='pre'){
-    const active=(patients||[]).filter(p=>p.active);
-    active.forEach(p=>{
-      const lastResp=resList.find(r=>r.patient_id===p.id);
-      const status=lastResp?lastResp.status:'nao_enviado';
-      const statusLabel={'nao_enviado':'N\u00e3o enviado','enviado':'Aguardando resposta','respondido':'Respondido'}[status]||status;
-      const statusColor={'nao_enviado':'var(--text-muted)','enviado':'var(--warning)','respondido':'var(--success)'}[status];
-      html+='<div class="card" style="margin-bottom:8px;padding:12px 16px;display:flex;align-items:center;gap:12px">';
-      html+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px">'+p.name.charAt(0)+'</div>';
-      html+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
-      html+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+(p.email?' \u00b7 '+p.email:'')+'</div>';
-      html+='<div style="font-size:11px;margin-top:2px;color:'+statusColor+'">'+statusLabel+(lastResp?' \u00b7 '+fmtDatetime(lastResp.created_at):'')+'</div></div>';
-      html+='<div style="display:flex;gap:6px">';
-      if(status==='respondido')html+='<button class="btn btn-sm btn-ghost" onclick="verRespostas('+p.id+')">Ver resultado</button>';
-      html+='<button class="btn btn-sm btn-primary" onclick="enviarFormWhatsApp('+p.id+',\''+escHtml(p.name)+'\',\''+escHtml(p.telefone||'')+'\')">Enviar via WhatsApp</button>';
-      html+='</div></div>';
+    // Last 20 patients with appointments this month
+    const mesAppts=(apptsMes||[]).filter(a=>{
+      if(!a.date_str)return false;
+      const p=a.date_str.split('/');if(p.length!==3)return false;
+      return p[1]===mesStr&&p[2]===now.getFullYear().toString();
     });
-    if(!active.length)html+='<div class="empty"><div class="empty-icon">&#128203;</div>Nenhum paciente ativo</div>';
+    const recentIds=[...new Set(mesAppts.map(a=>a.patient_id))].slice(0,20);
+    const recentPats=(patients||[]).filter(p=>p.active&&recentIds.includes(p.id)).sort((a,b)=>recentIds.indexOf(a.id)-recentIds.indexOf(b.id));
+    // Search bar
+    html+='<div style="display:flex;gap:8px;margin-bottom:16px;align-items:center">';
+    html+='<div style="flex:1;position:relative"><input id="rel-search" type="text" placeholder="Buscar paciente por nome ou CPF..." oninput="relFilterPats(this.value)" style="width:100%;padding:10px 14px 10px 38px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:var(--font);background:var(--white);box-sizing:border-box"/><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:16px">&#128269;</span></div>';
+    html+='</div>';
+    html+='<div id="rel-pat-list">';
+    if(!recentPats.length){
+      html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Nenhum paciente atendido este m\u00eas ainda. Use a busca acima para encontrar qualquer paciente.</div>';
+    } else {
+      html+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">\u00daltimos 20 pacientes atendidos este m\u00eas</div>';
+    }
+    recentPats.forEach(p=>{
+      html+=relPatRow(p,resList);
+    });
+    html+='</div>';
   } else {
     html+='<div class="card" style="padding:32px;text-align:center">';
     html+='<div style="font-size:32px;margin-bottom:12px">&#128336;</div>';
@@ -4388,6 +4400,39 @@ async function renderRelacionamento(tab){
     html+='</div>';
   }
   c.innerHTML=html;
+}
+
+function relPatRow(p,resList){
+  const lastResp=(resList||[]).find(r=>r.patient_id===p.id);
+  const status=lastResp?lastResp.status:'nao_enviado';
+  const statusLabel={'nao_enviado':'N\u00e3o enviado','enviado':'Aguardando resposta','respondido':'Respondido'}[status]||status;
+  const statusColor={'nao_enviado':'var(--text-muted)','enviado':'var(--warning)','respondido':'var(--success)'}[status];
+  let html='<div class="card" style="margin-bottom:8px;padding:12px 16px;display:flex;align-items:center;gap:12px">';
+  html+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px">'+p.name.charAt(0)+'</div>';
+  html+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
+  html+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+(p.email?' \u00b7 '+p.email:'')+'</div>';
+  html+='<div style="font-size:11px;margin-top:2px;color:'+statusColor+'">'+statusLabel+(lastResp?' \u00b7 '+fmtDatetime(lastResp.created_at):'')+'</div></div>';
+  html+='<div style="display:flex;gap:6px">';
+  if(status==='respondido')html+='<button class="btn btn-sm btn-ghost" onclick="verRespostas('+p.id+')">Ver resultado</button>';
+  html+='<button class="btn btn-sm btn-primary" onclick="enviarFormWhatsApp('+p.id+',\''+escHtml(p.name)+'\',\''+escHtml(p.telefone||'')+'\')">Enviar via WhatsApp</button>';
+  html+='</div></div>';
+  return html;
+}
+
+function relFilterPats(q){
+  const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const box=document.getElementById('rel-pat-list');
+  if(!box)return;
+  const all=window._relAllPatients||[];
+  const resList=window._relResList||[];
+  if(!q.trim()){
+    // Restore original recent list (re-render would be ideal but too heavy - show hint)
+    box.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Digite para buscar em todos os pacientes.</div>';
+    return;
+  }
+  const matches=all.filter(p=>p.active&&(norm(p.name).includes(norm(q))||norm(p.cpf||'').includes(norm(q)))).slice(0,20);
+  if(!matches.length){box.innerHTML='<div class="empty" style="padding:16px 0">Nenhum paciente encontrado</div>';return;}
+  box.innerHTML=matches.map(p=>relPatRow(p,resList)).join('');
 }
 
 async function enviarFormWhatsApp(patId,patName,telefone){
