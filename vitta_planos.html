@@ -4430,7 +4430,7 @@ function relFilterPats(q){
     box.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Digite um nome para buscar em todos os pacientes cadastrados.</div>';
     return;
   }
-  const matches=all.filter(p=>p.active&&(norm(p.name).includes(norm(q))||norm(p.cpf||'').includes(norm(q)))).slice(0,20);
+  const matches=all.filter(p=>norm(p.name).includes(norm(q))||norm(p.cpf||'').includes(norm(q))).slice(0,20);
   if(!matches.length){box.innerHTML='<div class="empty" style="padding:16px 0">Nenhum paciente encontrado para "'+escHtml(q)+'"</div>';return;}
   box.innerHTML='<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">'+matches.length+' resultado'+(matches.length>1?'s':'')+'</div>'
     +matches.map(p=>relPatRow(p,resList)).join('');
