@@ -4359,7 +4359,7 @@ async function renderRelacionamento(tab){
   html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">';
   html+='<div class="dash-card"><div class="dash-card-num">'+total+'</div><div class="dash-card-label">Perguntas ativas</div></div>';
   html+='<div class="dash-card"><div class="dash-card-num">'+enviados+'</div><div class="dash-card-label">Formul\u00e1rios enviados</div></div>';
-  html+='<div class="dash-card"><div class="dash-card-num">'+respondidos+'</div><div class="dash-card-label">Respondidos</div></div>';
+  html+='<div class="dash-card" style="cursor:pointer;border:1.5px solid transparent" onclick="relMostrarRespondidos()" title="Ver pacientes que responderam"><div class="dash-card-num">'+respondidos+'</div><div class="dash-card-label">Respondidos</div><div class="dash-card-sub" style="margin-top:4px;font-size:11px;color:var(--tidal)">Clique para ver</div></div>';
   html+='</div>';
   // Subtabs
   html+='<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">';
@@ -4417,6 +4417,33 @@ function relPatRow(p,resList){
   html+='<button class="btn btn-sm btn-primary" onclick="enviarFormWhatsApp('+p.id+',\''+escHtml(p.name)+'\',\''+escHtml(p.telefone||'')+'\')">Enviar via WhatsApp</button>';
   html+='</div></div>';
   return html;
+}
+
+function relMostrarRespondidos(){
+  // Switch to pre tab if not already there
+  _relRelTab='pre';
+  const box=document.getElementById('rel-pat-list');
+  const search=document.getElementById('rel-search');
+  const all=window._relAllPatients||allPatients||[];
+  const resList=window._relResList||[];
+  if(!box){
+    // Tab not rendered yet - re-render with filter
+    renderRelacionamento('pre');
+    setTimeout(relMostrarRespondidos,500);
+    return;
+  }
+  const respondidos=resList.filter(r=>r.status==='respondido');
+  const pats=all.filter(p=>respondidos.some(r=>r.patient_id===p.id));
+  if(search)search.value='';
+  if(!pats.length){
+    box.innerHTML='<div class="empty" style="padding:16px 0">Nenhum paciente respondeu ainda</div>';
+    return;
+  }
+  box.innerHTML='<div style="font-size:11px;color:var(--tidal);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">'
+    +pats.length+' paciente'+(pats.length>1?'s':'')+' responderam o formul\u00e1rio</div>'
+    +pats.map(p=>relPatRow(p,resList)).join('');
+  // Scroll to list
+  box.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function relFilterPats(q){
