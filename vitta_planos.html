@@ -4343,7 +4343,7 @@ async function renderRelacionamento(tab){
   const mesAno=now.getFullYear().toString()+mesStr;
   const[perguntas,{data:patients},{data:respostas},{data:apptsMes}]=await Promise.all([
     getPerguntas(),
-    sb.from('planos_patients').select('id,name,email,telefone,active').order('name'),
+    sb.from('planos_patients').select('id,name,email,telefone,cpf,active').order('name'),
     sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false}),
     sb.from('planos_appointments').select('patient_id,date_str').order('date_str',{ascending:false})
   ]);
@@ -4423,16 +4423,17 @@ function relFilterPats(q){
   const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const box=document.getElementById('rel-pat-list');
   if(!box)return;
-  const all=window._relAllPatients||[];
+  // Use both sources - window store and global allPatients
+  const all=(window._relAllPatients&&window._relAllPatients.length?window._relAllPatients:allPatients)||[];
   const resList=window._relResList||[];
   if(!q.trim()){
-    // Restore original recent list (re-render would be ideal but too heavy - show hint)
-    box.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Digite para buscar em todos os pacientes.</div>';
+    box.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Digite um nome para buscar em todos os pacientes cadastrados.</div>';
     return;
   }
   const matches=all.filter(p=>p.active&&(norm(p.name).includes(norm(q))||norm(p.cpf||'').includes(norm(q)))).slice(0,20);
-  if(!matches.length){box.innerHTML='<div class="empty" style="padding:16px 0">Nenhum paciente encontrado</div>';return;}
-  box.innerHTML=matches.map(p=>relPatRow(p,resList)).join('');
+  if(!matches.length){box.innerHTML='<div class="empty" style="padding:16px 0">Nenhum paciente encontrado para "'+escHtml(q)+'"</div>';return;}
+  box.innerHTML='<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">'+matches.length+' resultado'+(matches.length>1?'s':'')+'</div>'
+    +matches.map(p=>relPatRow(p,resList)).join('');
 }
 
 async function enviarFormWhatsApp(patId,patName,telefone){
