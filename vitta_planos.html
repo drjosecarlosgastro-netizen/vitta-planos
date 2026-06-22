@@ -4282,7 +4282,7 @@ function dateInRange(dateStr,start,end){
   const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));return d>=start&&d<=end;
 }
 
-let _relTab='financeiro';
+let _relRelTab='pre';
 // ========== RELACIONAMENTO ==========
 const FORM_PERGUNTAS_DEFAULT=[
   {id:1,secao:'Estomago',ordem:1,texto:'Com que frequencia voce sente desconforto, queimacao ou dor na regiao do estomago?',opcoes:['Nunca ou raramente','As vezes (1-2x por semana)','Frequentemente (3-4x por semana)','Quase todo dia'],pontos:[10,6,3,0]},
@@ -4334,7 +4334,8 @@ async function getPerguntas(){
   return FORM_PERGUNTAS_DEFAULT;
 }
 
-async function renderRelacionamento(){
+async function renderRelacionamento(tab){
+  if(tab)_relRelTab=tab;
   const c=document.getElementById('main-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
   const[perguntas,{data:patients},{data:respostas}]=await Promise.all([
@@ -4349,30 +4350,43 @@ async function renderRelacionamento(){
   const respondidos=resList.filter(r=>r.status==='respondido').length;
   let html='<div class="section-header">'
     +'<div class="section-title">Relacionamento</div>'
-    +'<button class="btn btn-ghost btn-sm" onclick="renderRelEditor()">Editar questionario</button>'
+    +'<button class="btn btn-ghost btn-sm" onclick="renderRelEditor()">Editar question\u00e1rio</button>'
     +'</div>';
   html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">';
   html+='<div class="dash-card"><div class="dash-card-num">'+total+'</div><div class="dash-card-label">Perguntas ativas</div></div>';
-  html+='<div class="dash-card"><div class="dash-card-num">'+enviados+'</div><div class="dash-card-label">Formularios enviados</div></div>';
+  html+='<div class="dash-card"><div class="dash-card-num">'+enviados+'</div><div class="dash-card-label">Formul\u00e1rios enviados</div></div>';
   html+='<div class="dash-card"><div class="dash-card-num">'+respondidos+'</div><div class="dash-card-label">Respondidos</div></div>';
   html+='</div>';
-  html+='<div class="section-header" style="margin-top:4px"><div style="font-size:14px;font-weight:600;color:var(--text)">Pre-consulta \u2014 Enviar formulario</div></div>';
-  const active=(patients||[]).filter(p=>p.active);
-  active.forEach(p=>{
-    const lastResp=resList.find(r=>r.patient_id===p.id);
-    const status=lastResp?lastResp.status:'nao_enviado';
-    const statusLabel={'nao_enviado':'Nao enviado','enviado':'Aguardando resposta','respondido':'Respondido'}[status]||status;
-    const statusColor={'nao_enviado':'var(--text-muted)','enviado':'var(--warning)','respondido':'var(--success)'}[status];
-    html+='<div class="card" style="margin-bottom:8px;padding:12px 16px;display:flex;align-items:center;gap:12px">';
-    html+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px">'+p.name.charAt(0)+'</div>';
-    html+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
-    html+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+(p.email?' \u00b7 '+p.email:'')+'</div>';
-    html+='<div style="font-size:11px;margin-top:2px;color:'+statusColor+'">'+statusLabel+(lastResp?' \u00b7 '+fmtDatetime(lastResp.created_at):'')+'</div></div>';
-    html+='<div style="display:flex;gap:6px">';
-    if(status==='respondido')html+='<button class="btn btn-sm btn-ghost" onclick="verRespostas('+p.id+')">Ver resultado</button>';
-    html+='<button class="btn btn-sm btn-primary" onclick="enviarFormWhatsApp('+p.id+',\''+escHtml(p.name)+'\',\''+escHtml(p.telefone||'')+'\')">Enviar via WhatsApp</button>';
-    html+='</div></div>';
-  });
+  // Subtabs
+  html+='<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">';
+  html+='<button class="subtab '+(_relRelTab==='pre'?'active':'')+' " onclick="renderRelacionamento(\'pre\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_relRelTab==='pre'?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_relRelTab==='pre'?'var(--accent)':'transparent')+';margin-bottom:-2px">Pré-consulta — Envio de Formulário</button>';
+  html+='<button class="subtab '+(_relRelTab==='pos'?'active':'')+' " onclick="renderRelacionamento(\'pos\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_relRelTab==='pos'?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_relRelTab==='pos'?'var(--accent)':'transparent')+';margin-bottom:-2px">Pós-consulta — Follow-up</button>';
+  html+='</div>';
+  if(_relRelTab==='pre'){
+    const active=(patients||[]).filter(p=>p.active);
+    active.forEach(p=>{
+      const lastResp=resList.find(r=>r.patient_id===p.id);
+      const status=lastResp?lastResp.status:'nao_enviado';
+      const statusLabel={'nao_enviado':'N\u00e3o enviado','enviado':'Aguardando resposta','respondido':'Respondido'}[status]||status;
+      const statusColor={'nao_enviado':'var(--text-muted)','enviado':'var(--warning)','respondido':'var(--success)'}[status];
+      html+='<div class="card" style="margin-bottom:8px;padding:12px 16px;display:flex;align-items:center;gap:12px">';
+      html+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px">'+p.name.charAt(0)+'</div>';
+      html+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
+      html+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+(p.email?' \u00b7 '+p.email:'')+'</div>';
+      html+='<div style="font-size:11px;margin-top:2px;color:'+statusColor+'">'+statusLabel+(lastResp?' \u00b7 '+fmtDatetime(lastResp.created_at):'')+'</div></div>';
+      html+='<div style="display:flex;gap:6px">';
+      if(status==='respondido')html+='<button class="btn btn-sm btn-ghost" onclick="verRespostas('+p.id+')">Ver resultado</button>';
+      html+='<button class="btn btn-sm btn-primary" onclick="enviarFormWhatsApp('+p.id+',\''+escHtml(p.name)+'\',\''+escHtml(p.telefone||'')+'\')">Enviar via WhatsApp</button>';
+      html+='</div></div>';
+    });
+    if(!active.length)html+='<div class="empty"><div class="empty-icon">&#128203;</div>Nenhum paciente ativo</div>';
+  } else {
+    html+='<div class="card" style="padding:32px;text-align:center">';
+    html+='<div style="font-size:32px;margin-bottom:12px">&#128336;</div>';
+    html+='<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">P\u00f3s-consulta \u2014 Follow-up</div>';
+    html+='<div style="font-size:13px;color:var(--text-muted);line-height:1.6">Em desenvolvimento. Aqui ficar\u00e3o os acompanhamentos p\u00f3s-consulta,<br>mensagens autom\u00e1ticas e programa de indica\u00e7\u00f5es.</div>';
+    html+='</div>';
+  }
   c.innerHTML=html;
 }
 
