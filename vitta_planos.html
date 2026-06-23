@@ -2762,10 +2762,42 @@ function showAddApptPatient(){
 }
 async function saveApptPatient(){
   await sb.from('planos_appointments').insert({patient_id:currentPatientId,date_str:document.getElementById('ap-date').value,time_str:document.getElementById('ap-time').value,procedimento:document.getElementById('ap-proc').value,tipo:document.getElementById('ap-tipo').value,observacao:document.getElementById('ap-obs').value.trim(),profissional_nome:document.getElementById('ap-prof')?.value||null,status:'Agendado',registrado_por:currentUser.name});
+  // Add to jornada pre-consulta automatically
+  await jornadaOnAgendado(currentPatientId);
   closeModal('modal-generic');toast('Agendamento salvo','success');patTab('agenda');
 }
-async function updateApptStatus(id,status){await sb.from('planos_appointments').update({status,updated_by:currentUser.name}).eq('id',id);toast('Status atualizado','success');}
+async function updateApptStatus(id,status){
+  await sb.from('planos_appointments').update({status,updated_by:currentUser.name}).eq('id',id);
+  if(status==='Compareceu'){
+    const {data:appt}=await sb.from('planos_appointments').select('patient_id').eq('id',id).single();
+    if(appt)await jornadaOnCompareceu(appt.patient_id);
+  }
+  toast('Status atualizado','success');
+}
 async function deleteAppt(id){await sb.from('planos_appointments').delete().eq('id',id);patTab('agenda');}
+
+// ---- JORNADA AUTO TRIGGERS ----
+async function jornadaOnAgendado(patientId){
+  // Insert patient into jornada at boasvindas stage if not already there
+  const {data:existing}=await sb.from('planos_jornada').select('id').eq('patient_id',patientId).eq('etapa','boasvindas').single().catch(()=>({data:null}));
+  if(!existing){
+    await sb.from('planos_jornada').insert({patient_id:patientId,etapa:'_preconsulta_ativo',concluida:false,updated_at:new Date().toISOString()}).catch(()=>{});
+  }
+  // Mark patient as active in pre-consulta pipeline
+  await sb.from('planos_jornada').upsert({patient_id:patientId,etapa:'_preconsulta_ativo',concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'}).catch(()=>{});
+}
+
+async function jornadaOnCompareceu(patientId){
+  // Mark pre-consulta as done, move to pos-consulta
+  await sb.from('planos_jornada').upsert({patient_id:patientId,etapa:'_preconsulta_ativo',concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  await sb.from('planos_jornada').upsert({patient_id:patientId,etapa:'_posconsulta_ativo',concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+}
+async function jornadaEncerrarPos(patientId){
+  await sb.from('planos_jornada').upsert({patient_id:patientId,etapa:'_posconsulta_ativo',concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  toast('Paciente conclu\u00eddo no p\u00f3s-consulta','success');
+  renderRelacionamento(_relRelTab);
+}
+// ---- END JORNADA AUTO TRIGGERS ----
 
 async function renderContrato(){
   const{data:items}=await sb.from('planos_contratos').select('*').eq('patient_id',currentPatientId).order('created_at');
@@ -4408,12 +4440,24 @@ async function renderRelacionamento(tab){
     html+=relJourneyContent(step,patients,resList,apptsMes,mesStr,now);
     html+='</div>';
   } else {
+    // Pos-consulta: patients who attended
+    const posAtivos=(jornada||[]).filter(j=>j.etapa==='_posconsulta_ativo'&&!j.concluida).map(j=>j.patient_id);
+    const posPats=(patients||[]).filter(p=>posAtivos.includes(p.id)).sort((a,b)=>a.name.localeCompare(b.name));
+    html+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Pós-consulta — Follow-up</div>';
+    if(!posPats.length){
+      html+='<div class="empty"><div class="empty-icon">&#128203;</div>Nenhum paciente no pós-consulta ainda.<br><span style="font-size:12px;color:var(--text-muted)">Pacientes aparecem aqui após marcar consulta como &#39;Compareceu&#39;.</span></div>';
+    } else {
+      html+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">'+posPats.length+' paciente'+(posPats.length>1?'s':'')+' aguardando follow-up</div>';
+      posPats.forEach(p=>{
+        html+='<div class="card" style="margin-bottom:8px;padding:12px 16px;display:flex;align-items:center;gap:12px">';
+        html+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px;background:var(--tidal)">'+p.name.charAt(0)+'</div>';
+        html+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
+        html+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+'</div></div>';
+        html+='<button class="btn btn-ghost btn-sm" onclick="jornadaEncerrarPos('+p.id+')" style="font-size:11px;color:var(--text-muted)">Concluído</button>';
+        html+='</div>';
+      });
+    }
     html+='<div id="rel-pat-list"></div>';
-    html+='<div class="card" style="padding:32px;text-align:center">';
-    html+='<div style="font-size:32px;margin-bottom:12px">&#128336;</div>';
-    html+='<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Pós-consulta — Follow-up</div>';
-    html+='<div style="font-size:13px;color:var(--text-muted);line-height:1.6">Em desenvolvimento. Aqui ficarão os acompanhamentos pós-consulta,<br>mensagens automáticas e programa de indicações.</div>';
-    html+='</div>';
   }
   c.innerHTML=html;
 }
@@ -4580,14 +4624,18 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
   const all=patients||[];
   const jornada=window._relJornada||[];
   // Last 20 patients this month for all steps
+  // Use _preconsulta_ativo flag (set when patient is scheduled)
+  // Fallback: also include last 20 from this month if no jornada records yet
+  const preAtivos=(jornada||[]).filter(j=>j.etapa==='_preconsulta_ativo'&&!j.concluida).map(j=>j.patient_id);
   const mesAppts=(apptsMes||[]).filter(a=>{
     if(!a.date_str)return false;
     const p=a.date_str.split('/');if(p.length!==3)return false;
     return p[1]===mesStr&&p[2]===now.getFullYear().toString();
   });
-  const recentIds=[...new Set(mesAppts.map(a=>a.patient_id))].slice(0,20);
-  const recentPats=all.filter(p=>p.active&&recentIds.includes(p.id))
-    .sort((a,b)=>recentIds.indexOf(a.id)-recentIds.indexOf(b.id));
+  const mesIds=[...new Set(mesAppts.map(a=>a.patient_id))];
+  const allPreIds=[...new Set([...preAtivos,...mesIds])].slice(0,30);
+  const recentPats=all.filter(p=>p.active&&allPreIds.includes(p.id))
+    .sort((a,b)=>allPreIds.indexOf(a.id)-allPreIds.indexOf(b.id));
   const stepInfo={
     boasvindas:{title:'Boas-vindas',sub:'Enviar guia de boas-vindas e link do formulario no ato do agendamento',moment:'No ato do agendamento'},
     formulario:{title:'Cobran\u00e7a do Formul\u00e1rio',sub:'Cobranca gentil do preenchimento do formulario e envio de exames anteriores',moment:'3 a 4 dias antes'},
