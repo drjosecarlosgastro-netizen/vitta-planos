@@ -4377,7 +4377,7 @@ async function renderRelacionamento(tab){
     getPerguntas(),
     sb.from('planos_patients').select('id,name,email,telefone,cpf,active').order('name'),
     sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false}),
-    sb.from('planos_appointments').select('patient_id,date_str').order('date_str',{ascending:false}),
+    sb.from('planos_appointments').select('patient_id,date_str,profissional_nome').order('date_str',{ascending:false}),
     sb.from('planos_jornada').select('*')
   ]);
   allPatients=patients||[];
@@ -4510,8 +4510,15 @@ function relJourneyPatCard(p,jornada,etapaId){
   h+='<div style="display:flex;gap:6px;flex-shrink:0">';
   if(!concluida&&roteiro){
     if(etapaId==='boasvindas'){
-      const guiaUrl='https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_boasvindas.html';
-      const guiaTextoDefault='Ol\u00e1, '+p.name.split(' ')[0]+'! Seja muito bem-vindo(a) \u00e0 Cl\u00ednica Vitta! \uD83C\uDFE5\n\nPreparamos um Guia de Boas-Vindas especialmente para voc\u00ea, com tudo que precisa saber antes da sua consulta:\n\n\uD83D\uDCCC '+guiaUrl+'\n\nQualquer d\u00favida, estou \u00e0 disposi\u00e7\u00e3o! Abra\u00e7o, Secretaria Cl\u00ednica Vitta';
+      // Detect which doctor based on last appointment profissional
+      const lastAppt=(window._relApptsMes||[]).find(a=>a.patient_id===p.id);
+      const profNome=(lastAppt&&lastAppt.profissional_nome)||'';
+      const isBruna=profNome.toLowerCase().includes('bruna');
+      const guiaUrl=isBruna
+        ?'https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_boasvindas_bruna.html'
+        :'https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_boasvindas.html';
+      const medicoNome=isBruna?'Dra. Bruna Braga':'Dr. Jos\u00e9 Carlos';
+      const guiaTextoDefault='Ol\u00e1, '+p.name.split(' ')[0]+'! Seja muito bem-vindo(a) \u00e0 Cl\u00ednica Vitta! \uD83C\uDFE5\n\nPreparamos um Guia de Boas-Vindas especialmente para voc\u00ea, com tudo que precisa saber antes da sua consulta com a(o) '+medicoNome+':\n\n\uD83D\uDCCC '+guiaUrl+'\n\nQualquer d\u00favida, estou \u00e0 disposi\u00e7\u00e3o! Abra\u00e7o, Secretaria Cl\u00ednica Vitta';
       h+='<button onclick="previewGuia('+p.id+',\''+escHtml(p.name)+'\',\''+tel+'\',\''+encodeURIComponent(guiaTextoDefault)+'\')" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:var(--gold);color:var(--midnight);font-family:var(--font);border:none;cursor:pointer">Enviar Guia de Boas-Vindas</button>';
     }
     h+='<a href="'+waUrl+'" target="_blank" onclick="relMarcarEtapa('+p.id+',\''+etapaId+'\')" class="btn btn-primary btn-sm" style="text-decoration:none;display:flex;align-items:center;gap:6px">Enviar WhatsApp</a>';
@@ -4610,8 +4617,9 @@ function relJourneyFilter(q){
 }
 
 function previewGuia(patId,patName,tel,msgEnc){
-  const guiaUrl='https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_boasvindas.html';
-  const textoDefault=decodeURIComponent(msgEnc);
+  const msgDecoded=decodeURIComponent(msgEnc);
+  const guiaUrl=msgDecoded.includes('bruna')?'https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_boasvindas_bruna.html':'https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_boasvindas.html';
+  const textoDefault=msgDecoded;
   let html='<div class="modal-title">Guia de Boas-Vindas</div>';
   html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Revise e edite a mensagem antes de enviar para <strong>'+escHtml(patName)+'</strong></div>';
   html+='<div style="margin-bottom:10px">';
