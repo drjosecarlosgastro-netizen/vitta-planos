@@ -4371,7 +4371,16 @@ async function renderRelacionamento(tab){
   window._relAllPatients=patients||[];
   window._relResList=resList;
   window._relJornada=jornada||[];
+  window._relApptsMes=apptsMes||[];
+  window._relMesStr=mesStr;
+  window._relNow=now;
   if(_relRelTab==='pre'){
+    // Search bar - global, serves all journey steps
+    html+='<div style="display:flex;gap:8px;margin-bottom:16px;align-items:center">';
+    html+='<div style="flex:1;position:relative">';
+    html+='<input id="rel-journey-search" type="text" placeholder="Buscar paciente em qualquer etapa..." oninput="relJourneyFilter(this.value)" style="width:100%;padding:10px 14px 10px 38px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:var(--font);background:var(--white);box-sizing:border-box"/>';
+    html+='<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:16px">&#128269;</span>';
+    html+='</div></div>';
     const etapas=[
       {id:'boasvindas',label:'Boas-vindas',color:'#19807f'},
       {id:'formulario',label:'Formulário',color:'#154C56'},
@@ -4396,8 +4405,6 @@ async function renderRelacionamento(tab){
     });
     html+='</div>';
     html+='<div id="rel-journey-content">';
-    html+=relJourneyContent(step,patients,resList,apptsMes,mesStr,now);
-    html+='</div>';
     html+=relJourneyContent(step,patients,resList,apptsMes,mesStr,now);
     html+='</div>';
   } else {
@@ -4467,11 +4474,72 @@ function relJourneyPatCard(p,jornada,etapaId){
   }
   h+='</div></div>';
   if(!concluida&&roteiro){
-    h+='<details style="margin-top:10px"><summary style="font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;letter-spacing:.3px">Ver roteiro da mensagem</summary>';
-    h+='<div style="margin-top:8px;background:var(--bg-page);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text);border:1px solid var(--border)">'+escHtml(roteiro)+'</div></details>';
+    const msgKey='roteiro_'+etapaId+'_'+p.id;
+    h+='<div style="margin-top:10px">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+    h+='<span style="font-size:11px;font-weight:600;color:var(--text-muted)">Roteiro da mensagem</span>';
+    h+='<button onclick="relEditarRoteiro(\''+msgKey+'\')" style="font-size:11px;font-weight:600;color:var(--tidal);background:none;border:1px solid var(--tidal);border-radius:6px;padding:2px 10px;cursor:pointer">Editar</button>';
+    h+='</div>';
+    h+='<div id="roteiro-view-'+msgKey+'" style="background:var(--bg-page);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text);border:1px solid var(--border)">'+escHtml(roteiro)+'</div>';
+    h+='<div id="roteiro-edit-'+msgKey+'" style="display:none">';
+    h+='<textarea id="roteiro-txt-'+msgKey+'" rows="8" style="width:100%;box-sizing:border-box;font-size:12px;line-height:1.7;padding:10px 12px;border-radius:8px;border:1.5px solid var(--tidal);background:var(--white);color:var(--text);font-family:var(--font);resize:vertical">'+escHtml(roteiro)+'</textarea>';
+    h+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">';
+    h+='<button onclick="relCancelarRoteiro(\''+msgKey+'\')" style="font-size:12px;background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;color:var(--text-muted)">Cancelar</button>';
+    h+='<button onclick="relSalvarRoteiro(\''+msgKey+'\','+p.id+',\''+etapaId+'\')" class="btn btn-primary btn-sm">Salvar e enviar</button>';
+    h+='</div></div></div>';
   }
   h+='</div>';
   return h;
+}
+
+function relEditarRoteiro(key){
+  document.getElementById('roteiro-view-'+key).style.display='none';
+  document.getElementById('roteiro-edit-'+key).style.display='block';
+}
+
+function relCancelarRoteiro(key){
+  document.getElementById('roteiro-edit-'+key).style.display='none';
+  document.getElementById('roteiro-view-'+key).style.display='block';
+}
+
+function relSalvarRoteiro(key,patId,etapaId){
+  const txt=document.getElementById('roteiro-txt-'+key);
+  if(!txt)return;
+  const novoTexto=txt.value.trim();
+  const tel=(window._relAllPatients||[]).find(p=>p.id===patId);
+  const telNum=tel?(tel.telefone||'').replace(/\D/g,''):'';
+  if(telNum){
+    const waUrl='https://wa.me/55'+telNum+'?text='+encodeURIComponent(novoTexto);
+    window.open(waUrl,'_blank');
+  }
+  relMarcarEtapa(patId,etapaId);
+}
+
+function relJourneyFilter(q){
+  const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const box=document.getElementById('rel-journey-content');
+  if(!box)return;
+  if(!q.trim()){
+    // Restore full list
+    const step=window._relJourneyStep||'boasvindas';
+    const pts=window._relAllPatients||[];
+    const rl=window._relResList||[];
+    const jn=window._relJornada||[];
+    const am=window._relApptsMes||[];
+    const ms=window._relMesStr||'';
+    const nw=window._relNow||new Date();
+    box.innerHTML=relJourneyContent(step,pts,rl,am,ms,nw);
+    return;
+  }
+  const all=window._relAllPatients||[];
+  const matches=all.filter(p=>norm(p.name).includes(norm(q))||norm(p.cpf||'').includes(norm(q)));
+  const step=window._relJourneyStep||'boasvindas';
+  const jn=window._relJornada||[];
+  const rl=window._relResList||[];
+  if(!matches.length){box.innerHTML='<div class="empty" style="padding:16px 0">Nenhum paciente encontrado</div>';return;}
+  let h='<div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">'+matches.length+' resultado'+(matches.length>1?'s':'')+'</div>';
+  matches.forEach(p=>{h+=relJourneyPatCard(p,jn,step);});
+  box.innerHTML=h;
 }
 
 async function relMarcarEtapa(patId,etapaId){
