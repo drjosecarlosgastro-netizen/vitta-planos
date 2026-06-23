@@ -67,7 +67,7 @@ body{font-family:var(--font);color:var(--midnight);background:var(--bg);min-heig
 /* HOW TO */
 .transport-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .transport-card{background:var(--bg);border-radius:10px;padding:14px;border:1px solid var(--border)}
-.transport-icon{font-size:20px;margin-bottom:6px}
+.transport-icon{display:none}
 .transport-title{font-size:12px;font-weight:700;color:var(--midnight);margin-bottom:4px}
 .transport-text{font-size:11px;color:var(--ash);line-height:1.5}
 
@@ -151,11 +151,12 @@ body{font-family:var(--font);color:var(--midnight);background:var(--bg);min-heig
     <!-- PRESENCIAL -->
     <div id="tab-presencial" class="tab-content active">
       <div class="section-eyebrow" style="margin-bottom:10px">Onde nos encontrar</div>
-      <div class="map-container">
-        <iframe
-          src="https://www.google.com/maps/embed/v1/place?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFmBWY&q=Alameda+Graja%C3%BA+98+Alphaville+Barueri+SP"
-          allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
+      <div style="background:var(--bg);border-radius:12px;border:1px solid var(--border);padding:20px;text-align:center;margin-bottom:12px">
+        <div style="font-size:13px;color:var(--ash);margin-bottom:12px">Edifício Pravda — Alameda Grajaú, 98, Alphaville, Barueri</div>
+        <a href="https://maps.google.com/?q=Alameda+Grajaú+98+Alphaville+Barueri+SP" target="_blank"
+          style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--white);text-decoration:none;background:var(--deep);padding:10px 20px;border-radius:8px">
+          Ver no Google Maps
+        </a>
       </div>
       <div class="address-box">
         <strong>Edifício Pravda</strong>
@@ -163,29 +164,24 @@ body{font-family:var(--font);color:var(--midnight);background:var(--bg);min-heig
         Alphaville Industrial, Barueri — SP<br>
         CEP: 06454-050
       </div>
-      <div style="margin-top:14px">
-        <a href="https://maps.google.com/?q=Alameda+Grajaú+98+Alphaville+Barueri+SP" target="_blank"
-          style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--tidal);text-decoration:none;border:1px solid var(--tidal);padding:7px 14px;border-radius:8px">
-          Abrir no Google Maps
-        </a>
-      </div>
+
 
       <div style="margin-top:20px">
         <div class="section-eyebrow" style="margin-bottom:10px">Como chegar</div>
         <div class="transport-grid">
           <div class="transport-card">
-            <div class="transport-icon">🚗</div>
+            
             <div class="transport-title">De carro</div>
             <div class="transport-text">O edifício possui estacionamento próprio. Informe na recepção que veio para a Clínica Vitta.</div>
           </div>
 
           <div class="transport-card">
-            <div class="transport-icon">🚕</div>
+            
             <div class="transport-title">Uber / 99</div>
             <div class="transport-text">Solicite para "Edifício Pravda, Alameda Grajaú 98, Alphaville, Barueri".</div>
           </div>
           <div class="transport-card">
-            <div class="transport-icon">🏢</div>
+            
             <div class="transport-title">Na recepção</div>
             <div class="transport-text">Informe que tem consulta com Dr. José Carlos, Clínica Vitta, sala 704/706.</div>
           </div>
