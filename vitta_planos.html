@@ -4475,6 +4475,66 @@ async function enviarFormWhatsApp(patId,patName,telefone){
   setTimeout(()=>renderRelacionamento(),600);
 }
 
+async function imprimirResultado(patId){
+  const [{data:sc}]=await Promise.all([
+    sb.from('planos_form_scores').select('*').eq('patient_id',patId).order('created_at',{ascending:false}).limit(1)
+  ]);
+  const p=allPatients.find(x=>x.id===patId);
+  if(!sc||!sc.length)return;
+  const score=sc[0];
+  const eixos=['estomago','intestino','figado','hormonios','cerebro'];
+  const labels=['\u00c9stomago','Intestino','F\u00edgado','Horm\u00f4nios','C\u00e9rebro'];
+  const scores=eixos.map(e=>score['score_'+e]||0);
+  const scoreRows=eixos.map((e,i)=>{
+    const val=scores[i];
+    const color=val>=7?'#19807f':val>=4?'#C9B382':'#ef4444';
+    const bar=Math.round(val*10);
+    return '<tr><td style="padding:8px 12px;font-size:13px;font-weight:600;color:#1F2033">'+labels[i]+'</td>'
+      +'<td style="padding:8px 12px;font-size:18px;font-weight:700;color:'+color+'">'+val.toFixed(1)+'</td>'
+      +'<td style="padding:8px 12px;width:200px"><div style="height:6px;background:#e4eaed;border-radius:3px"><div style="height:6px;background:'+color+';width:'+bar+'%;border-radius:3px"></div></div></td>'
+      +'</tr>';
+  }).join('');
+  const analise=score.analise_ia||'';
+  // Build pentagon SVG inline
+  const cx=150,cy=150,R=110;
+  let pentPath='';let gridSVG='';let labelsSVG='';
+  for(let g=1;g<=5;g++){
+    let pts=[];
+    for(let i=0;i<5;i++){const a=-Math.PI/2+(2*Math.PI*i/5);const rr=(g/5)*R;pts.push((cx+rr*Math.cos(a)).toFixed(1)+','+(cy+rr*Math.sin(a)).toFixed(1));}
+    gridSVG+='<polygon points="'+pts.join(' ')+'" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>';
+  }
+  let dataPts=[];
+  scores.forEach((val,i)=>{const a=-Math.PI/2+(2*Math.PI*i/5);const rr=(val/10)*R;dataPts.push((cx+rr*Math.cos(a)).toFixed(1)+','+(cy+rr*Math.sin(a)).toFixed(1));});
+  labels.forEach((lb,i)=>{const a=-Math.PI/2+(2*Math.PI*i/5);const rr=R+24;const x=(cx+rr*Math.cos(a)).toFixed(1);const y=(cy+rr*Math.sin(a)).toFixed(1);const anchor=Math.cos(a)>0.1?'start':Math.cos(a)<-0.1?'end':'middle';labelsSVG+='<text x="'+x+'" y="'+y+'" text-anchor="'+anchor+'" dominant-baseline="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#5A7381">'+lb+' '+scores[i].toFixed(1)+'</text>';});
+  const pentagonSVG='<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">'+gridSVG+'<polygon points="'+dataPts.join(' ')+'" fill="rgba(21,76,86,0.15)" stroke="#154C56" stroke-width="2"/>'+labelsSVG+'</svg>';
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pre-consulta - '+(p?p.name:'')+'</title>'
+    +'<style>@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap");'
+    +'body{font-family:"DM Sans",sans-serif;color:#1F2033;margin:0;padding:32px;background:#fff}'
+    +'h1{font-family:"Cormorant Garamond",serif;font-size:26px;font-weight:600;margin:0 0 4px}'
+    +'.sub{font-size:13px;color:#5A7381;margin-bottom:24px}'
+    +'.section{margin-bottom:24px}'
+    +'.section-title{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#5A7381;margin-bottom:12px}'
+    +'table{width:100%;border-collapse:collapse}'
+    +'tr{border-bottom:1px solid #e4eaed}'
+    +'.analise{background:#f4f7f8;border-radius:8px;padding:16px;font-size:13px;line-height:1.7;white-space:pre-wrap;color:#1F2033}'
+    +'.logo{font-family:"Cormorant Garamond",serif;font-size:15px;color:#154C56;font-weight:600;margin-bottom:24px;padding-bottom:12px;border-bottom:2px solid #154C56}'
+    +'@media print{body{padding:20px}}'
+    +'</style></head><body>'
+    +'<div class="logo">Clinica Vitta \u00b7 Pre-consulta</div>'
+    +'<h1>Resultado de Pre-consulta</h1>'
+    +'<div class="sub">'+(p?p.name:'')+' \u00b7 '+fmtDatetime(score.created_at)+'</div>'
+    +'<div class="section"><div class="section-title">Mapa dos eixos</div>'
+    +'<div style="text-align:center">'+pentagonSVG+'</div></div>'
+    +'<div class="section"><div class="section-title">Scores por eixo</div>'
+    +'<table>'+scoreRows+'</table></div>'
+    +(analise?'<div class="section"><div class="section-title">Interpretacao Clinica</div><div class="analise">'+analise.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div></div>':'')
+    +'</body></html>';
+  const win=window.open('','_blank','width=800,height=900');
+  win.document.write(html);
+  win.document.close();
+  win.onload=function(){win.focus();win.print();};
+}
+
 async function verRespostas(patId){
   const [{data:sc}]= await Promise.all([
     sb.from('planos_form_scores').select('*').eq('patient_id',patId).order('created_at',{ascending:false}).limit(1)
@@ -4484,8 +4544,12 @@ async function verRespostas(patId){
   const score=sc[0];
   const eixos=['estomago','intestino','figado','hormonios','cerebro'];
   const labels=['Est\u00f4mago','Intestino','F\u00edgado','Horm\u00f4nios','C\u00e9rebro'];
-  let html='<div class="modal-title">Resultado Pr\u00e9-consulta</div>';
-  html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">'+escHtml(p?p.name:'')+' \u00b7 '+fmtDatetime(score.created_at)+'</div>';
+  const patName=p?p.name:'';
+  let html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+    +'<div class="modal-title" style="margin:0">Resultado Pr\u00e9-consulta</div>'
+    +'<button class="btn btn-ghost btn-sm" onclick="imprimirResultado('+patId+')" style="font-size:12px">Salvar PDF</button>'
+    +'</div>';
+  html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">'+escHtml(patName)+' \u00b7 '+fmtDatetime(score.created_at)+'</div>';
   html+='<canvas id="pentagon-canvas" width="280" height="280" style="display:block;margin:0 auto 16px"></canvas>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
   eixos.forEach((e,i)=>{
