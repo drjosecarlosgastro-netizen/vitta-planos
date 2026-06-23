@@ -4475,6 +4475,51 @@ async function enviarFormWhatsApp(patId,patName,telefone){
   setTimeout(()=>renderRelacionamento(),600);
 }
 
+
+function gerarInterpretacaoClinica(eixos,labels,scores){
+  const implicacoes={
+    estomago:['hipocloridria, gastrite ou disbiose gastrica com impacto na digestao de proteinas e absorcao de micronutrientes','disfuncao digestiva moderada, possivelmente associada a habitos alimentares ou estresse cronico','leve alteracao na funcao gastrica, com digestao preservada na maioria das situacoes'],
+    intestino:['disbiose intestinal significativa, permeabilidade intestinal aumentada e possivel sindrome do intestino irritavel, com impacto sistemico relevante','alteracao da microbiota com repercussao inflamatoria e possivel comprometimento da imunidade mucosa','transito intestinal levemente alterado, com microbiota possivelmente em desequilibrio'],
+    figado:['sobrecarga hepatica com possivel esteatose, reducao da depuracao de toxinas e comprometimento do metabolismo hormonal e lipidico','funcao hepatica moderadamente sobrecarregada, possivelmente por dieta, alcool ou estresse oxidativo','funcao hepatica levemente comprometida, requerendo suporte nutricional e reducao de carga toxica'],
+    hormonios:['desregulacao hormonal importante com impacto no ciclo menstrual, peso, sono e libido, sugestivo de resistencia insulinica ou disfuncao tireoidiana','desequilibrio hormonal moderado com sintomas de hipoestrogenismo, dominancia estrogenica ou fadiga adrenal','flutuacoes hormonais leves, possivelmente relacionadas a estresse ou fase do ciclo'],
+    cerebro:['comprometimento significativo do eixo intestino-cerebro, com brain fog, ansiedade ou depressao como manifestacoes provaveis de neuroinflamacao','disfuncao neurocomportamental moderada com impacto na concentracao, humor e energia ao longo do dia','flutuacoes leves de energia mental e humor, responsivas a melhora do sono e reducao do estresse']
+  };
+  const pares={
+    'estomago-intestino':'A disfuncao gastrica e intestinal frequentemente coexistem, formando um ciclo de disbiose e ma-digestao que perpetua a inflamacao de baixo grau.',
+    'intestino-cerebro':'O eixo intestino-cerebro esta comprometido. A disbiose alimenta neuroinflamacao, ansiedade e brain fog atraves do nervo vago e producao de neurotransmissores.',
+    'intestino-hormonios':'O intestino tem papel central no metabolismo estrogenico via beta-glicuronidase. A disbiose pode perpetuar o desequilibrio hormonal.',
+    'figado-hormonios':'O figado e essencial para a depuracao hormonal. Sua sobrecarga compromete o metabolismo de estrogenios, cortisol e hormonios tireoidianos.',
+    'figado-intestino':'Figado e intestino funcionam em circuito fechado via circulacao enterohepatica. A sobrecarga de um retroalimenta o outro.',
+    'hormonios-cerebro':'O desequilibrio hormonal tem impacto direto na funcao cognitiva, humor e ciclo sono-vigilia, explicando os sintomas neurologicos relatados.',
+    'estomago-figado':'A hipocloridria reduz a absorcao de aminoacidos necessarios a detoxificacao hepatica, sobrecarregando ainda mais o figado.',
+    'estomago-hormonios':'A disfuncao gastrica compromete a absorcao de zinco, magnesio e vitamina B6, cofatores essenciais para a sintese hormonal.',
+    'estomago-cerebro':'A ma-digestao de proteinas reduz a disponibilidade de triptofano e tirosina, precursores de serotonina e dopamina.',
+    'figado-cerebro':'A sobrecarga hepatica eleva toxinas sistemicas com impacto direto na funcao cognitiva e humor.'
+  };
+  const prioridades={
+    estomago:'Investigar hipocloridria, uso de IBP e habitos alimentares. Considerar teste de HCl, probioticos gastricos e suporte enzimatico.',
+    intestino:'Avaliar microbiota (calprotectina, zonulina). Protocolo de restauracao intestinal com prebioticos, probioticos e L-glutamina.',
+    figado:'Solicitar perfil hepatico completo, GGT e ferritina. Suporte com silimarina, N-acetilcisteina e dieta anti-inflamatoria.',
+    hormonios:'Perfil hormonal completo (estrogenios, progesterona, cortisol, TSH, T3L, T4L). Avaliar ciclo circadiano do cortisol.',
+    cerebro:'Avaliar estresse cronico, qualidade do sono e marcadores inflamatorios. Suporte com magnesio, ashwagandha e otimizacao do sono.'
+  };
+  const sorted=eixos.map((e,i)=>({e,label:labels[i],val:scores[i]})).sort((a,b)=>a.val-b.val);
+  const pior=sorted[0];const segundo=sorted[1];const melhor=sorted[sorted.length-1];
+  const getImpl=(e,val)=>{const arr=implicacoes[e]||['comprometimento funcional'];return val<4?arr[0]:val<6?arr[1]:arr[2];};
+  let t='';
+  t+='Eixo mais comprometido: '+pior.label+' ('+pior.val.toFixed(1)+'/10)\n';
+  t+='O eixo de '+pior.label.toLowerCase()+' apresenta o maior grau de comprometimento, sugestivo de '+getImpl(pior.e,pior.val)+'. Este achado merece atencao prioritaria na consulta.\n\n';
+  if(segundo.val<7){
+    t+='Relacao com o eixo de '+segundo.label.toLowerCase()+' ('+segundo.val.toFixed(1)+'/10):\n';
+    const chave=pior.e+'-'+segundo.e;const chave2=segundo.e+'-'+pior.e;
+    t+=(pares[chave]||pares[chave2]||'A inter-relacao entre esses dois eixos amplifica o impacto clinico e deve ser abordada de forma integrada.')+'\n\n';
+  }
+  t+='Prioridades para a consulta:\n';
+  sorted.slice(0,3).forEach(item=>{if(item.val<7)t+='- '+prioridades[item.e]+'\n';});
+  if(melhor.val>=8)t+='\nPonto positivo: o eixo de '+melhor.label.toLowerCase()+' apresenta boa reserva funcional ('+melhor.val.toFixed(1)+'/10), favorecendo a resposta ao tratamento integrado.';
+  return t;
+}
+
 async function imprimirResultado(patId){
   const [{data:sc}]=await Promise.all([
     sb.from('planos_form_scores').select('*').eq('patient_id',patId).order('created_at',{ascending:false}).limit(1)
@@ -4544,6 +4589,7 @@ async function verRespostas(patId){
   const score=sc[0];
   const eixos=['estomago','intestino','figado','hormonios','cerebro'];
   const labels=['Est\u00f4mago','Intestino','F\u00edgado','Horm\u00f4nios','C\u00e9rebro'];
+  const scores2=eixos.map(e=>score['score_'+e]||0);
   const patName=p?p.name:'';
   let html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
     +'<div class="modal-title" style="margin:0">Resultado Pr\u00e9-consulta</div>'
@@ -4562,7 +4608,11 @@ async function verRespostas(patId){
     html+='</div>';
   });
   html+='</div>';
-  if(score.analise_ia)html+='<div style="background:var(--bg-page);border-radius:8px;padding:12px;font-size:13px;line-height:1.6;border:1px solid var(--border)"><div style="font-weight:600;font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase">An\u00e1lise da IA</div>'+escHtml(score.analise_ia)+'</div>';
+  const analise=score.analise_ia||gerarInterpretacaoClinica(eixos,labels,scores2);
+  if(!score.analise_ia)sb.from('planos_form_scores').update({analise_ia:analise}).eq('id',score.id);
+  html+='<div style="background:var(--bg-page);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;border:1px solid var(--border);margin-top:4px">';
+  html+='<div style="font-weight:600;font-size:11px;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Interpreta\u00e7\u00e3o Cl\u00ednica</div>';
+  html+='<div style="white-space:pre-wrap;color:var(--text)">'+escHtml(analise)+'</div></div>';
   document.getElementById('modal-generic-content').innerHTML=html;
   openModal('modal-generic');
   setTimeout(()=>{
