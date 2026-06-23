@@ -4608,14 +4608,12 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
 
 function relMostrarEnviados(){
   _relRelTab='pre';
-  const box=document.getElementById('rel-pat-list');
-  const search=document.getElementById('rel-search');
+  const box=document.getElementById('rel-journey-content');
   const all=window._relAllPatients||allPatients||[];
   const resList=window._relResList||[];
   if(!box){renderRelacionamento('pre');setTimeout(relMostrarEnviados,500);return;}
   const enviados=resList.filter(r=>r.status==='enviado'||r.status==='respondido');
   const pats=all.filter(p=>enviados.some(r=>r.patient_id===p.id));
-  if(search)search.value='';
   if(!pats.length){box.innerHTML='<div class="empty" style="padding:16px 0">Nenhum formul\u00e1rio enviado ainda</div>';return;}
   box.innerHTML='<div style="font-size:11px;color:var(--tidal);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">'
     +pats.length+' paciente'+(pats.length>1?'s':'')+' com formul\u00e1rio enviado</div>'
@@ -4624,10 +4622,9 @@ function relMostrarEnviados(){
 }
 
 function relMostrarRespondidos(){
-  // Switch to pre tab if not already there
   _relRelTab='pre';
-  const box=document.getElementById('rel-pat-list');
-  const search=document.getElementById('rel-search');
+  const box=document.getElementById('rel-journey-content');
+  const search=document.getElementById('rel-journey-search');
   const all=window._relAllPatients||allPatients||[];
   const resList=window._relResList||[];
   if(!box){
