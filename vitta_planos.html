@@ -4475,24 +4475,42 @@ function relJourneyPatCard(p,jornada,etapaId){
   h+='</div></div>';
   if(!concluida&&roteiro){
     const msgKey='roteiro_'+etapaId+'_'+p.id;
+    // Collapsible roteiro with arrow - starts closed
     h+='<div style="margin-top:10px">';
-    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+    h+='<div onclick="relToggleRoteiro(\''+msgKey+'\')" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-page);border-radius:8px;border:1px solid var(--border);cursor:pointer">';
     h+='<span style="font-size:11px;font-weight:600;color:var(--text-muted)">Roteiro da mensagem</span>';
-    h+='<button onclick="relEditarRoteiro(\''+msgKey+'\')" style="font-size:11px;font-weight:600;color:var(--tidal);background:none;border:1px solid var(--tidal);border-radius:6px;padding:2px 10px;cursor:pointer">Editar</button>';
-    h+='</div>';
-    h+='<div id="roteiro-view-'+msgKey+'" style="background:var(--bg-page);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text);border:1px solid var(--border)">'+escHtml(roteiro)+'</div>';
+    h+='<div style="display:flex;align-items:center;gap:8px">';
+    h+='<button onclick="event.stopPropagation();relEditarRoteiro(\''+msgKey+'\')" style="font-size:11px;font-weight:600;color:var(--tidal);background:none;border:1px solid var(--tidal);border-radius:6px;padding:2px 10px;cursor:pointer">Editar</button>';
+    h+='<span id="roteiro-arrow-'+msgKey+'" style="color:var(--text-muted);font-size:18px;transition:transform .2s">&#8250;</span>';
+    h+='</div></div>';
+    h+='<div id="roteiro-body-'+msgKey+'" style="display:none">';
+    h+='<div id="roteiro-view-'+msgKey+'" style="background:var(--bg-page);border-radius:0 0 8px 8px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text);border:1px solid var(--border);border-top:none">'+escHtml(roteiro)+'</div>';
     h+='<div id="roteiro-edit-'+msgKey+'" style="display:none">';
-    h+='<textarea id="roteiro-txt-'+msgKey+'" rows="8" style="width:100%;box-sizing:border-box;font-size:12px;line-height:1.7;padding:10px 12px;border-radius:8px;border:1.5px solid var(--tidal);background:var(--white);color:var(--text);font-family:var(--font);resize:vertical">'+escHtml(roteiro)+'</textarea>';
+    h+='<textarea id="roteiro-txt-'+msgKey+'" rows="8" style="width:100%;box-sizing:border-box;font-size:12px;line-height:1.7;padding:10px 12px;border-radius:0 0 8px 8px;border:1.5px solid var(--tidal);border-top:none;background:var(--white);color:var(--text);font-family:var(--font);resize:vertical">'+escHtml(roteiro)+'</textarea>';
     h+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">';
     h+='<button onclick="relCancelarRoteiro(\''+msgKey+'\')" style="font-size:12px;background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;color:var(--text-muted)">Cancelar</button>';
     h+='<button onclick="relSalvarRoteiro(\''+msgKey+'\','+p.id+',\''+etapaId+'\')" class="btn btn-primary btn-sm">Salvar e enviar</button>';
-    h+='</div></div></div>';
+    h+='</div></div></div></div>';
   }
   h+='</div>';
   return h;
 }
 
+function relToggleRoteiro(key){
+  const body=document.getElementById('roteiro-body-'+key);
+  const arrow=document.getElementById('roteiro-arrow-'+key);
+  if(!body)return;
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(arrow)arrow.style.transform=open?'none':'rotate(90deg)';
+}
+
 function relEditarRoteiro(key){
+  // Make sure body is open first
+  const body=document.getElementById('roteiro-body-'+key);
+  const arrow=document.getElementById('roteiro-arrow-'+key);
+  if(body)body.style.display='block';
+  if(arrow)arrow.style.transform='rotate(90deg)';
   document.getElementById('roteiro-view-'+key).style.display='none';
   document.getElementById('roteiro-edit-'+key).style.display='block';
 }
