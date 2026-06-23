@@ -4465,6 +4465,12 @@ function relJourneyPatCard(p,jornada,etapaId){
   h+='</div>';
   h+='<div style="display:flex;gap:6px;flex-shrink:0">';
   if(!concluida&&roteiro){
+    if(etapaId==='boasvindas'){
+      const guiaUrl='https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_boasvindas.html';
+      const guiaMsg=encodeURIComponent('Ol\u00e1, '+p.name.split(' ')[0]+'! Seja muito bem-vindo(a) \u00e0 Cl\u00ednica Vitta! \uD83C\uDFE5\n\nPreparamos um Guia de Boas-Vindas especialmente para voc\u00ea, com tudo que precisa saber antes da sua consulta:\n\n\uD83D\uDCCC '+guiaUrl+'\n\nQualquer d\u00favida, estou \u00e0 disposi\u00e7\u00e3o! Abra\u00e7o, Secretaria Cl\u00ednica Vitta');
+      const guiaWaUrl='https://wa.me/55'+tel+'?text='+guiaMsg;
+      h+='<a href="'+guiaWaUrl+'" target="_blank" onclick="relMarcarEtapa('+p.id+',\''+etapaId+'\')" style="text-decoration:none;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:var(--gold);color:var(--midnight);font-family:var(--font)">Enviar Guia de Boas-Vindas</a>';
+    }
     h+='<a href="'+waUrl+'" target="_blank" onclick="relMarcarEtapa('+p.id+',\''+etapaId+'\')" class="btn btn-primary btn-sm" style="text-decoration:none;display:flex;align-items:center;gap:6px">Enviar WhatsApp</a>';
   }
   if(!concluida){
