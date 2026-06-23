@@ -4530,6 +4530,7 @@ async function imprimirResultado(patId){
   const eixos=['estomago','intestino','figado','hormonios','cerebro'];
   const labels=['\u00c9stomago','Intestino','F\u00edgado','Horm\u00f4nios','C\u00e9rebro'];
   const scores=eixos.map(e=>score['score_'+e]||0);
+  const eixos2=eixos;const labels2=labels;const scores3=scores;
   const scoreRows=eixos.map((e,i)=>{
     const val=scores[i];
     const color=val>=7?'#19807f':val>=4?'#C9B382':'#ef4444';
@@ -4539,7 +4540,7 @@ async function imprimirResultado(patId){
       +'<td style="padding:8px 12px;width:200px"><div style="height:6px;background:#e4eaed;border-radius:3px"><div style="height:6px;background:'+color+';width:'+bar+'%;border-radius:3px"></div></div></td>'
       +'</tr>';
   }).join('');
-  const analise=score.analise_ia||'';
+  const analise=score.analise_ia||gerarInterpretacaoClinica(eixos2,labels2,scores3);
   // Build pentagon SVG inline
   const cx=150,cy=150,R=110;
   let pentPath='';let gridSVG='';let labelsSVG='';
