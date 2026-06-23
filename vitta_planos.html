@@ -4341,11 +4341,12 @@ async function renderRelacionamento(tab){
   // Get start of current month
   const now=new Date();const mesStr=(now.getMonth()+1).toString().padStart(2,'0');
   const mesAno=now.getFullYear().toString()+mesStr;
-  const[perguntas,{data:patients},{data:respostas},{data:apptsMes}]=await Promise.all([
+  const[perguntas,{data:patients},{data:respostas},{data:apptsMes},{data:jornada}]=await Promise.all([
     getPerguntas(),
     sb.from('planos_patients').select('id,name,email,telefone,cpf,active').order('name'),
     sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false}),
-    sb.from('planos_appointments').select('patient_id,date_str').order('date_str',{ascending:false})
+    sb.from('planos_appointments').select('patient_id,date_str').order('date_str',{ascending:false}),
+    sb.from('planos_jornada').select('*')
   ]);
   allPatients=patients||[];
   const resList=respostas||[];
@@ -4362,23 +4363,49 @@ async function renderRelacionamento(tab){
   html+='<div class="dash-card" style="cursor:pointer;border:1.5px solid transparent" onclick="relMostrarRespondidos()" title="Ver pacientes que responderam"><div class="dash-card-num">'+respondidos+'</div><div class="dash-card-label">Respondidos</div><div class="dash-card-sub" style="margin-top:4px;font-size:11px;color:var(--tidal)">Clique para ver</div></div>';
   html+='</div>';
   // Subtabs
-  html+='<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">';
-  html+='<button class="subtab '+(_relRelTab==='pre'?'active':'')+' " onclick="renderRelacionamento(\'pre\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_relRelTab==='pre'?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_relRelTab==='pre'?'var(--accent)':'transparent')+';margin-bottom:-2px">Pré-consulta — Envio de Formulário</button>';
-  html+='<button class="subtab '+(_relRelTab==='pos'?'active':'')+' " onclick="renderRelacionamento(\'pos\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_relRelTab==='pos'?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_relRelTab==='pos'?'var(--accent)':'transparent')+';margin-bottom:-2px">Pós-consulta — Follow-up</button>';
+  html+='<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">';
+  html+='<button class="subtab '+(_relRelTab==='pre'?'active':'')+' " onclick="renderRelacionamento(\'pre\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_relRelTab==='pre'?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_relRelTab==='pre'?'var(--accent)':'transparent')+';margin-bottom:-2px">Pré-consulta</button>';
+  html+='<button class="subtab '+(_relRelTab==='pos'?'active':'')+' " onclick="renderRelacionamento(\'pos\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_relRelTab==='pos'?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_relRelTab==='pos'?'var(--accent)':'transparent')+';margin-bottom:-2px">Pós-consulta</button>';
   html+='</div>';
   // Build patient map for quick lookup
   window._relAllPatients=patients||[];
   window._relResList=resList;
+  window._relJornada=jornada||[];
   if(_relRelTab==='pre'){
-    html+='<div id="rel-pat-list">';
-    html+='<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Digite um nome para buscar em todos os pacientes cadastrados.</div>';
+    const etapas=[
+      {id:'boasvindas',label:'Boas-vindas',color:'#19807f'},
+      {id:'formulario',label:'Formulário',color:'#154C56'},
+      {id:'alinhamento',label:'Alinhamento',color:'#1a6b6a'},
+      {id:'confirmacao',label:'Confirmação',color:'#5A7381'},
+      {id:'consulta',label:'Consulta',color:'#9CB7C7'}
+    ];
+    const step=window._relJourneyStep||'boasvindas';
+    html+='<div style="display:flex;justify-content:center;align-items:stretch;gap:0;margin-bottom:28px;overflow-x:auto;padding:4px 0">';
+    etapas.forEach((e,i)=>{
+      const isActive=step===e.id;
+      const bg=isActive?e.color:'#e4eaed';
+      const col=isActive?'#fff':'#5A7381';
+      html+='<div onclick="relJourneyStep(\''+e.id+'\')" style="'
+        +'position:relative;display:flex;align-items:center;justify-content:center;'
+        +'min-width:148px;height:56px;background:'+bg+';color:'+col+';'
+        +'font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;'
+        +'clip-path:polygon(0 0,calc(100% - 18px) 0,100% 50%,calc(100% - 18px) 100%,0 100%,'+(i>0?'18px 50%':'0 50%')+');'
+        +'padding:0 28px 0 '+(i>0?'32px':'16px')+';'
+        +'transition:filter .15s;text-align:center;line-height:1.3;white-space:nowrap'
+        +'">'+e.label+'</div>';
+    });
     html+='</div>';
+    html+='<div id="rel-journey-content">';
+    html+=relJourneyContent(step,patients,resList,apptsMes,mesStr,now);
+    html+='</div>';
+    html+=relJourneyContent(step,patients,resList,apptsMes,mesStr,now);
     html+='</div>';
   } else {
+    html+='<div id="rel-pat-list"></div>';
     html+='<div class="card" style="padding:32px;text-align:center">';
     html+='<div style="font-size:32px;margin-bottom:12px">&#128336;</div>';
-    html+='<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">P\u00f3s-consulta \u2014 Follow-up</div>';
-    html+='<div style="font-size:13px;color:var(--text-muted);line-height:1.6">Em desenvolvimento. Aqui ficar\u00e3o os acompanhamentos p\u00f3s-consulta,<br>mensagens autom\u00e1ticas e programa de indica\u00e7\u00f5es.</div>';
+    html+='<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Pós-consulta — Follow-up</div>';
+    html+='<div style="font-size:13px;color:var(--text-muted);line-height:1.6">Em desenvolvimento. Aqui ficarão os acompanhamentos pós-consulta,<br>mensagens automáticas e programa de indicações.</div>';
     html+='</div>';
   }
   c.innerHTML=html;
@@ -4400,6 +4427,116 @@ function relPatRow(p,resList){
   html+='</div></div>';
   return html;
 }
+
+let _relJourneyStep='boasvindas';
+
+function relJourneyStep(step){
+  window._relJourneyStep=step;
+  _relJourneyStep=step;
+  renderRelacionamento(_relRelTab);
+}
+
+function relJourneyPatCard(p,jornada,etapaId){
+  const etapa=(jornada||[]).find(j=>j.patient_id===p.id&&j.etapa===etapaId);
+  const concluida=etapa&&etapa.concluida;
+  const tel=(p.telefone||'').replace(/\D/g,'');
+  const roteiros={
+    boasvindas:'Ol\u00e1, '+p.name.split(' ')[0]+'! Seja muito bem-vindo(a) \u00e0 Cl\u00ednica Vitta! \uD83C\uDFE5\n\nO Dr. Jos\u00e9 Carlos est\u00e1 ansioso para te receber e cuidar da sua sa\u00fade de forma completa e personalizada.\n\nPara j\u00e1 come\u00e7armos a te preparar, enviamos nosso Guia de Boas-Vindas com tudo que voc\u00ea precisa saber antes da consulta:\n\u2714 Como chegar \/ link de acesso\n\u2714 O que trazer\n\u2714 Nossa proposta de cuidado\n\nQualquer d\u00favida, estou \u00e0 disposi\u00e7\u00e3o! Abraco, Secretaria Cl\u00ednica Vitta',
+    formulario:'Ol\u00e1, '+p.name.split(' ')[0]+'! Tudo bem?\n\nEstamos organizando o seu prontu\u00e1rio para que o Dr. Jos\u00e9 Carlos j\u00e1 chegue preparado para a sua consulta. \uD83D\uDCCB\n\nVoc\u00ea j\u00e1 preencheu o nosso formul\u00e1rio de pr\u00e9-atendimento? Ele \u00e9 essencial para que a consulta seja ainda mais completa e precisa.\n\nAcesse aqui: [LINK DO FORMUL\u00C1RIO]\n\nQualquer d\u00favida, estou aqui! \uD83D\uDE0A',
+    alinhamento:'Ol\u00e1, '+p.name.split(' ')[0]+'! Boa tarde \uD83D\uDE0A\n\nEstou organizando o prontu\u00e1rio que o Dr. Jos\u00e9 Carlos vai analisar antes de te receber. Vi que voc\u00ea j\u00e1 preencheu o formul\u00e1rio, obrigada!\n\nTem mais alguma queixa ou objetivo principal que voc\u00ea lembrou e gostaria que eu anotasse em destaque para ele?\n\nA sua consulta j\u00e1 come\u00e7ou aqui! \uD83C\uDF31',
+    confirmacao:'Ol\u00e1, '+p.name.split(' ')[0]+'! \uD83D\uDE0A\n\nO Dr. Jos\u00e9 Carlos j\u00e1 separou o seu hor\u00e1rio na agenda de amanh\u00e3 e est\u00e1 estudando o seu caso pelo formul\u00e1rio que voc\u00ea enviou.\n\nEst\u00e1 tudo certo para nos vermos amanh\u00e3?\n\nAh, caso voc\u00ea precise de documenta\u00e7\u00e3o para reembolso do seu plano de sa\u00fade, me envie os dados para eu j\u00e1 deixar tudo pr\u00e9-configurado e agilizar seu p\u00f3s-consulta! \uD83D\uDCCB'
+  };
+  const roteiro=roteiros[etapaId]||'';
+  const waMsg=encodeURIComponent(roteiro);
+  const waUrl='https://wa.me/55'+tel+'?text='+waMsg;
+  let h='<div class="card" style="margin-bottom:8px;padding:12px 16px;border:1.5px solid '+(concluida?'var(--success)':'var(--border)')+';background:'+(concluida?'#f0faf9':'var(--white)') +'">';
+  h+='<div style="display:flex;align-items:center;gap:12px">';
+  h+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px;background:'+(concluida?'var(--success)':'var(--deep-ocean)')+'">'+p.name.charAt(0)+'</div>';
+  h+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
+  h+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+(p.email?' \u00b7 '+p.email:'')+'</div>';
+  h+='<div style="font-size:11px;margin-top:2px;color:'+(concluida?'var(--success)':'var(--warning)')+'">'+( concluida?'\u2705 Etapa conclu\u00edda':'\u23f0 Pendente')+(etapa&&etapa.updated_at?' \u00b7 '+fmtDatetime(etapa.updated_at):'')+'</div>';
+  h+='</div>';
+  h+='<div style="display:flex;gap:6px;flex-shrink:0">';
+  if(!concluida&&roteiro){
+    h+='<a href="'+waUrl+'" target="_blank" onclick="relMarcarEtapa('+p.id+',\''+etapaId+'\')" class="btn btn-primary btn-sm" style="text-decoration:none;display:flex;align-items:center;gap:6px">Enviar WhatsApp</a>';
+  }
+  if(!concluida){
+    h+='<button class="btn btn-ghost btn-sm" onclick="relMarcarEtapa('+p.id+',\''+etapaId+'\')" style="font-size:11px">Marcar feito</button>';
+  } else {
+    h+='<button class="btn btn-ghost btn-sm" onclick="relDesmarcarEtapa('+p.id+',\''+etapaId+'\')" style="font-size:11px;color:var(--text-muted)">Desfazer</button>';
+  }
+  h+='</div></div>';
+  if(!concluida&&roteiro){
+    h+='<details style="margin-top:10px"><summary style="font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;letter-spacing:.3px">Ver roteiro da mensagem</summary>';
+    h+='<div style="margin-top:8px;background:var(--bg-page);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text);border:1px solid var(--border)">'+escHtml(roteiro)+'</div></details>';
+  }
+  h+='</div>';
+  return h;
+}
+
+async function relMarcarEtapa(patId,etapaId){
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:etapaId,concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  renderRelacionamento(_relRelTab);
+}
+
+async function relDesmarcarEtapa(patId,etapaId){
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:etapaId,concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  renderRelacionamento(_relRelTab);
+}
+
+function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
+  const all=patients||[];
+  const jornada=window._relJornada||[];
+  // Last 20 patients this month for all steps
+  const mesAppts=(apptsMes||[]).filter(a=>{
+    if(!a.date_str)return false;
+    const p=a.date_str.split('/');if(p.length!==3)return false;
+    return p[1]===mesStr&&p[2]===now.getFullYear().toString();
+  });
+  const recentIds=[...new Set(mesAppts.map(a=>a.patient_id))].slice(0,20);
+  const recentPats=all.filter(p=>p.active&&recentIds.includes(p.id))
+    .sort((a,b)=>recentIds.indexOf(a.id)-recentIds.indexOf(b.id));
+  const stepInfo={
+    boasvindas:{title:'Boas-vindas',sub:'Enviar guia de boas-vindas e link do formulario no ato do agendamento',moment:'No ato do agendamento'},
+    formulario:{title:'Cobran\u00e7a do Formul\u00e1rio',sub:'Cobranca gentil do preenchimento do formulario e envio de exames anteriores',moment:'3 a 4 dias antes'},
+    alinhamento:{title:'Alinhamento 48h',sub:'Check-in ativo — o medico ja esta estudando o caso do paciente',moment:'48 horas antes'},
+    confirmacao:{title:'Confirma\u00e7\u00e3o 24h',sub:'Confirmacao estrategica e alinhamento de dados para faturamento\/reembolso',moment:'24 horas antes'},
+    consulta:{title:'Dia da Consulta',sub:'Paciente chega preparado, engajado e ciente do valor do servico',moment:'Dia da consulta'}
+  }[step]||{title:step,sub:'',moment:''};
+  let h='<div style="margin-bottom:16px">';
+  h+='<div style="font-size:14px;font-weight:700;color:var(--text)">'+stepInfo.title+'</div>';
+  h+='<div style="font-size:12px;color:var(--text-muted);margin-top:3px">'+stepInfo.sub+'</div>';
+  h+='<div style="font-size:11px;font-weight:600;color:var(--tidal);margin-top:4px;text-transform:uppercase;letter-spacing:.5px">'+stepInfo.moment+'</div>';
+  h+='</div>';
+  if(step==='consulta'){
+    h+='<div class="card" style="padding:24px;text-align:center">';
+    h+='<div style="font-size:36px;margin-bottom:12px">\u2705</div>';
+    h+='<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Paciente pronto para a consulta</div>';
+    h+='<div style="font-size:13px;color:var(--text-muted);line-height:1.6">O paciente passou por todas as etapas de preparo.<br>Ele chega desarmado, engajado e ciente do valor do servico.</div>';
+    h+='</div>';
+    return h;
+  }
+  // Count completed for this step
+  const concluidosCount=recentPats.filter(p=>(jornada||[]).some(j=>j.patient_id===p.id&&j.etapa===step&&j.concluida)).length;
+  h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">';
+  h+='<span style="font-size:12px;color:var(--text-muted)">'+recentPats.length+' pacientes neste mes</span>';
+  h+='<span style="background:var(--success);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">'+concluidosCount+' feitos</span>';
+  if(concluidosCount<recentPats.length)h+='<span style="background:#ef4444;color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">'+(recentPats.length-concluidosCount)+' pendentes</span>';
+  h+='</div>';
+  if(!recentPats.length){
+    h+='<div class="empty"><div class="empty-icon">\uD83D\uDCC5</div>Nenhum paciente atendido este mes. Use a busca acima.</div>';
+  } else {
+    // Sort: pending first
+    const sorted=[...recentPats].sort((a,b)=>{
+      const ca=(jornada||[]).some(j=>j.patient_id===a.id&&j.etapa===step&&j.concluida);
+      const cb=(jornada||[]).some(j=>j.patient_id===b.id&&j.etapa===step&&j.concluida);
+      return ca-cb;
+    });
+    sorted.forEach(p=>{h+=relJourneyPatCard(p,jornada,step);});
+  }
+  return h;
+}
+
 
 function relMostrarEnviados(){
   _relRelTab='pre';
