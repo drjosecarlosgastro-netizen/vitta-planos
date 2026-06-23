@@ -4361,6 +4361,10 @@ async function renderRelacionamento(tab){
   html+='<div class="dash-card" style="cursor:pointer" onclick="relMostrarEnviados()" title="Ver pacientes aguardando resposta"><div class="dash-card-num">'+enviados+'</div><div class="dash-card-label">Formul\u00e1rios enviados</div><div class="dash-card-sub" style="margin-top:4px;font-size:11px;color:var(--tidal)">Clique para ver</div></div>';
   html+='<div class="dash-card" style="cursor:pointer;border:1.5px solid transparent" onclick="relMostrarRespondidos()" title="Ver pacientes que responderam"><div class="dash-card-num">'+respondidos+'</div><div class="dash-card-label">Respondidos</div><div class="dash-card-sub" style="margin-top:4px;font-size:11px;color:var(--tidal)">Clique para ver</div></div>';
   html+='</div>';
+  // Search bar - always visible between cards and subtabs
+  html+='<div style="display:flex;gap:8px;margin-bottom:16px;align-items:center">';
+  html+='<div style="flex:1;position:relative"><input id="rel-search" type="text" placeholder="Buscar paciente por nome ou CPF..." oninput="relFilterPats(this.value)" style="width:100%;padding:10px 14px 10px 38px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:var(--font);background:var(--white);box-sizing:border-box"/><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:16px">&#128269;</span></div>';
+  html+='</div>';
   // Subtabs
   html+='<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px">';
   html+='<button class="subtab '+(_relRelTab==='pre'?'active':'')+' " onclick="renderRelacionamento(\'pre\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_relRelTab==='pre'?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_relRelTab==='pre'?'var(--accent)':'transparent')+';margin-bottom:-2px">Pré-consulta — Envio de Formulário</button>';
@@ -4378,10 +4382,6 @@ async function renderRelacionamento(tab){
     });
     const recentIds=[...new Set(mesAppts.map(a=>a.patient_id))].slice(0,20);
     const recentPats=(patients||[]).filter(p=>p.active&&recentIds.includes(p.id)).sort((a,b)=>recentIds.indexOf(a.id)-recentIds.indexOf(b.id));
-    // Search bar
-    html+='<div style="display:flex;gap:8px;margin-bottom:16px;align-items:center">';
-    html+='<div style="flex:1;position:relative"><input id="rel-search" type="text" placeholder="Buscar paciente por nome ou CPF..." oninput="relFilterPats(this.value)" style="width:100%;padding:10px 14px 10px 38px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:var(--font);background:var(--white);box-sizing:border-box"/><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:16px">&#128269;</span></div>';
-    html+='</div>';
     html+='<div id="rel-pat-list">';
     if(!recentPats.length){
       html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Nenhum paciente atendido este m\u00eas ainda. Use a busca acima para encontrar qualquer paciente.</div>';
@@ -4393,6 +4393,7 @@ async function renderRelacionamento(tab){
     });
     html+='</div>';
   } else {
+    html+='<div id="rel-pat-list"></div>';
     html+='<div class="card" style="padding:32px;text-align:center">';
     html+='<div style="font-size:32px;margin-bottom:12px">&#128336;</div>';
     html+='<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">P\u00f3s-consulta \u2014 Follow-up</div>';
