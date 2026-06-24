@@ -4528,12 +4528,14 @@ async function renderRelacionamento(tab){
   // Get start of current month
   const now=new Date();const mesStr=(now.getMonth()+1).toString().padStart(2,'0');
   const mesAno=now.getFullYear().toString()+mesStr;
-  const[perguntas,{data:patients},{data:respostas},{data:apptsMes},{data:jornada}]=await Promise.all([
+  const mesInicio=now.getFullYear()+'-'+mesStr+'-01';
+  const[perguntas,{data:patients},{data:respostas},{data:apptsMes},{data:jornada},{data:finMes}]=await Promise.all([
     getPerguntas(),
     sb.from('planos_patients').select('id,name,email,telefone,cpf,active').order('name'),
     sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false}),
     sb.from('planos_appointments').select('patient_id,date_str,profissional_nome').order('date_str',{ascending:false}),
-    sb.from('planos_jornada').select('*')
+    sb.from('planos_jornada').select('*'),
+    sb.from('planos_financeiro').select('patient_id,valor,forma,data_pagamento,observacao,created_at').gte('data_pagamento',mesInicio)
   ]);
   allPatients=patients||[];
   const resList=respostas||[];
@@ -4559,6 +4561,7 @@ async function renderRelacionamento(tab){
   window._relResList=resList;
   window._relJornada=jornada||[];
   window._relApptsMes=apptsMes||[];
+  window._relFinMes=finMes||[];
   window._relMesStr=mesStr;
   window._relNow=now;
   if(_relRelTab==='pre'){
@@ -4719,6 +4722,24 @@ function relJourneyPatCard(p,jornada,etapaId){
     h+='<button onclick="relSalvarRoteiro(\''+msgKey+'\','+p.id+',\''+etapaId+'\')" class="btn btn-primary btn-sm">Salvar e enviar</button>';
     h+='</div></div></div></div>';
   }
+  // Payment panel for Confirmacao step
+  if(etapaId==='confirmacao'){
+    var finList=window._relFinMes||[];
+    var pago=finList.find(function(f){return f.patient_id===p.id;});
+    var pagoLabel=pago?'&#10003; Pago \u2014 R$ '+(parseFloat(pago.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+' ('+escHtml(pago.forma||'')+')':'Aguardando pagamento';
+    var pagoColor=pago?'var(--success)':'var(--warning)';
+    var pagoBg=pago?'#f0faf9':'#fff8ed';
+    var pagoBorder=pago?'var(--success)':'#f0a500';
+    h+='<div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:'+pagoBg+';border:1.5px solid '+pagoBorder+';display:flex;align-items:center;gap:10px">';
+    h+='<div style="font-size:13px;font-weight:700;color:'+pagoColor+'">&#128179; '+pagoLabel+'</div>';
+    h+='<div style="flex:1"></div>';
+    if(!pago){
+      h+='<button onclick="relRegistrarPagamento('+p.id+',\''+escHtml(p.name)+'\')" style="font-size:12px;font-weight:600;background:var(--tidal);color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:var(--font)">Registrar pagamento</button>';
+    } else {
+      h+='<button onclick="relVerPagamento('+p.id+',\''+escHtml(p.name)+'\')" style="font-size:11px;color:var(--text-muted);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:var(--font)">Ver</button>';
+    }
+    h+='</div>';
+  }
   h+='</div>';
   return h;
 }
@@ -4838,6 +4859,57 @@ function relBulkClear(){
   document.querySelectorAll('.rel-bulk-cb').forEach(function(cb){cb.checked=false;});
   var bar=document.getElementById('rel-bulk-bar');
   if(bar)bar.style.display='none';
+}
+
+function relRegistrarPagamento(patId,patName){
+  var hoje=new Date().toISOString().split('T')[0];
+  var html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:16px">Registrar pagamento</div>';
+  html+='<div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:14px">'+escHtml(patName)+'</div>';
+  html+='<div style="display:grid;gap:12px">';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Valor (R$)</label><input id="relpag-valor" type="number" step="0.01" placeholder="0,00" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Forma de pagamento</label><select id="relpag-forma" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"><option>Pix</option><option>Cart\u00e3o</option><option>Dinheiro</option><option>Transfer\u00eancia</option></select></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Data</label><input id="relpag-data" type="date" value="'+hoje+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observa\u00e7\u00e3o</label><input id="relpag-obs" type="text" placeholder="Opcional" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">';
+  html+='<button onclick="closeModal(\'modal-generic\')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--text-muted)">Cancelar</button>';
+  html+='<button onclick="relSalvarPagamento('+patId+')" class="btn btn-primary">Confirmar pagamento</button>';
+  html+='</div></div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+
+async function relSalvarPagamento(patId){
+  var valor=parseFloat(document.getElementById('relpag-valor').value)||0;
+  if(!valor){toast('Informe o valor','error');return;}
+  var forma=document.getElementById('relpag-forma').value;
+  var data=document.getElementById('relpag-data').value;
+  var obs=document.getElementById('relpag-obs').value.trim();
+  await sb.from('planos_financeiro').insert({patient_id:patId,forma:forma,valor:valor,data_pagamento:data,observacao:obs||'Pagamento antecipado da consulta',registrado_por:currentUser?currentUser.name:'Secretaria'});
+  closeModal('modal-generic');
+  toast('Pagamento registrado com sucesso','success');
+  renderRelacionamento(_relRelTab);
+}
+
+function relVerPagamento(patId,patName){
+  var finList=window._relFinMes||[];
+  var pago=finList.find(function(f){return f.patient_id===patId;});
+  if(!pago){toast('Pagamento n\u00e3o encontrado','error');return;}
+  var html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:16px">Pagamento registrado</div>';
+  html+='<div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:16px">'+escHtml(patName)+'</div>';
+  html+='<div style="display:grid;gap:8px">';
+  html+='<div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg-page);border-radius:8px"><span style="font-size:12px;color:var(--text-muted)">Valor</span><span style="font-weight:700;color:var(--success)">R$ '+(parseFloat(pago.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span></div>';
+  html+='<div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg-page);border-radius:8px"><span style="font-size:12px;color:var(--text-muted)">Forma</span><span style="font-weight:600">'+escHtml(pago.forma||'')+'</span></div>';
+  html+='<div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg-page);border-radius:8px"><span style="font-size:12px;color:var(--text-muted)">Data</span><span style="font-weight:600">'+escHtml(pago.data_pagamento||'')+'</span></div>';
+  if(pago.observacao)html+='<div style="padding:10px 14px;background:var(--bg-page);border-radius:8px"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Observa\u00e7\u00e3o</div><div style="font-size:13px">'+escHtml(pago.observacao)+'</div></div>';
+  html+='</div>';
+  html+='<div style="display:flex;justify-content:flex-end;margin-top:18px">';
+  html+='<button onclick="closeModal(\'modal-generic\')" class="btn btn-primary">Fechar</button>';
+  html+='</div></div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
 }
 
 async function relBulkMarcarFeito(){
