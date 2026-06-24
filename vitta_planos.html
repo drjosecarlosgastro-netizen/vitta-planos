@@ -2776,6 +2776,137 @@ async function updateApptStatus(id,status){
 }
 async function deleteAppt(id){await sb.from('planos_appointments').delete().eq('id',id);patTab('agenda');}
 
+
+// ========== BIBLIOTECA DE FORMULÁRIOS ==========
+let _formLibrary=null;
+let _formLibrarySelectedId=null;
+
+async function getFormLibrary(){
+  if(_formLibrary)return _formLibrary;
+  const{data}=await sb.from('planos_form_biblioteca').select('*').order('ordem').catch(()=>({data:null}));
+  if(data&&data.length){_formLibrary=data;return data;}
+  // Default: pre-consultation form
+  _formLibrary=[
+    {id:1,nome:'Formulário de Pré-consulta',descricao:'Avaliação dos 5 eixos: Estômago, Intestino, Fígado, Hormônios e Cérebro',url:'https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_form.html?t=',url_type:'interno',ativo:true,ordem:1}
+  ];
+  return _formLibrary;
+}
+
+async function renderFormLibrary(patId,patName,tel){
+  const forms=await getFormLibrary();
+  let html='<div class="modal-title">Escolher Formulário</div>';
+  html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Selecione o formulário a ser enviado para <strong>'+escHtml(patName)+'</strong></div>';
+  html+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">';
+  forms.filter(f=>f.ativo!==false).forEach(f=>{
+    const isSelected=(_formLibrarySelectedId===f.id)||(!_formLibrarySelectedId&&f.ordem===1);
+    const formUrl=f.url_type==='interno'?f.url+patId:f.url;
+    html+='<label style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;border:1.5px solid '+(isSelected?'var(--deep)':'var(--border)')+';background:'+(isSelected?'#f0f7f8':'var(--white)')+';cursor:pointer" onclick="selectFormLibrary('+f.id+')">';
+    html+='<input type="radio" name="form-lib" value="'+f.id+'" '+(isSelected?'checked':'')+' style="margin-top:2px;accent-color:var(--deep)">';
+    html+='<div style="flex:1">';
+    html+='<div style="font-weight:600;font-size:13px;color:var(--midnight)">'+escHtml(f.nome)+'</div>';
+    html+='<div style="font-size:12px;color:var(--ash);margin-top:3px">'+escHtml(f.descricao||'')+'</div>';
+    if(f.url_type!=='interno')html+='<div style="font-size:11px;color:var(--tidal);margin-top:4px">'+escHtml(formUrl)+'</div>';
+    html+='</div></label>';
+  });
+  html+='</div>';
+  // Message preview
+  const defaultForm=forms.find(f=>f.ativo!==false&&((_formLibrarySelectedId&&f.id===_formLibrarySelectedId)||(!_formLibrarySelectedId&&f.ordem===1)));
+  const formUrl=defaultForm?(defaultForm.url_type==='interno'?defaultForm.url+patId:defaultForm.url):'';
+  const msgDefault='Olá, '+patName.split(' ')[0]+'! Tudo bem?\n\nEstamos organizando o seu prontuário para que o médico já chegue preparado para a sua consulta.\n\nPor favor, preencha o formulário abaixo antes da consulta:\n\n'+formUrl+'\n\nQualquer dúvida, estou aqui!';
+  html+='<div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Mensagem</div>';
+  html+='<textarea id="form-lib-msg" rows="8" style="width:100%;box-sizing:border-box;font-size:13px;line-height:1.7;padding:12px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg-page);color:var(--text);font-family:var(--font);resize:vertical">'+escHtml(msgDefault)+'</textarea>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">';
+  html+='<button onclick="closeModal(\'modal-generic\')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--text-muted)">Cancelar</button>';
+  html+='<button onclick="enviarFormSelecionado(\''+patId+'\',\''+tel+'\')" class="btn btn-primary" style="padding:9px 20px">Enviar via WhatsApp</button>';
+  html+='</div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+
+function selectFormLibrary(id){
+  _formLibrarySelectedId=id;
+  const forms=_formLibrary||[];
+  const selected=forms.find(f=>f.id===id);
+  // Update visual
+  document.querySelectorAll('[name="form-lib"]').forEach(r=>{
+    const lbl=r.closest('label');
+    if(parseInt(r.value)===id){
+      r.checked=true;
+      lbl.style.border='1.5px solid var(--deep)';
+      lbl.style.background='#f0f7f8';
+    } else {
+      lbl.style.border='1.5px solid var(--border)';
+      lbl.style.background='var(--white)';
+    }
+  });
+}
+
+async function enviarFormSelecionado(patId,tel){
+  const txt=document.getElementById('form-lib-msg');
+  if(!txt)return;
+  const msg=encodeURIComponent(txt.value.trim());
+  const waUrl='https://wa.me/55'+tel.replace(/\D/g,'')+'?text='+msg;
+  window.open(waUrl,'_blank');
+  await relMarcarEtapa(parseInt(patId),'formulario');
+  closeModal('modal-generic');
+}
+
+async function abrirGerenciarFormularios(){
+  const forms=await getFormLibrary();
+  let html='<div class="modal-title">Biblioteca de Formulários</div>';
+  html+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">';
+  forms.forEach(f=>{
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:var(--bg-page);border:1px solid var(--border)">';
+    html+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(f.nome)+'</div>';
+    html+='<div style="font-size:11px;color:var(--ash)">'+escHtml(f.descricao||'')+'</div></div>';
+    html+='<button onclick="editarFormLibraryById('+f.id+')" style="font-size:11px;font-weight:600;color:var(--tidal);background:none;border:1px solid var(--tidal);border-radius:6px;padding:3px 10px;cursor:pointer">Editar</button>';
+    html+='</div>';
+  });
+  html+='</div>';
+  html+='<button onclick="novoFormulario()" class="btn btn-primary btn-sm">+ Novo formulário</button>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+
+function editarFormulario(f){
+  let html='<div class="modal-title">'+(f.id&&f.id>0?'Editar':'Novo')+' Formulário</div>';
+  html+='<div class="field"><label>Nome</label><input id="fb-nome" value="'+escHtml(f.nome||'')+'" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font)"/></div>';
+  html+='<div class="field"><label>Descrição</label><input id="fb-desc" value="'+escHtml(f.descricao||'')+'" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font)"/></div>';
+  html+='<div class="field"><label>Link do formulário</label><input id="fb-url" value="'+escHtml(f.url||'')+'" placeholder="https://... ou link interno" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font)"/></div>';
+  html+='<div class="field"><label>Tipo</label><select id="fb-type" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font)">';
+  html+='<option value="interno"'+(f.url_type==='interno'?' selected':'')+'>Interno (link do sistema + ID do paciente)</option>';
+  html+='<option value="externo"'+(f.url_type==='externo'?' selected':'')+'>Externo (link fixo, ex: Google Forms)</option>';
+  html+='</select></div>';
+  html+='<input type="hidden" id="fb-id" value="'+(f.id||0)+'"/>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">';
+  html+='<button onclick="abrirGerenciarFormularios()" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--text-muted)">Voltar</button>';
+  html+='<button onclick="salvarFormulario()" class="btn btn-primary" style="padding:9px 20px">Salvar</button>';
+  html+='</div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+}
+
+function novoFormulario(){editarFormulario({id:0,nome:'',descricao:'',url:'',url_type:'externo',ativo:true,ordem:99});}
+
+function editarFormLibraryById(id){const f=(_formLibrary||[]).find(x=>x.id===id);if(f)editarFormulario(f);}
+
+async function salvarFormulario(){
+  const id=parseInt(document.getElementById('fb-id').value);
+  const data={
+    nome:document.getElementById('fb-nome').value.trim(),
+    descricao:document.getElementById('fb-desc').value.trim(),
+    url:document.getElementById('fb-url').value.trim(),
+    url_type:document.getElementById('fb-type').value,
+    ativo:true
+  };
+  if(!data.nome){toast('Digite o nome do formulário','error');return;}
+  if(id>0){await sb.from('planos_form_biblioteca').update(data).eq('id',id);}
+  else{await sb.from('planos_form_biblioteca').insert(data);}
+  _formLibrary=null;
+  toast('Formulário salvo!','success');
+  abrirGerenciarFormularios();
+}
+// ========== END BIBLIOTECA ==========
+
 // ---- JORNADA AUTO TRIGGERS ----
 async function jornadaOnAgendado(patientId){
   // Insert patient into jornada at boasvindas stage if not already there
@@ -4521,7 +4652,11 @@ function relJourneyPatCard(p,jornada,etapaId){
       const guiaTextoDefault='Ol\u00e1, '+p.name.split(' ')[0]+'! Seja muito bem-vindo(a) \u00e0 Cl\u00ednica Vitta! \uD83C\uDFE5\n\nPreparamos um Guia de Boas-Vindas especialmente para voc\u00ea, com tudo que precisa saber antes da sua consulta com a(o) '+medicoNome+':\n\n\uD83D\uDCCC '+guiaUrl+'\n\nQualquer d\u00favida, estou \u00e0 disposi\u00e7\u00e3o! Abra\u00e7o, Secretaria Cl\u00ednica Vitta';
       h+='<button onclick="previewGuia('+p.id+',\''+escHtml(p.name)+'\',\''+tel+'\',\''+encodeURIComponent(guiaTextoDefault)+'\')" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:var(--gold);color:var(--midnight);font-family:var(--font);border:none;cursor:pointer">Enviar Guia de Boas-Vindas</button>';
     }
-    h+='<a href="'+waUrl+'" target="_blank" onclick="relMarcarEtapa('+p.id+',\''+etapaId+'\')" class="btn btn-primary btn-sm" style="text-decoration:none;display:flex;align-items:center;gap:6px">Enviar WhatsApp</a>';
+    if(etapaId==='formulario'){
+      h+='<button onclick="renderFormLibrary('+p.id+',\''+escHtml(p.name)+'\',\''+tel+'\')" class="btn btn-primary btn-sm" style="display:flex;align-items:center;gap:6px">Escolher e Enviar</button>';
+    } else {
+      h+='<a href="'+waUrl+'" target="_blank" onclick="relMarcarEtapa('+p.id+',\''+etapaId+'\')" class="btn btn-primary btn-sm" style="text-decoration:none;display:flex;align-items:center;gap:6px">Enviar WhatsApp</a>';
+    }
   }
   if(!concluida){
     h+='<button class="btn btn-ghost btn-sm" onclick="relMarcarEtapa('+p.id+',\''+etapaId+'\')" style="font-size:11px">Marcar feito</button>';
@@ -4678,7 +4813,7 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
     .sort((a,b)=>allPreIds.indexOf(a.id)-allPreIds.indexOf(b.id));
   const stepInfo={
     boasvindas:{title:'Boas-vindas',sub:'Enviar guia de boas-vindas e link do formulario no ato do agendamento',moment:'No ato do agendamento'},
-    formulario:{title:'Cobran\u00e7a do Formul\u00e1rio',sub:'Cobranca gentil do preenchimento do formulario e envio de exames anteriores',moment:'3 a 4 dias antes'},
+    formulario:{title:'Envio de Formul\u00e1rio',sub:'Selecione e envie o formul\u00e1rio mais adequado ao paciente',moment:'3 a 4 dias antes'},
     alinhamento:{title:'Alinhamento 48h',sub:'Check-in ativo — o medico ja esta estudando o caso do paciente',moment:'48 horas antes'},
     confirmacao:{title:'Confirma\u00e7\u00e3o 24h',sub:'Confirmacao estrategica e alinhamento de dados para faturamento\/reembolso',moment:'24 horas antes'},
     consulta:{title:'Dia da Consulta',sub:'Paciente chega preparado, engajado e ciente do valor do servico',moment:'Dia da consulta'}
@@ -4687,6 +4822,9 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
   h+='<div style="font-size:14px;font-weight:700;color:var(--text)">'+stepInfo.title+'</div>';
   h+='<div style="font-size:12px;color:var(--text-muted);margin-top:3px">'+stepInfo.sub+'</div>';
   h+='<div style="font-size:11px;font-weight:600;color:var(--tidal);margin-top:4px;text-transform:uppercase;letter-spacing:.5px">'+stepInfo.moment+'</div>';
+  if(step==='formulario'){
+    h+='<button onclick="abrirGerenciarFormularios()" style="font-size:11px;font-weight:600;color:var(--ash);background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer;margin-top:8px">Gerenciar formul\u00e1rios</button>';
+  }
   h+='</div>';
   if(step==='consulta'){
     h+='<div class="card" style="padding:24px;text-align:center">';
