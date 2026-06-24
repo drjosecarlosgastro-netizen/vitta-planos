@@ -4616,6 +4616,16 @@ async function renderRelacionamento(tab){
   }
   c.innerHTML=html;
   if(_relJourneyStep==='formulario'||window._relJourneyStep==='formulario'){setTimeout(renderFormBibliotecaCards,50);}
+  // Inject bulk action bar if not exists
+  if(!document.getElementById('rel-bulk-bar')){
+    var bar=document.createElement('div');
+    bar.id='rel-bulk-bar';
+    bar.style.cssText='position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:var(--midnight);color:#fff;padding:12px 24px;border-radius:14px;display:none;align-items:center;gap:16px;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,.3);font-family:var(--font);font-size:13px;font-weight:600';
+    bar.innerHTML='<span id="rel-bulk-count">0 selecionados</span>'
+    +'<button onclick="relBulkMarcarFeito()" style="background:var(--tidal);color:#fff;border:none;border-radius:8px;padding:7px 18px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font)">Marcar feito</button>'
+    +'<button onclick="relBulkClear()" style="background:none;color:#aaa;border:1px solid #555;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-family:var(--font)">Cancelar</button>';
+    document.body.appendChild(bar);
+  }
 }
 
 function relPatRow(p,resList){
@@ -4656,8 +4666,9 @@ function relJourneyPatCard(p,jornada,etapaId){
   const roteiro=roteiros[etapaId]||'';
   const waMsg=encodeURIComponent(roteiro);
   const waUrl='https://wa.me/55'+tel+'?text='+waMsg;
-  let h='<div class="card" style="margin-bottom:8px;padding:12px 16px;border:1.5px solid '+(concluida?'var(--success)':'var(--border)')+';background:'+(concluida?'#f0faf9':'var(--white)') +'">';
+  let h='<div class="card rel-pat-card" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" style="margin-bottom:8px;padding:12px 16px;border:1.5px solid '+(concluida?'var(--success)':'var(--border)')+';background:'+(concluida?'#f0faf9':'var(--white)') +'">';
   h+='<div style="display:flex;align-items:center;gap:12px">';
+  if(!concluida){h+='<input type="checkbox" class="rel-bulk-cb" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" onchange="relBulkUpdate()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--tidal);flex-shrink:0">';}
   h+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px;background:'+(concluida?'var(--success)':'var(--deep-ocean)')+'">'+p.name.charAt(0)+'</div>';
   h+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
   h+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+(p.email?' \u00b7 '+p.email:'')+'</div>';
@@ -4811,9 +4822,42 @@ async function enviarGuia(patId,tel){
   closeModal('modal-generic');
 }
 
-async function relMarcarEtapa(patId,etapaId){
-  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:etapaId,concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+function relBulkUpdate(){
+  var cbs=document.querySelectorAll('.rel-bulk-cb:checked');
+  var bar=document.getElementById('rel-bulk-bar');
+  if(!bar)return;
+  if(cbs.length>0){
+    bar.style.display='flex';
+    document.getElementById('rel-bulk-count').textContent=cbs.length+' selecionado'+(cbs.length>1?'s':'');
+  } else {
+    bar.style.display='none';
+  }
+}
+
+function relBulkClear(){
+  document.querySelectorAll('.rel-bulk-cb').forEach(function(cb){cb.checked=false;});
+  var bar=document.getElementById('rel-bulk-bar');
+  if(bar)bar.style.display='none';
+}
+
+async function relBulkMarcarFeito(){
+  var cbs=document.querySelectorAll('.rel-bulk-cb:checked');
+  if(!cbs.length)return;
+  var bar=document.getElementById('rel-bulk-bar');
+  if(bar){var btn=bar.querySelector('button');if(btn){btn.textContent='Salvando...';btn.disabled=true;}}
+  var promises=[];
+  cbs.forEach(function(cb){
+    promises.push(relMarcarEtapa(parseInt(cb.dataset.patId),cb.dataset.etapa,true));
+  });
+  await Promise.all(promises);
+  relBulkClear();
   renderRelacionamento(_relRelTab);
+  toast(cbs.length+' paciente'+(cbs.length>1?'s':'')+' marcado'+(cbs.length>1?'s':'')+' como feito','success');
+}
+
+async function relMarcarEtapa(patId,etapaId,silent){
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:etapaId,concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  if(!silent)renderRelacionamento(_relRelTab);
 }
 
 async function relDesmarcarEtapa(patId,etapaId){
