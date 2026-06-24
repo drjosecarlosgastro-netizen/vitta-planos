@@ -5112,13 +5112,13 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
   if(!recentPats.length){
     h+='<div class="empty"><div class="empty-icon">\uD83D\uDCC5</div>Nenhum paciente atendido este mes. Use a busca acima.</div>';
   } else {
-    // Sort: pending first
-    const sorted=[...recentPats].sort((a,b)=>{
-      const ca=(jornada||[]).some(j=>j.patient_id===a.id&&j.etapa===step&&j.concluida);
-      const cb=(jornada||[]).some(j=>j.patient_id===b.id&&j.etapa===step&&j.concluida);
-      return ca-cb;
-    });
-    sorted.forEach(p=>{h+=relJourneyPatCard(p,jornada,step);});
+    // Only show pending (not yet concluded for this step)
+    const sorted=[...recentPats].filter(p=>!(jornada||[]).some(j=>j.patient_id===p.id&&j.etapa===step&&j.concluida));
+    if(!sorted.length){
+      h+='<div class="empty"><div class="empty-icon">\u2705</div>Todos os pacientes desta etapa j\u00e1 foram conclu\u00eddos.</div>';
+    } else {
+      sorted.forEach(p=>{h+=relJourneyPatCard(p,jornada,step);});
+    }
   }
   return h;
 }
