@@ -4993,6 +4993,14 @@ async function relMarcarEtapa(patId,etapaId,silent){
   if(!silent)renderRelacionamento(_relRelTab);
 }
 
+async function relEncerrarConsulta(patId,patName){
+  if(!confirm('Encerrar o ciclo de '+patName+'?\nEle sair\u00e1 da jornada do m\u00eas.'))return;
+  // Insere marcador de encerramento (etapa dedicada)
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:'_encerrado',concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  toast(patName+' \u2014 consulta encerrada. Removido da jornada.','success');
+  renderRelacionamento(_relRelTab);
+}
+
 async function relDesmarcarEtapa(patId,etapaId){
   await sb.from('planos_jornada').upsert({patient_id:patId,etapa:etapaId,concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
   renderRelacionamento(_relRelTab);
@@ -5038,10 +5046,11 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
     var _finMes=window._relFinMes||[];
     var _jornada=window._relJornada||[];
     // Pacientes que avanc\u00e7aram para consulta (tem registro na jornada etapa=consulta)
+    var _encerrados=new Set(_jornada.filter(function(j){return j.etapa==='_encerrado'&&j.concluida;}).map(function(j){return j.patient_id;}));
     var _prontos=recentPats.filter(function(p){
-      return _jornada.some(function(j){return j.patient_id===p.id&&j.etapa==='consulta';});
+      return !_encerrados.has(p.id)&&_jornada.some(function(j){return j.patient_id===p.id&&j.etapa==='consulta';});
     });
-    // Conta comparecidos
+    // Conta comparecidos (marcou compareceu mas ainda n\u00e3o encerrou)
     var _comparecidos=_prontos.filter(function(p){
       return _jornada.some(function(j){return j.patient_id===p.id&&j.etapa==='consulta'&&j.concluida;});
     });
@@ -5085,6 +5094,7 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
         if(!_compareceu){
           h+='<button class="btn btn-ghost btn-sm" onclick="relMarcarEtapa('+p.id+',\'consulta\')" style="font-size:11px">Marcar compareceu</button>';
         } else {
+          h+='<button onclick="relEncerrarConsulta('+p.id+',\''+escHtml(p.name)+'\')" style="font-size:11px;font-weight:700;background:var(--success);color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-family:var(--font)">&#10003; Encerrar consulta</button>';
           h+='<button class="btn btn-ghost btn-sm" onclick="relDesmarcarEtapa('+p.id+',\'consulta\')" style="font-size:11px;color:var(--text-muted)">Desfazer</button>';
         }
         h+='</div></div></div>';
