@@ -2780,14 +2780,16 @@ async function deleteAppt(id){await sb.from('planos_appointments').delete().eq('
 // ========== BIBLIOTECA DE FORMULÁRIOS ==========
 let _formLibrary=null;
 let _formLibrarySelectedId=null;
+let _formLibraryFromDB=false;
 
 async function getFormLibrary(){
   if(_formLibrary)return _formLibrary;
   const{data}=await sb.from('planos_form_biblioteca').select('*').order('ordem').catch(()=>({data:null}));
-  if(data&&data.length){_formLibrary=data;return data;}
-  // Default: pre-consultation form
+  if(data&&data.length){_formLibrary=data;_formLibraryFromDB=true;return data;}
+  // Default fallback when table is empty or missing
+  _formLibraryFromDB=false;
   _formLibrary=[
-    {id:1,nome:'Formulário de Pré-consulta',descricao:'Avaliação dos 5 eixos: Estômago, Intestino, Fígado, Hormônios e Cérebro',url:'https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_form.html?t=',url_type:'interno',ativo:true,ordem:1}
+    {id:-1,nome:'Formulário de Pré-consulta',descricao:'Avaliação dos 5 eixos: Estômago, Intestino, Fígado, Hormônios e Cérebro',url:'https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_form.html?t=',url_type:'interno',ativo:true,ordem:1,_default:true}
   ];
   return _formLibrary;
 }
@@ -2901,9 +2903,28 @@ async function salvarFormulario(){
   if(!data.nome){toast('Digite o nome do formulário','error');return;}
   if(id>0){await sb.from('planos_form_biblioteca').update(data).eq('id',id);}
   else{await sb.from('planos_form_biblioteca').insert(data);}
-  _formLibrary=null;
+  _formLibrary=null;_formLibraryFromDB=false;
   toast('Formulário salvo!','success');
   abrirGerenciarFormularios();
+}
+async function renderFormBibliotecaCards(){
+  var el=document.getElementById('form-biblioteca-cards');
+  if(!el)return;
+  var forms=await getFormLibrary();
+  var active=forms.filter(function(f){return f.ativo!==false;});
+  if(!active.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--text-muted);padding:10px 0">Nenhum formul\u00e1rio cadastrado. Clique em <strong>Gerenciar Formul\u00e1rios</strong> para adicionar.</div>';
+    return;
+  }
+  var html2='';
+  active.forEach(function(f){
+    html2+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:var(--bg-page);border:1px solid var(--border)">';
+    html2+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(f.nome)+'</div>';
+    html2+='<div style="font-size:11px;color:var(--ash)">'+escHtml(f.descricao||'')+'</div></div>';
+    html2+='<span style="font-size:10px;color:var(--tidal);font-weight:600;background:#e6f4f4;padding:2px 8px;border-radius:12px">'+(f.url_type==='interno'?'Interno':'Externo')+'</span>';
+    html2+='</div>';
+  });
+  el.innerHTML=html2;
 }
 // ========== END BIBLIOTECA ==========
 
@@ -4823,9 +4844,15 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
   h+='<div style="font-size:12px;color:var(--text-muted);margin-top:3px">'+stepInfo.sub+'</div>';
   h+='<div style="font-size:11px;font-weight:600;color:var(--tidal);margin-top:4px;text-transform:uppercase;letter-spacing:.5px">'+stepInfo.moment+'</div>';
   if(step==='formulario'){
-    h+='<button onclick="abrirGerenciarFormularios()" style="font-size:11px;font-weight:600;color:var(--ash);background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer;margin-top:8px">Gerenciar formul\u00e1rios</button>';
+    h+='<button onclick="abrirGerenciarFormularios()" style="font-size:12px;font-weight:600;color:var(--tidal);background:none;border:1.5px solid var(--tidal);border-radius:8px;padding:5px 14px;cursor:pointer;margin-top:10px">&#9881; Gerenciar Formul\u00e1rios</button>';
   }
   h+='</div>';
+  if(step==='formulario'){
+    h+='<div id="form-biblioteca-preview" style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Formul\u00e1rios dispon\u00edveis</div>';
+    h+='<div id="form-biblioteca-cards" style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;color:var(--text-muted)">Carregando...</div></div>';
+    h+='</div>';
+    setTimeout(renderFormBibliotecaCards,100);
+  }
   if(step==='consulta'){
     h+='<div class="card" style="padding:24px;text-align:center">';
     h+='<div style="font-size:36px;margin-bottom:12px">\u2705</div>';
