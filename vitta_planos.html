@@ -2854,6 +2854,7 @@ async function enviarFormSelecionado(patId,tel){
 }
 
 async function abrirGerenciarFormularios(){
+  try{
   const forms=await getFormLibrary();
   let html='<div class="modal-title">Biblioteca de Formulários</div>';
   html+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">';
@@ -2868,6 +2869,7 @@ async function abrirGerenciarFormularios(){
   html+='<button onclick="novoFormulario()" class="btn btn-primary btn-sm">+ Novo formulário</button>';
   document.getElementById('modal-generic-content').innerHTML=html;
   openModal('modal-generic');
+  }catch(e){toast('Erro: '+e.message,'error');console.error(e);}
 }
 
 function editarFormulario(f){
@@ -4612,6 +4614,7 @@ async function renderRelacionamento(tab){
     html+='<div id="rel-pat-list"></div>';
   }
   c.innerHTML=html;
+  if(_relJourneyStep==='formulario'||window._relJourneyStep==='formulario'){setTimeout(renderFormBibliotecaCards,50);}
 }
 
 function relPatRow(p,resList){
@@ -4759,6 +4762,7 @@ function relJourneyFilter(q){
     const ms=window._relMesStr||'';
     const nw=window._relNow||new Date();
     box.innerHTML=relJourneyContent(step,pts,rl,am,ms,nw);
+    if(step==='formulario')setTimeout(renderFormBibliotecaCards,50);
     return;
   }
   const all=window._relAllPatients||[];
@@ -4851,7 +4855,6 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
     h+='<div id="form-biblioteca-preview" style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Formul\u00e1rios dispon\u00edveis</div>';
     h+='<div id="form-biblioteca-cards" style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;color:var(--text-muted)">Carregando...</div></div>';
     h+='</div>';
-    setTimeout(renderFormBibliotecaCards,100);
   }
   if(step==='consulta'){
     h+='<div class="card" style="padding:24px;text-align:center">';
