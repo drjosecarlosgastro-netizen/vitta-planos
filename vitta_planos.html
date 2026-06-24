@@ -2784,8 +2784,9 @@ let _formLibraryFromDB=false;
 
 async function getFormLibrary(){
   if(_formLibrary)return _formLibrary;
-  const{data}=await sb.from('planos_form_biblioteca').select('*').order('ordem').catch(()=>({data:null}));
-  if(data&&data.length){_formLibrary=data;_formLibraryFromDB=true;return data;}
+  let _fbData=null;
+  try{const{data:_d}=await sb.from('planos_form_biblioteca').select('*').order('ordem');_fbData=_d;}catch(e){_fbData=null;}
+  if(_fbData&&_fbData.length){_formLibrary=_fbData;_formLibraryFromDB=true;return _fbData;}
   // Default fallback when table is empty or missing
   _formLibraryFromDB=false;
   _formLibrary=[
