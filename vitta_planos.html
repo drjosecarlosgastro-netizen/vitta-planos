@@ -4905,10 +4905,48 @@ async function relSalvarPagamento(patId){
   var forma=document.getElementById('relpag-forma').value;
   var data=document.getElementById('relpag-data').value;
   var obs=document.getElementById('relpag-obs').value.trim();
+  // 1. Salvar pagamento
   await sb.from('planos_financeiro').insert({patient_id:patId,forma:forma,valor:valor,data_pagamento:data,observacao:obs||'Pagamento antecipado da consulta',registrado_por:currentUser?currentUser.name:'Secretaria'});
+  // 2. Verificar etapas anteriores pendentes
+  var jornada=window._relJornada||[];
+  var etapasObrigatorias=['boasvindas','formulario','alinhamento','confirmacao'];
+  var etapasLabels={boasvindas:'Boas-vindas',formulario:'Formul\u00e1rio',alinhamento:'Alinhamento 48h',confirmacao:'Confirma\u00e7\u00e3o 24h'};
+  var pendentes=etapasObrigatorias.filter(function(e){
+    var reg=jornada.find(function(j){return j.patient_id===patId&&j.etapa===e;});
+    return !reg||!reg.concluida;
+  });
+  // 3. Avan\u00e7ar para etapa 'consulta' automaticamente
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:'consulta',concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  // 4. Marcar todas etapas anteriores como conclu\u00eddas (para sumir das listas)
+  var upserts=etapasObrigatorias.map(function(e){
+    return sb.from('planos_jornada').upsert({patient_id:patId,etapa:e,concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  });
+  await Promise.all(upserts);
   closeModal('modal-generic');
-  toast('Pagamento registrado com sucesso','success');
-  renderRelacionamento(_relRelTab);
+  // 5. Mostrar alerta se houver etapas n\u00e3o feitas
+  if(pendentes.length){
+    var labels=pendentes.map(function(e){return etapasLabels[e];}).join(', ');
+    var html='<div style="padding:4px">';
+    html+='<div style="font-size:16px;font-weight:700;margin-bottom:12px">\u26a0\ufe0f Etapas n\u00e3o conclu\u00eddas</div>';
+    html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">O pagamento foi registrado e o paciente avan\u00e7ou para a etapa <strong>Consulta</strong>, mas as seguintes etapas n\u00e3o foram feitas:</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">';
+    pendentes.forEach(function(e){
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff8ed;border:1.5px solid #f0a500;border-radius:10px">';
+      html+='<span style="font-size:16px">\u26a0\ufe0f</span>';
+      html+='<span style="font-size:13px;font-weight:600;color:var(--text)">'+etapasLabels[e]+'</span>';
+      html+='<span style="font-size:11px;color:var(--text-muted);margin-left:auto">N\u00e3o foi feita</span>';
+      html+='</div>';
+    });
+    html+='</div>';
+    html+='<div style="display:flex;justify-content:flex-end">';
+    html+='<button onclick="closeModal(\'modal-generic\');renderRelacionamento(_relRelTab)" class="btn btn-primary">Entendido</button>';
+    html+='</div></div>';
+    document.getElementById('modal-generic-content').innerHTML=html;
+    openModal('modal-generic');
+  } else {
+    toast('Pagamento registrado \u2014 paciente avan\u00e7ado para Consulta','success');
+    renderRelacionamento(_relRelTab);
+  }
 }
 
 function relVerPagamento(patId,patName){
@@ -4948,6 +4986,10 @@ async function relBulkMarcarFeito(){
 
 async function relMarcarEtapa(patId,etapaId,silent){
   await sb.from('planos_jornada').upsert({patient_id:patId,etapa:etapaId,concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  // Ao concluir Confirma\u00e7\u00e3o, avan\u00e7ar automaticamente para Consulta
+  if(etapaId==='confirmacao'){
+    await sb.from('planos_jornada').upsert({patient_id:patId,etapa:'consulta',concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  }
   if(!silent)renderRelacionamento(_relRelTab);
 }
 
@@ -4993,11 +5035,61 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
     h+='</div>';
   }
   if(step==='consulta'){
-    h+='<div class="card" style="padding:24px;text-align:center">';
-    h+='<div style="font-size:36px;margin-bottom:12px">\u2705</div>';
-    h+='<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Paciente pronto para a consulta</div>';
-    h+='<div style="font-size:13px;color:var(--text-muted);line-height:1.6">O paciente passou por todas as etapas de preparo.<br>Ele chega desarmado, engajado e ciente do valor do servico.</div>';
+    var _finMes=window._relFinMes||[];
+    var _jornada=window._relJornada||[];
+    // Pacientes que avanc\u00e7aram para consulta (tem registro na jornada etapa=consulta)
+    var _prontos=recentPats.filter(function(p){
+      return _jornada.some(function(j){return j.patient_id===p.id&&j.etapa==='consulta';});
+    });
+    // Conta comparecidos
+    var _comparecidos=_prontos.filter(function(p){
+      return _jornada.some(function(j){return j.patient_id===p.id&&j.etapa==='consulta'&&j.concluida;});
+    });
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">';
+    h+='<span style="font-size:12px;color:var(--text-muted)">'+_prontos.length+' prontos para consulta</span>';
+    if(_comparecidos.length)h+='<span style="background:var(--success);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">'+_comparecidos.length+' compareceram</span>';
+    var _aguardando=_prontos.length-_comparecidos.length;
+    if(_aguardando>0)h+='<span style="background:#3b82f6;color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">'+_aguardando+' aguardando</span>';
     h+='</div>';
+    if(!_prontos.length){
+      h+='<div class="card" style="padding:24px;text-align:center">';
+      h+='<div style="font-size:36px;margin-bottom:12px">\ud83d\udcc5</div>';
+      h+='<div style="font-size:14px;font-weight:600;color:var(--text-muted)">Nenhum paciente pronto ainda.</div>';
+      h+='<div style="font-size:12px;color:var(--text-muted);margin-top:6px">Pacientes avan\u00e7am aqui automaticamente ao registrar pagamento.</div>';
+      h+='</div>';
+    } else {
+      // Sort: nao compareceu primeiro
+      var _sortedProntos=[..._prontos].sort(function(a,b){
+        var ca=_jornada.some(function(j){return j.patient_id===a.id&&j.etapa==='consulta'&&j.concluida;});
+        var cb=_jornada.some(function(j){return j.patient_id===b.id&&j.etapa==='consulta'&&j.concluida;});
+        return ca-cb;
+      });
+      _sortedProntos.forEach(function(p){
+        var _pago=_finMes.find(function(f){return f.patient_id===p.id;});
+        var _jRec=_jornada.find(function(j){return j.patient_id===p.id&&j.etapa==='consulta';});
+        var _compareceu=_jRec&&_jRec.concluida;
+        var _bgColor=_compareceu?'#f0faf9':(_pago?'#f0f7ff':'var(--white)');
+        var _borderColor=_compareceu?'var(--success)':(_pago?'#3b82f6':'var(--border)');
+        h+='<div class="card" style="margin-bottom:8px;padding:12px 16px;border:1.5px solid '+_borderColor+';background:'+_bgColor+'">';
+        h+='<div style="display:flex;align-items:center;gap:12px">';
+        h+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px;background:'+(_compareceu?'var(--success)':(_pago?'#3b82f6':'var(--deep-ocean)'))+'">'+p.name.charAt(0)+'</div>';
+        h+='<div style="flex:1">';
+        h+='<div style="display:flex;align-items:center;gap:8px">';
+        h+='<span style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</span>';
+        if(_pago)h+='<span style="font-size:10px;font-weight:700;background:#dbeafe;color:#2563eb;border-radius:12px;padding:2px 8px">&#128179; Pago R$'+(parseFloat(_pago.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>';
+        h+='</div>';
+        h+='<div style="font-size:11px;color:var(--text-muted);margin-top:2px">'+(p.telefone||'Sem telefone')+'</div>';
+        h+='<div style="font-size:11px;margin-top:2px;color:'+(_compareceu?'var(--success)':'#3b82f6')+'">'+(_compareceu?'\u2705 Compareceu':'\ud83d\udd51 Aguardando consulta')+'</div>';
+        h+='</div>';
+        h+='<div style="display:flex;gap:6px;flex-shrink:0">';
+        if(!_compareceu){
+          h+='<button class="btn btn-ghost btn-sm" onclick="relMarcarEtapa('+p.id+',\'consulta\')" style="font-size:11px">Marcar compareceu</button>';
+        } else {
+          h+='<button class="btn btn-ghost btn-sm" onclick="relDesmarcarEtapa('+p.id+',\'consulta\')" style="font-size:11px;color:var(--text-muted)">Desfazer</button>';
+        }
+        h+='</div></div></div>';
+      });
+    }
     return h;
   }
   // Count completed for this step
