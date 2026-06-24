@@ -4671,6 +4671,7 @@ function relJourneyPatCard(p,jornada,etapaId){
   const waUrl='https://wa.me/55'+tel+'?text='+waMsg;
   let h='<div class="card rel-pat-card" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" style="margin-bottom:8px;padding:12px 16px;border:1.5px solid '+(concluida?'var(--success)':'var(--border)')+';background:'+(concluida?'#f0faf9':'var(--white)') +'">';
   h+='<div style="display:flex;align-items:center;gap:12px">';
+  console.log('card',p.name,'etapa',etapaId,'concluida',concluida,'etapaObj',etapa);
   if(!concluida){h+='<input type="checkbox" class="rel-bulk-cb" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" onchange="relBulkUpdate()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--tidal);flex-shrink:0">';}
   h+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px;background:'+(concluida?'var(--success)':'var(--deep-ocean)')+'">'+p.name.charAt(0)+'</div>';
   h+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
