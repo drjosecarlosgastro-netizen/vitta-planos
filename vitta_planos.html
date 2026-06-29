@@ -222,6 +222,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="ntab" id="ntab-avulsas" onclick="mainNav('avulsas')">Consultas Avulsas</button>
     <button class="ntab" id="ntab-pendencias" onclick="mainNav('pendencias')">Pend&#234;ncias</button>
     <button class="ntab" id="ntab-relacionamento" onclick="mainNav('relacionamento')">Relacionamento</button>
+    <button class="ntab" id="ntab-leads" onclick="mainNav('leads')">CRM Leads</button>
     <button class="ntab" id="ntab-financeiro-global" onclick="mainNav('financeiro-global')">Financeiro</button>
     <button class="ntab" id="ntab-relatorios" onclick="mainNav('relatorios')">Relat&#243;rios</button>
     <button class="ntab" id="ntab-config" onclick="mainNav('config')">&#9881; Configura&#231;&#245;es</button>
@@ -340,6 +341,7 @@ function mainNav(section){
   else if(section==='avulsas')renderAvulsas();
   else if(section==='pendencias')renderPendenciasTab();
   else if(section==='relacionamento')renderRelacionamento();
+  else if(section==='leads')renderLeads();
   else if(section==='financeiro-global')renderFinanceiroGlobal();
   else if(section==='config')renderConfig();
   else if(section==='relatorios')renderRelatorios();
@@ -2930,6 +2932,188 @@ async function renderFormBibliotecaCards(){
   el.innerHTML=html2;
 }
 // ========== END BIBLIOTECA ==========
+// ========== CRM LEADS ==========
+let _leadsData=null;
+
+async function renderLeads(){
+  setActiveNav('leads');
+  const c=document.getElementById('main-content');
+  c.innerHTML='<div style="padding:32px 24px;font-size:13px;color:var(--text-muted)">Carregando leads...</div>';
+  try{
+    const{data:leads}=await sb.from('planos_leads').select('*').order('created_at',{ascending:false});
+    _leadsData=leads||[];
+  }catch(e){_leadsData=[];}
+  buildLeadsUI();
+}
+
+function buildLeadsUI(){
+  const leads=_leadsData||[];
+  const colunas=[
+    {id:'novo',label:'Novo Lead',color:'#3b82f6',bg:'#eff6ff'},
+    {id:'contato',label:'Contato Feito',color:'#f59e0b',bg:'#fffbeb'},
+    {id:'negociacao',label:'Em Negocição',color:'#8b5cf6',bg:'#f5f3ff'},
+    {id:'agendado',label:'Agendado',color:'#10b981',bg:'#ecfdf5'},
+    {id:'perdido',label:'Perdido',color:'#ef4444',bg:'#fef2f2'}
+  ];
+  const hoje=new Date().toISOString().split('T')[0];
+  const atrasados=leads.filter(l=>l.proximo_contato&&l.proximo_contato<hoje&&l.status!=='agendado'&&l.status!=='perdido').length;
+  let h='<div style="padding:24px">';
+  h+='<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap">';
+  h+='<div><div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text)">CRM de Leads</div>';
+  h+='<div style="font-size:13px;color:var(--text-muted);margin-top:2px">Gerencie novos contatos e conversões</div></div>';
+  h+='<div style="flex:1"></div>';
+  if(atrasados>0)h+='<div style="background:#fef2f2;border:1.5px solid #ef4444;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;color:#ef4444">\u26a0\ufe0f '+atrasados+' follow-up'+(atrasados>1?'s':'')+' atrasado'+(atrasados>1?'s':'')+'</div>';
+  h+='<button onclick="abrirNovoLead()" class="btn btn-primary" style="display:flex;align-items:center;gap:6px">+ Novo Lead</button>';
+  h+='</div>';
+  const total=leads.filter(l=>l.status!=='perdido').length;
+  const novos=leads.filter(l=>l.status==='novo').length;
+  const agendados=leads.filter(l=>l.status==='agendado').length;
+  const taxa=total+leads.filter(l=>l.status==='perdido').length>0?Math.round(agendados/(total+leads.filter(l=>l.status==='perdido').length)*100):0;
+  h+='<div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">';
+  h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700">'+total+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Leads ativos</div></div>';
+  h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700;color:#3b82f6">'+novos+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Novos</div></div>';
+  h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700;color:#10b981">'+agendados+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Agendados</div></div>';
+  h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700">'+taxa+'%</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Taxa de conversão</div></div>';
+  h+='</div>';
+  h+='<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">';
+  colunas.forEach(function(col){
+    var colLeads=leads.filter(function(l){return (l.status||'novo')===col.id;});
+    h+='<div style="min-width:260px;width:260px;flex-shrink:0">';
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 14px;background:'+col.bg+';border-radius:10px;border-left:3px solid '+col.color+'">';
+    h+='<span style="font-size:12px;font-weight:700;color:'+col.color+'">'+col.label+'</span>';
+    h+='<span style="margin-left:auto;background:'+col.color+';color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700">'+colLeads.length+'</span>';
+    h+='</div>';
+    if(!colLeads.length){
+      h+='<div style="padding:20px;text-align:center;border:2px dashed var(--border);border-radius:10px;color:var(--text-muted);font-size:12px">Nenhum lead</div>';
+    } else {
+      colLeads.forEach(function(lead){
+        var atrasado=lead.proximo_contato&&lead.proximo_contato<hoje&&col.id!=='agendado'&&col.id!=='perdido';
+        var waNum=(lead.telefone||'').replace(/\D/g,'');
+        h+='<div onclick="abrirLead('+lead.id+')" style="background:var(--white);border:1.5px solid '+(atrasado?'#ef4444':'var(--border)')+';border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.boxShadow=\'0 2px 12px rgba(0,0,0,.08)\'" onmouseout="this.style.boxShadow=\'none\'">';
+        h+='<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">';
+        h+='<div style="width:32px;height:32px;border-radius:50%;background:'+col.color+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">'+(lead.nome||'?').charAt(0).toUpperCase()+'</div>';
+        h+='<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(lead.nome||'Sem nome')+'</div>';
+        h+='<div style="font-size:11px;color:var(--text-muted);margin-top:1px">'+escHtml(lead.origem||'')+(lead.medico_interesse?' \u00b7 '+escHtml(lead.medico_interesse):'')+'</div></div>';
+        if(atrasado)h+='<span style="font-size:16px" title="Follow-up atrasado">&#128276;</span>';
+        h+='</div>';
+        if(lead.telefone)h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">'+escHtml(lead.telefone)+'</div>';
+        if(lead.proximo_contato)h+='<div style="font-size:11px;color:'+(atrasado?'#ef4444':'var(--text-muted)')+';margin-bottom:6px">'+(atrasado?'Atrasado: ':'')+lead.proximo_contato+'</div>';
+        if(lead.observacao)h+='<div style="font-size:11px;color:var(--text-muted);background:var(--bg-page);border-radius:6px;padding:5px 8px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(lead.observacao)+'</div>';
+        h+='<div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">';
+        if(waNum)h+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="flex:1;text-align:center;padding:5px 0;background:#25d366;color:#fff;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none">WhatsApp</a>';
+        if(col.id!=='agendado'&&col.id!=='perdido')h+='<button onclick="avancarLead('+lead.id+')" style="flex:1;padding:5px 0;background:'+col.color+';color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">Avançar \u2192</button>';
+        h+='</div></div>';
+      });
+    }
+    h+='</div>';
+  });
+  h+='</div></div>';
+  document.getElementById('main-content').innerHTML=h;
+}
+
+function abrirNovoLead(){
+  var html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:18px">Novo Lead</div>';
+  html+='<div style="display:grid;gap:12px">';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Nome *</label><input id="lead-nome" type="text" placeholder="Nome completo" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Telefone</label><input id="lead-tel" type="text" placeholder="(00) 00000-0000" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Email</label><input id="lead-email" type="text" placeholder="email@exemplo.com" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='</div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Origem</label><select id="lead-origem" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"><option>Email/Google</option><option>WhatsApp</option><option>Instagram</option><option>Indicação</option><option>Outro</option></select></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Médico de interesse</label><select id="lead-medico" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"><option>Dr. José Carlos</option><option>Dra. Bruna</option><option>Indiferente</option></select></div>';
+  html+='</div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Próximo contato</label><input id="lead-pc" type="date" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><textarea id="lead-obs" rows="2" placeholder="Anotações sobre o lead..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical"></textarea></div>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">';
+  html+='<button onclick="closeModal(\'modal-generic\')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer">Cancelar</button>';
+  html+='<button onclick="salvarNovoLead()" class="btn btn-primary">Salvar lead</button>';
+  html+='</div></div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+
+async function salvarNovoLead(){
+  var nome=document.getElementById('lead-nome').value.trim();
+  if(!nome){toast('Informe o nome','error');return;}
+  var data={nome:nome,telefone:document.getElementById('lead-tel').value.trim(),email:document.getElementById('lead-email').value.trim(),origem:document.getElementById('lead-origem').value,medico_interesse:document.getElementById('lead-medico').value,proximo_contato:document.getElementById('lead-pc').value||null,observacao:document.getElementById('lead-obs').value.trim()||null,status:'novo',created_at:new Date().toISOString()};
+  try{
+    await sb.from('planos_leads').insert(data);
+    closeModal('modal-generic');
+    toast('Lead cadastrado!','success');
+    await renderLeads();
+  }catch(e){toast('Erro ao salvar: '+e.message,'error');}
+}
+
+async function abrirLead(id){
+  var lead=(_leadsData||[]).find(function(l){return l.id===id;});
+  if(!lead)return;
+  var statusOpts=[{id:'novo',label:'Novo Lead'},{id:'contato',label:'Contato Feito'},{id:'negociacao',label:'Em Negociação'},{id:'agendado',label:'Agendado'},{id:'perdido',label:'Perdido'}];
+  var waNum=(lead.telefone||'').replace(/\D/g,'');
+  var html='<div style="padding:4px">';
+  html+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">';
+  html+='<div style="width:44px;height:44px;border-radius:50%;background:var(--deep-ocean);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px">'+(lead.nome||'?').charAt(0).toUpperCase()+'</div>';
+  html+='<div><div style="font-size:17px;font-weight:700">'+escHtml(lead.nome||'')+'</div>';
+  html+='<div style="font-size:12px;color:var(--text-muted)">'+escHtml(lead.origem||'')+' · '+escHtml(lead.medico_interesse||'')+'</div></div></div>';
+  html+='<div style="display:grid;gap:12px">';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Status</label><select id="edlead-status" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)">';
+  statusOpts.forEach(function(s){html+='<option value="'+s.id+'"'+(lead.status===s.id?' selected':'')+'>'+s.label+'</option>';});
+  html+='</select></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Telefone</label><input id="edlead-tel" type="text" value="'+escHtml(lead.telefone||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Email</label><input id="edlead-email" type="text" value="'+escHtml(lead.email||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='</div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Próximo contato</label><input id="edlead-pc" type="date" value="'+(lead.proximo_contato||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><textarea id="edlead-obs" rows="3" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical">'+escHtml(lead.observacao||'')+'</textarea></div>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:8px;justify-content:space-between;margin-top:18px;flex-wrap:wrap">';
+  html+='<button onclick="deletarLead('+id+')" style="padding:9px 14px;border:1.5px solid #ef4444;border-radius:8px;background:none;font-size:12px;font-family:var(--font);cursor:pointer;color:#ef4444">Excluir</button>';
+  html+='<div style="display:flex;gap:8px">';
+  if(waNum)html+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="padding:9px 14px;background:#25d366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center">WhatsApp</a>';
+  html+='<button onclick="closeModal(\'modal-generic\')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer">Cancelar</button>';
+  html+='<button onclick="salvarLead('+id+')" class="btn btn-primary">Salvar</button>';
+  html+='</div></div></div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+
+async function salvarLead(id){
+  var data={status:document.getElementById('edlead-status').value,telefone:document.getElementById('edlead-tel').value.trim(),email:document.getElementById('edlead-email').value.trim(),proximo_contato:document.getElementById('edlead-pc').value||null,observacao:document.getElementById('edlead-obs').value.trim()||null,updated_at:new Date().toISOString()};
+  try{
+    await sb.from('planos_leads').update(data).eq('id',id);
+    closeModal('modal-generic');
+    toast('Lead atualizado!','success');
+    await renderLeads();
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+async function avancarLead(id){
+  var lead=(_leadsData||[]).find(function(l){return l.id===id;});
+  if(!lead)return;
+  var ordem=['novo','contato','negociacao','agendado'];
+  var idx=ordem.indexOf(lead.status||'novo');
+  if(idx<0||idx>=ordem.length-1)return;
+  var proximo=ordem[idx+1];
+  try{
+    await sb.from('planos_leads').update({status:proximo,updated_at:new Date().toISOString()}).eq('id',id);
+    toast('Lead avançado!','success');
+    await renderLeads();
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+async function deletarLead(id){
+  if(!confirm('Excluir este lead permanentemente?'))return;
+  try{
+    await sb.from('planos_leads').delete().eq('id',id);
+    closeModal('modal-generic');
+    toast('Lead excluído','success');
+    await renderLeads();
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+// ========== END CRM LEADS ==========
+
 
 // ---- JORNADA AUTO TRIGGERS ----
 async function jornadaOnAgendado(patientId){
