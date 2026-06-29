@@ -2936,7 +2936,8 @@ async function renderFormBibliotecaCards(){
 let _leadsData=null;
 
 async function renderLeads(){
-  setActiveNav('leads');
+  document.querySelectorAll('[id^="ntab-"]').forEach(t=>t.classList.remove('active'));
+  const _nt=document.getElementById('ntab-leads');if(_nt)_nt.classList.add('active');
   const c=document.getElementById('main-content');
   c.innerHTML='<div style="padding:32px 24px;font-size:13px;color:var(--text-muted)">Carregando leads...</div>';
   try{
