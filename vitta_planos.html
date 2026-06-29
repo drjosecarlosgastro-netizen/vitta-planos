@@ -331,6 +331,7 @@ function mainNav(section){
   currentSection=section;
   document.querySelectorAll('[id^="ntab-"]').forEach(t=>t.classList.remove('active'));
   const t=document.getElementById('ntab-'+section);if(t)t.classList.add('active');
+  if(section!=='leads'&&_leadsInterval){clearInterval(_leadsInterval);_leadsInterval=null;}
   const c=document.getElementById('main-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
   if(section==='dashboard')renderDashboard();
@@ -2934,6 +2935,7 @@ async function renderFormBibliotecaCards(){
 // ========== END BIBLIOTECA ==========
 // ========== CRM LEADS ==========
 let _leadsData=null;
+let _leadsInterval=null;
 
 async function renderLeads(){
   document.querySelectorAll('[id^="ntab-"]').forEach(t=>t.classList.remove('active'));
@@ -2945,6 +2947,23 @@ async function renderLeads(){
     _leadsData=leads||[];
   }catch(e){_leadsData=[];}
   buildLeadsUI();
+  // Auto-refresh a cada 2 minutos
+  if(_leadsInterval)clearInterval(_leadsInterval);
+  _leadsInterval=setInterval(async function(){
+    if(document.getElementById('ntab-leads')&&document.getElementById('ntab-leads').classList.contains('active')){
+      try{
+        const{data:leads}=await sb.from('planos_leads').select('*').order('created_at',{ascending:false});
+        var novos=(leads||[]).filter(function(l){return !(_leadsData||[]).find(function(e){return e.id===l.id;});});
+        _leadsData=leads||[];
+        if(novos.length){
+          buildLeadsUI();
+          toast(novos.length+' novo'+(novos.length>1?'s leads chegaram':' lead chegou')+'!','success');
+        }
+      }catch(e){}
+    } else {
+      clearInterval(_leadsInterval);
+    }
+  },120000);
 }
 
 function buildLeadsUI(){
@@ -3074,6 +3093,7 @@ async function abrirLead(id){
   html+='<button onclick="deletarLead('+id+')" style="padding:9px 14px;border:1.5px solid #ef4444;border-radius:8px;background:none;font-size:12px;font-family:var(--font);cursor:pointer;color:#ef4444">Excluir</button>';
   html+='<div style="display:flex;gap:8px">';
   if(waNum)html+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="padding:9px 14px;background:#25d366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center">WhatsApp</a>';
+  if(lead.status!=='agendado'&&lead.status!=='perdido')html+='<button onclick="closeModal(\'modal-generic\');abrirModalAgendarLead('+id+')" style="padding:9px 14px;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Agendar</button>';
   html+='<button onclick="closeModal(\'modal-generic\')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer">Cancelar</button>';
   html+='<button onclick="salvarLead('+id+')" class="btn btn-primary">Salvar</button>';
   html+='</div></div></div>';
@@ -3098,11 +3118,68 @@ async function avancarLead(id){
   var idx=ordem.indexOf(lead.status||'novo');
   if(idx<0||idx>=ordem.length-1)return;
   var proximo=ordem[idx+1];
+  if(proximo==='agendado'){abrirModalAgendarLead(id);return;}
   try{
     await sb.from('planos_leads').update({status:proximo,updated_at:new Date().toISOString()}).eq('id',id);
     toast('Lead avançado!','success');
     await renderLeads();
   }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+function abrirModalAgendarLead(leadId){
+  var lead=(_leadsData||[]).find(function(l){return l.id===leadId;});
+  if(!lead)return;
+  var hoje=new Date().toISOString().split('T')[0];
+  var html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:6px">Agendar consulta</div>';
+  html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:18px">'+escHtml(lead.nome)+'</div>';
+  html+='<div style="display:grid;gap:12px">';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Data *</label><input id="aglead-data" type="date" value="'+hoje+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Hora</label><input id="aglead-hora" type="time" value="08:00" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='</div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Médico</label><select id="aglead-medico" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)">';
+  html+='<option value="Dr. José Carlos"'+(lead.medico_interesse==='Dr. José Carlos'?' selected':'')+'>Dr. José Carlos</option>';
+  html+='<option value="Dra. Bruna"'+(lead.medico_interesse==='Dra. Bruna'?' selected':'')+'>Dra. Bruna</option>';
+  html+='</select></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><input id="aglead-obs" type="text" placeholder="Opcional" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">';
+  html+='<button onclick="closeModal(\'modal-generic\')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer">Cancelar</button>';
+  html+='<button onclick="confirmarAgendarLead('+leadId+')" class="btn btn-primary">Confirmar agendamento</button>';
+  html+='</div></div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+
+async function confirmarAgendarLead(leadId){
+  var lead=(_leadsData||[]).find(function(l){return l.id===leadId;});
+  if(!lead)return;
+  var dataVal=document.getElementById('aglead-data').value;
+  if(!dataVal){toast('Informe a data','error');return;}
+  var hora=document.getElementById('aglead-hora').value||'08:00';
+  var medico=document.getElementById('aglead-medico').value;
+  var obs=document.getElementById('aglead-obs').value.trim();
+  var partes=dataVal.split('-');
+  var dateStr=partes[2]+'/'+partes[1]+'/'+partes[0];
+  var btn=document.querySelector('#modal-generic-content .btn-primary');
+  if(btn){btn.textContent='Salvando...';btn.disabled=true;}
+  try{
+    var patId=null;
+    var{data:existing}=await sb.from('planos_patients').select('id').eq('name',lead.nome).maybeSingle();
+    if(existing&&existing.id){
+      patId=existing.id;
+    } else {
+      var{data:newPat}=await sb.from('planos_patients').insert({name:lead.nome,telefone:lead.telefone||'',email:lead.email||'',active:true}).select('id').single();
+      patId=newPat.id;
+    }
+    await sb.from('planos_appointments').insert({patient_id:patId,date_str:dateStr,time_str:hora,profissional_nome:medico,status:'Agendado',observacao:obs||null});
+    await jornadaOnAgendado(patId);
+    await sb.from('planos_leads').update({status:'agendado',updated_at:new Date().toISOString()}).eq('id',leadId);
+    closeModal('modal-generic');
+    toast(lead.nome+' agendado! Já aparece na Agenda e no Relacionamento.','success');
+    await renderLeads();
+  }catch(e){toast('Erro: '+e.message,'error');if(btn){btn.textContent='Confirmar agendamento';btn.disabled=false;}}
 }
 
 async function deletarLead(id){
