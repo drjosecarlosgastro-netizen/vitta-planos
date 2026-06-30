@@ -4836,14 +4836,16 @@ async function renderRelacionamento(tab){
   const now=new Date();const mesStr=(now.getMonth()+1).toString().padStart(2,'0');
   const mesAno=now.getFullYear().toString()+mesStr;
   const mesInicio=now.getFullYear()+'-'+mesStr+'-01';
-  const[perguntas,{data:patients},{data:respostas},{data:apptsMes},{data:jornada},{data:finMes},{data:comparecimentos}]=await Promise.all([
+  const[perguntas,{data:patients},{data:respostas},{data:apptsMes},{data:jornada},{data:finMes},{data:comparecimentos},{data:soroHist},{data:implHist}]=await Promise.all([
     getPerguntas(),
     sb.from('planos_patients').select('id,name,email,telefone,cpf,active').order('name'),
     sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false}),
     sb.from('planos_appointments').select('patient_id,date_str,profissional_nome').order('date_str',{ascending:false}),
     sb.from('planos_jornada').select('*'),
     sb.from('planos_financeiro').select('patient_id,valor,forma,data_pagamento,observacao,created_at').gte('data_pagamento',mesInicio),
-    sb.from('planos_appointments').select('patient_id,date_str').eq('status','Compareceu')
+    sb.from('planos_appointments').select('patient_id,date_str').eq('status','Compareceu'),
+    sb.from('planos_soro_sessoes').select('patient_id,data_sessao'),
+    sb.from('planos_implantes').select('patient_id,data_implante')
   ]);
   allPatients=patients||[];
   const resList=respostas||[];
@@ -4871,6 +4873,8 @@ async function renderRelacionamento(tab){
   window._relApptsMes=apptsMes||[];
   window._relFinMes=finMes||[];
   window._relComparecimentos=comparecimentos||[];
+  window._relSoroHist=soroHist||[];
+  window._relImplHist=implHist||[];
   window._relMesStr=mesStr;
   window._relNow=now;
   if(_relRelTab==='pre'){
@@ -4978,16 +4982,7 @@ function relJourneyPatCard(p,jornada,etapaId){
   const roteiro=roteiros[etapaId]||'';
   const waMsg=encodeURIComponent(roteiro);
   const waUrl='https://wa.me/55'+tel+'?text='+waMsg;
-  // Primeira vez: nenhum Compareceu em agendamentos ANTERIORES ao atual (mes corrente)
-  var _compList=window._relComparecimentos||[];
-  var _apptsMes=window._relApptsMes||[];
-  var _apptAtualDates=_apptsMes.filter(function(a){return a.patient_id===p.id;}).map(function(a){return a.date_str;});
-  var _compAnteriores=_compList.filter(function(c){
-    if(c.patient_id!==p.id)return false;
-    // exclude if date matches current month appointment
-    return !_apptAtualDates.includes(c.date_str);
-  });
-  var isPrimeiraVez=_compAnteriores.length===0;
+  var isPrimeiraVez=relIsPrimeiraVez(p.id);
   let h='<div class="card rel-pat-card" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" style="margin-bottom:8px;padding:12px 16px;border:1.5px solid '+(concluida?'var(--success)':'var(--border)')+';background:'+(concluida?'#f0faf9':'var(--white)') +'">';
   h+='<div style="display:flex;align-items:center;gap:12px">';
   if(!concluida){h+='<input type="checkbox" class="rel-bulk-cb" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" onchange="relBulkUpdate()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--tidal);flex-shrink:0">';}
@@ -5312,6 +5307,21 @@ async function relDesmarcarEtapa(patId,etapaId){
   renderRelacionamento(_relRelTab);
 }
 
+function relIsPrimeiraVez(patId){
+  var _compList=window._relComparecimentos||[];
+  var _soroList=window._relSoroHist||[];
+  var _implList=window._relImplHist||[];
+  var _apptsMes=window._relApptsMes||[];
+  var _apptAtualDates=_apptsMes.filter(function(a){return a.patient_id===patId;}).map(function(a){return a.date_str;});
+  var _compAnteriores=_compList.filter(function(c){
+    if(c.patient_id!==patId)return false;
+    return !_apptAtualDates.includes(c.date_str);
+  });
+  var _soroAnteriores=_soroList.filter(function(s){return s.patient_id===patId;});
+  var _implAnteriores=_implList.filter(function(i){return i.patient_id===patId;});
+  return _compAnteriores.length===0&&_soroAnteriores.length===0&&_implAnteriores.length===0;
+}
+
 function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
   const all=patients||[];
   const jornada=window._relJornada||[];
@@ -5419,7 +5429,9 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
     h+='<div class="empty"><div class="empty-icon">\uD83D\uDCC5</div>Nenhum paciente atendido este mes. Use a busca acima.</div>';
   } else {
     // Only show pending (not yet concluded for this step)
-    const sorted=[...recentPats].filter(p=>!(jornada||[]).some(j=>j.patient_id===p.id&&j.etapa===step&&j.concluida));
+    let sorted=[...recentPats].filter(p=>!(jornada||[]).some(j=>j.patient_id===p.id&&j.etapa===step&&j.concluida));
+    // Boas-vindas: somente pacientes de primeira vez
+    if(step==='boasvindas')sorted=sorted.filter(p=>relIsPrimeiraVez(p.id));
     if(!sorted.length){
       h+='<div class="empty"><div class="empty-icon">\u2705</div>Todos os pacientes desta etapa j\u00e1 foram conclu\u00eddos.</div>';
     } else {
