@@ -2808,7 +2808,7 @@ async function renderFormLibrary(patId,patName,tel){
   forms.filter(f=>f.ativo!==false).forEach(f=>{
     const isSelected=(_formLibrarySelectedId===f.id)||(!_formLibrarySelectedId&&f.ordem===1);
     const formUrl=f.url_type==='interno'?f.url+patId:f.url;
-    html+='<label style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;border:1.5px solid '+(isSelected?'var(--deep)':'var(--border)')+';background:'+(isSelected?'#f0f7f8':'var(--white)')+';cursor:pointer" onclick="selectFormLibrary('+f.id+')">';
+    html+='<label style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;border:1.5px solid '+(isSelected?'var(--deep)':'var(--border)')+';background:'+(isSelected?'#f0f7f8':'var(--white)')+';cursor:pointer" onclick="selectFormLibrary('+f.id+',\''+patId+'\',\''+escHtml(patName).replace(/'/g,"\\'")+'\')">';
     html+='<input type="radio" name="form-lib" value="'+f.id+'" '+(isSelected?'checked':'')+' style="margin-top:2px;accent-color:var(--deep)">';
     html+='<div style="flex:1">';
     html+='<div style="font-weight:600;font-size:13px;color:var(--midnight)">'+escHtml(f.nome)+'</div>';
@@ -2831,7 +2831,7 @@ async function renderFormLibrary(patId,patName,tel){
   openModal('modal-generic');
 }
 
-function selectFormLibrary(id){
+function selectFormLibrary(id,patId,patName){
   _formLibrarySelectedId=id;
   const forms=_formLibrary||[];
   const selected=forms.find(f=>f.id===id);
@@ -2847,6 +2847,14 @@ function selectFormLibrary(id){
       lbl.style.background='var(--white)';
     }
   });
+  // Atualiza a mensagem com o link do formulario selecionado
+  if(selected){
+    var formUrl=selected.url_type==='interno'?selected.url+patId:selected.url;
+    var nomeP=(patName||'').split(' ')[0];
+    var msg='Ol\u00e1, '+nomeP+'! Tudo bem?\n\nEstamos organizando o seu prontu\u00e1rio para que o m\u00e9dico j\u00e1 chegue preparado para a sua consulta.\n\nPor favor, preencha o formul\u00e1rio abaixo antes da consulta:\n\n'+formUrl+'\n\nQualquer d\u00favida, estou aqui!';
+    var ta=document.getElementById('form-lib-msg');
+    if(ta)ta.value=msg;
+  }
 }
 
 async function enviarFormSelecionado(patId,tel){
@@ -4982,7 +4990,6 @@ function relJourneyPatCard(p,jornada,etapaId){
   var isPrimeiraVez=_compAnteriores.length===0;
   let h='<div class="card rel-pat-card" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" style="margin-bottom:8px;padding:12px 16px;border:1.5px solid '+(concluida?'var(--success)':'var(--border)')+';background:'+(concluida?'#f0faf9':'var(--white)') +'">';
   h+='<div style="display:flex;align-items:center;gap:12px">';
-  console.log('card',p.name,'etapa',etapaId,'concluida',concluida,'etapaObj',etapa);
   if(!concluida){h+='<input type="checkbox" class="rel-bulk-cb" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" onchange="relBulkUpdate()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--tidal);flex-shrink:0">';}
   h+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px;background:'+(concluida?'var(--success)':'var(--deep-ocean)')+'">'+p.name.charAt(0)+'</div>';
   h+='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</span>';
