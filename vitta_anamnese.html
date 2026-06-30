@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Clinica Vitta | Anamnese</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --deep:#154C56;--tidal:#19807f;--ivory:#FFFAE5;--gold:#C9B382;--sky:#9CB7C7;
+  --midnight:#1F2033;--ash:#5A7381;--bg:#f4f7f8;--white:#fff;
+  --border:#e4eaed;--danger:#ef4444;--success:#19807f;--warning:#C9B382;
+  --font:'DM Sans',sans-serif;--font-display:'Cormorant Garamond',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--midnight);min-height:100vh}
+.topbar{background:#13141f;border-bottom:2px solid var(--tidal);padding:16px 20px;display:flex;align-items:center;gap:10px}
+.logo{font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--ivory)}
+.logo-mark{width:28px;height:28px;border-radius:6px;background:var(--tidal);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ivory)}
+.container{max-width:680px;margin:0 auto;padding:24px 16px 48px}
+.hero{background:var(--deep);border-radius:14px;padding:24px 24px 20px;margin-bottom:24px;color:var(--ivory)}
+.hero-title{font-family:var(--font-display);font-size:24px;font-weight:600;margin-bottom:6px}
+.hero-sub{font-size:13px;color:var(--sky);line-height:1.6}
+.progress-bar{height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin-top:16px;overflow:hidden}
+.progress-fill{height:4px;background:var(--tidal);border-radius:2px;transition:width .4s}
+.progress-label{font-size:11px;color:var(--sky);margin-top:6px}
+.section-card{background:var(--white);border-radius:12px;border:1px solid var(--border);padding:20px;margin-bottom:16px}
+.section-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ash);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-badge{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-size:10px;color:var(--ash)}
+.q-item{margin-bottom:18px}
+.q-item:last-child{margin-bottom:0}
+.q-text{font-size:14px;font-weight:500;color:var(--midnight);margin-bottom:8px;line-height:1.5}
+.q-num{font-size:11px;color:var(--ash);margin-right:6px}
+.q-textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);color:var(--midnight);resize:vertical;min-height:48px;transition:border-color .15s}
+.q-textarea:focus{outline:none;border-color:var(--tidal)}
+.btn-submit{width:100%;padding:14px;background:var(--deep);color:var(--ivory);border:none;border-radius:10px;font-size:15px;font-weight:600;font-family:var(--font);cursor:pointer;transition:background .15s;margin-top:8px}
+.btn-submit:hover{background:var(--tidal)}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed}
+.msg-box{text-align:center;padding:48px 24px}
+.msg-icon{font-size:48px;margin-bottom:16px}
+.msg-title{font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--midnight);margin-bottom:8px}
+.msg-sub{font-size:14px;color:var(--ash);line-height:1.6}
+.unanswered{border-color:var(--danger)!important;background:#fff5f5!important}
+.loading-box{text-align:center;padding:48px 24px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--tidal);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo-mark">V</div>
+  <div class="logo">Clinica Vitta</div>
+</div>
+
+<div class="container" id="app">
+  <div class="loading-box"><div class="spinner"></div><div style="font-size:13px;color:var(--ash)">Carregando anamnese...</div></div>
+</div>
+
+<script>
+const SUPABASE_URL='https://tzsamyaobtzswpklxpzx.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6c2FteWFvYnR6c3dwa2x4cHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkxNjEsImV4cCI6MjA5NDg1NTE2MX0.okDoh3yP2HHPQKIUFf64X0UzBp0aWK_5WirprPsL8vM';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const params=new URLSearchParams(window.location.search);
+const patientId=parseInt(params.get('t'));
+const genero=(params.get('g')||'A').toUpperCase(); // M, H ou A
+let patient=null;
+let perguntas=[];
+const respostas={};
+
+function escHtml(s){
+  if(s===null||s===undefined)return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function init(){
+  const app=document.getElementById('app');
+  if(!patientId){
+    app.innerHTML='<div class="msg-box"><div class="msg-icon">&#128274;</div><div class="msg-title">Link invalido</div><div class="msg-sub">Este link nao e valido. Solicite um novo link a clinica.</div></div>';
+    return;
+  }
+  try{
+    const{data:pat}=await sb.from('planos_patients').select('*').eq('id',patientId).single();
+    patient=pat;
+    if(!patient){
+      app.innerHTML='<div class="msg-box"><div class="msg-icon">&#10060;</div><div class="msg-title">Paciente nao encontrado</div></div>';
+      return;
+    }
+    // Verifica se ja respondeu
+    const{data:jaRespondeu}=await sb.from('planos_anamnese_respostas').select('id').eq('patient_id',patientId).limit(1);
+    if(jaRespondeu&&jaRespondeu.length){
+      app.innerHTML='<div class="msg-box"><div class="msg-icon">&#9989;</div><div class="msg-title">Anamnese ja enviada</div><div class="msg-sub">Voce ja preencheu esta anamnese anteriormente. Caso precise alterar alguma informacao, entre em contato com a clinica.</div></div>';
+      return;
+    }
+    const{data:perg}=await sb.from('planos_anamnese_perguntas').select('*').order('secao').order('ordem');
+    perguntas=(perg||[]).filter(function(p){return p.genero==='A'||p.genero===genero;});
+    if(!perguntas.length){
+      app.innerHTML='<div class="msg-box"><div class="msg-icon">&#9888;&#65039;</div><div class="msg-title">Anamnese nao configurada</div><div class="msg-sub">Entre em contato com a clinica.</div></div>';
+      return;
+    }
+    render();
+  }catch(e){
+    app.innerHTML='<div class="msg-box"><div class="msg-icon">&#10060;</div><div class="msg-title">Erro ao carregar</div><div class="msg-sub">'+escHtml(e.message)+'</div></div>';
+  }
+}
+
+function render(){
+  const app=document.getElementById('app');
+  const secoes={};
+  perguntas.forEach(function(p){
+    if(!secoes[p.secao])secoes[p.secao]=[];
+    secoes[p.secao].push(p);
+  });
+  let h='<div class="hero">';
+  h+='<div class="hero-title">Anamnese</div>';
+  h+='<div class="hero-sub">Ola, '+escHtml(patient.name||'')+'! Por favor preencha com calma e o maximo de detalhes possivel. Essas informacoes ajudam a equipe medica a entender seu historico de saude.</div>';
+  h+='<div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>';
+  h+='<div class="progress-label" id="progress-label">0 de '+perguntas.length+' respondidas</div>';
+  h+='</div>';
+
+  Object.keys(secoes).forEach(function(secao){
+    h+='<div class="section-card">';
+    h+='<div class="section-label">'+escHtml(secao)+'<span class="section-badge">'+secoes[secao].length+' perguntas</span></div>';
+    secoes[secao].forEach(function(p,i){
+      h+='<div class="q-item">';
+      h+='<div class="q-text">'+escHtml(p.texto)+'</div>';
+      h+='<textarea class="q-textarea" id="q-'+p.id+'" rows="2" placeholder="Digite sua resposta..." oninput="onAnswer('+p.id+')"></textarea>';
+      h+='</div>';
+    });
+    h+='</div>';
+  });
+
+  h+='<button class="btn-submit" id="btn-submit" onclick="enviar()">Enviar anamnese</button>';
+  app.innerHTML=h;
+}
+
+function onAnswer(id){
+  const el=document.getElementById('q-'+id);
+  respostas[id]=el.value;
+  const total=perguntas.length;
+  const respondidas=Object.keys(respostas).filter(function(k){return respostas[k]&&respostas[k].trim();}).length;
+  const pct=Math.round(respondidas/total*100);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=respondidas+' de '+total+' respondidas';
+}
+
+async function enviar(){
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true;
+  btn.textContent='Enviando...';
+  try{
+    const rows=perguntas.map(function(p){
+      const el=document.getElementById('q-'+p.id);
+      return {
+        patient_id:patientId,
+        pergunta_id:p.id,
+        secao:p.secao,
+        pergunta_texto:p.texto,
+        resposta:el?el.value.trim():'',
+        created_at:new Date().toISOString()
+      };
+    });
+    await sb.from('planos_anamnese_respostas').insert(rows);
+    const app=document.getElementById('app');
+    app.innerHTML='<div class="msg-box"><div class="msg-icon">&#9989;</div><div class="msg-title">Anamnese enviada!</div><div class="msg-sub">Obrigado, '+escHtml(patient.name||'')+'. Suas respostas foram registradas e estarao disponiveis para a equipe medica antes da sua consulta.</div></div>';
+  }catch(e){
+    btn.disabled=false;
+    btn.textContent='Enviar anamnese';
+    alert('Erro ao enviar: '+e.message);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
