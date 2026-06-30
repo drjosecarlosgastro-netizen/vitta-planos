@@ -5431,7 +5431,8 @@ function relJourneyContent(step,patients,resList,apptsMes,mesStr,now){
     // Only show pending (not yet concluded for this step)
     let sorted=[...recentPats].filter(p=>!(jornada||[]).some(j=>j.patient_id===p.id&&j.etapa===step&&j.concluida));
     // Boas-vindas: somente pacientes de primeira vez
-    if(step==='boasvindas')sorted=sorted.filter(p=>relIsPrimeiraVez(p.id));
+    // Jornada pre-consulta e exclusiva para pacientes de primeira vez
+    if(step!=='consulta')sorted=sorted.filter(p=>relIsPrimeiraVez(p.id));
     if(!sorted.length){
       h+='<div class="empty"><div class="empty-icon">\u2705</div>Todos os pacientes desta etapa j\u00e1 foram conclu\u00eddos.</div>';
     } else {
