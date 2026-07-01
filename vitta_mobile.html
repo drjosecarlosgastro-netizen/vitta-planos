@@ -138,6 +138,8 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
   <button class="tab" onclick="showTab('soro')">Soroterapia</button>
   <button class="tab" onclick="showTab('alertas')">Alertas</button>
   <button class="tab" onclick="showTab('pendencias')">Pend\u00eancias</button>
+  <button class="tab" onclick="showTab('leads')">CRM</button>
+  <button class="tab" onclick="showTab('relacionamento')">Relacionamento</button>
   <button class="tab" onclick="showTab('financeiro')">Financeiro</button>
 </div>
 
@@ -233,7 +235,7 @@ function updateSummaryBar(){
 
 function showTab(tab){
   currentTab=tab;
-  const tabNames=['inicio','agenda','pacientes','soro','alertas','pendencias','financeiro'];
+  const tabNames=['inicio','agenda','pacientes','soro','alertas','pendencias','leads','relacionamento','financeiro'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabNames[i]===tab));
   if(tab==='inicio')renderInicio();
   else if(tab==='agenda')renderAgenda();
@@ -241,6 +243,8 @@ function showTab(tab){
   else if(tab==='soro')renderSoro();
   else if(tab==='alertas')renderAlertas();
   else if(tab==='pendencias')renderPendenciasMobile();
+  else if(tab==='leads')renderLeadsMobile();
+  else if(tab==='relacionamento')renderRelacionamentoMobile();
   else if(tab==='financeiro')renderFinanceiro();
 }
 
@@ -848,6 +852,174 @@ function renderPendenciasMobile(){
 }
 
 // ── INIT ───────────────────────────────────────────────────────
+
+// ========== CRM LEADS MOBILE ==========
+async function renderLeadsMobile(){
+  const c=document.getElementById('main-content');
+  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando leads...</div>';
+  let leads=[];
+  try{const{data}=await sb.from('planos_leads').select('*').order('created_at',{ascending:false});leads=data||[];}catch(e){}
+  const hoje=new Date().toISOString().split('T')[0];
+  const colunas=[
+    {id:'novo',label:'Novo Lead',color:'#3b82f6'},
+    {id:'contato',label:'Contato Feito',color:'#f59e0b'},
+    {id:'negociacao',label:'Em Negocição',color:'#8b5cf6'},
+    {id:'agendado',label:'Agendado',color:'#10b981'},
+    {id:'perdido',label:'Perdido',color:'#ef4444'}
+  ];
+  const atrasados=leads.filter(l=>l.proximo_contato&&l.proximo_contato<hoje&&l.status!=='agendado'&&l.status!=='perdido').length;
+  const ativos=leads.filter(l=>l.status!=='perdido').length;
+  const novos=leads.filter(l=>l.status==='novo').length;
+  const agendados=leads.filter(l=>l.status==='agendado').length;
+  let html='<div style="display:flex;gap:8px;margin-bottom:14px">';
+  html+='<div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700">'+ativos+'</div><div style="font-size:10px;color:var(--text-muted)">Ativos</div></div>';
+  html+='<div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:#3b82f6">'+novos+'</div><div style="font-size:10px;color:var(--text-muted)">Novos</div></div>';
+  html+='<div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:#10b981">'+agendados+'</div><div style="font-size:10px;color:var(--text-muted)">Agendados</div></div>';
+  if(atrasados>0)html+='<div style="flex:1;background:#fef2f2;border:1px solid #ef4444;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:#ef4444">'+atrasados+'</div><div style="font-size:10px;color:#ef4444">Atrasados</div></div>';
+  html+='</div>';
+  colunas.forEach(function(col){
+    const colLeads=leads.filter(l=>(l.status||'novo')===col.id);
+    if(!colLeads.length)return;
+    html+='<div style="margin-bottom:16px">';
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:10px;height:10px;border-radius:50%;background:'+col.color+'"></div>';
+    html+='<span style="font-size:12px;font-weight:700;color:'+col.color+'">'+col.label+'</span>';
+    html+='<span style="background:'+col.color+';color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700">'+colLeads.length+'</span></div>';
+    colLeads.forEach(function(lead){
+      const atrasado=lead.proximo_contato&&lead.proximo_contato<hoje&&col.id!=='agendado'&&col.id!=='perdido';
+      const waNum=(lead.telefone||'').replace(/\D/g,'');
+      html+='<div class="card" style="margin-bottom:8px;border:1.5px solid '+(atrasado?'#ef4444':'var(--border)')+'">';
+      html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+      html+='<div class="avatar" style="background:'+col.color+';width:34px;height:34px;font-size:13px">'+lead.nome.charAt(0).toUpperCase()+'</div>';
+      html+='<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(lead.nome)+'</div>';
+      html+='<div style="font-size:11px;color:var(--text-muted)">'+escHtml(lead.origem||'')+(lead.medico_interesse?' · '+escHtml(lead.medico_interesse):'')+'</div></div>';
+      if(atrasado)html+='<span style="font-size:14px">🔔</span>';
+      html+='</div>';
+      if(lead.telefone)html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">📱 '+escHtml(lead.telefone)+'</div>';
+      if(lead.proximo_contato)html+='<div style="font-size:11px;color:'+(atrasado?'#ef4444':'var(--text-muted)')+';margin-bottom:6px">📅 '+(atrasado?'Atrasado: ':'')+lead.proximo_contato+'</div>';
+      if(lead.observacao)html+='<div style="font-size:11px;color:var(--text-muted);background:var(--bg-page);border-radius:6px;padding:5px 8px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(lead.observacao)+'</div>';
+      html+='<div style="display:flex;gap:6px;margin-top:8px">';
+      if(waNum)html+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="flex:1;text-align:center;padding:7px 0;background:#25d366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">WhatsApp</a>';
+      const ordem=['novo','contato','negociacao','agendado'];
+      const idx=ordem.indexOf(col.id);
+      if(col.id!=='agendado'&&col.id!=='perdido'&&idx<ordem.length-1)html+='<button onclick="avancarLeadMobile('+lead.id+')" style="flex:1;padding:7px 0;background:'+col.color+';color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Avançar →</button>';
+      html+='<button onclick="registrarAtivMobile('+lead.id+',\'nao_respondeu\')" style="padding:7px 10px;background:#fff8ed;border:1px solid #f59e0b;border-radius:8px;font-size:11px;cursor:pointer;font-family:var(--font)" title="Não respondeu">🔇</button>';
+      html+='<button onclick="registrarAtivMobile('+lead.id+',\'contato_feito\')" style="padding:7px 10px;background:#e6f4f4;border:1px solid var(--tidal);border-radius:8px;font-size:11px;cursor:pointer;font-family:var(--font)" title="Contato feito">📞</button>';
+      html+='</div></div>';
+    });
+    html+='</div>';
+  });
+  c.innerHTML=html||'<div class="empty">Nenhum lead cadastrado.</div>';
+}
+
+async function avancarLeadMobile(id){
+  let lead=null;
+  try{const{data}=await sb.from('planos_leads').select('*').eq('id',id).single();lead=data;}catch(e){}
+  if(!lead)return;
+  const ordem=['novo','contato','negociacao','agendado'];
+  const idx2=ordem.indexOf(lead.status||'novo');
+  if(idx2<0||idx2>=ordem.length-1)return;
+  const proximo=ordem[idx2+1];
+  await sb.from('planos_leads').update({status:proximo,updated_at:new Date().toISOString()}).eq('id',id);
+  const labels={novo:'Novo Lead',contato:'Contato Feito',negociacao:'Em Negociação',agendado:'Agendado'};
+  await sb.from('planos_leads_atividades').insert({lead_id:id,tipo:'status_alterado',descricao:'Status: '+(labels[lead.status]||lead.status)+' → '+(labels[proximo]||proximo),registrado_por:'Mobile',created_at:new Date().toISOString()});
+  showToastMobile('Lead avançado!');
+  renderLeadsMobile();
+}
+
+async function registrarAtivMobile(leadId,tipo){
+  const msgs={contato_feito:'Contato realizado',nao_respondeu:'Tentativa sem resposta'};
+  await sb.from('planos_leads_atividades').insert({lead_id:leadId,tipo:tipo,descricao:msgs[tipo]||tipo,registrado_por:'Mobile',created_at:new Date().toISOString()});
+  showToastMobile(tipo==='contato_feito'?'📞 Contato registrado!':'🔇 Não respondeu registrado!');
+}
+
+// ========== RELACIONAMENTO MOBILE ==========
+async function renderRelacionamentoMobile(){
+  const c=document.getElementById('main-content');
+  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  try{
+    const now=new Date();
+    const mes=String(now.getMonth()+1).padStart(2,'0');
+    const ano=now.getFullYear();
+    const[{data:pats},{data:appts},{data:jornada},{data:soroH},{data:implH},{data:compH}]=await Promise.all([
+      sb.from('planos_patients').select('id,name,telefone,active').order('name'),
+      sb.from('planos_appointments').select('patient_id,date_str').order('date_str',{ascending:false}),
+      sb.from('planos_jornada').select('*'),
+      sb.from('planos_soro_sessoes').select('patient_id'),
+      sb.from('planos_implantes').select('patient_id'),
+      sb.from('planos_appointments').select('patient_id,date_str').eq('status','Compareceu')
+    ]);
+    const mesAppts=(appts||[]).filter(a=>{
+      if(!a.date_str)return false;
+      const p=a.date_str.split('/');
+      return p.length===3&&p[1]===mes&&p[2]===ano.toString();
+    });
+    const mesIds=[...new Set(mesAppts.map(a=>a.patient_id))];
+    const recentPats=(pats||[]).filter(p=>p.active&&mesIds.includes(p.id));
+    function isPrimeiraVez(patId){
+      const apptAtual=mesAppts.filter(a=>a.patient_id===patId).map(a=>a.date_str);
+      return (compH||[]).filter(c=>c.patient_id===patId&&!apptAtual.includes(c.date_str)).length===0
+        &&(soroH||[]).filter(s=>s.patient_id===patId).length===0
+        &&(implH||[]).filter(i=>i.patient_id===patId).length===0;
+    }
+    const etapas=[
+      {id:'boasvindas',label:'Boas-vindas'},
+      {id:'formulario',label:'Formulário'},
+      {id:'alinhamento',label:'Alinhamento'},
+      {id:'confirmacao',label:'Confirmação'},
+      {id:'consulta',label:'Consulta'}
+    ];
+    let html='';
+    etapas.forEach(function(etapa){
+      const pats2=recentPats.filter(p=>{
+        if((jornada||[]).some(j=>j.patient_id===p.id&&j.etapa===etapa.id&&j.concluida))return false;
+        if(etapa.id==='consulta')return (jornada||[]).some(j=>j.patient_id===p.id&&j.etapa==='consulta');
+        const manuais=(jornada||[]).filter(j=>j.etapa==='_manual_'+etapa.id&&!j.concluida).map(j=>j.patient_id);
+        return isPrimeiraVez(p.id)||manuais.includes(p.id);
+      });
+      if(!pats2.length)return;
+      html+='<div style="margin-bottom:16px">';
+      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+      html+='<span style="font-size:12px;font-weight:700;color:var(--tidal);text-transform:uppercase;letter-spacing:.5px">'+etapa.label+'</span>';
+      html+='<span style="background:var(--tidal);color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700">'+pats2.length+'</span>';
+      html+='</div>';
+      pats2.forEach(function(p){
+        const waNum=(p.telefone||'').replace(/\D/g,'');
+        const pv=isPrimeiraVez(p.id);
+        html+='<div class="card" style="margin-bottom:8px;padding:12px 14px">';
+        html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+        html+='<div class="avatar" style="width:34px;height:34px;font-size:13px">'+p.name.charAt(0)+'</div>';
+        html+='<div style="flex:1"><div style="font-weight:700;font-size:13px">'+escHtml(p.name)+'</div>';
+        html+='<span style="font-size:10px;font-weight:700;background:'+(pv?'#e6f4f4':'#f3f4f6')+';color:'+(pv?'var(--tidal)':'var(--ash)')+';border-radius:12px;padding:2px 8px">'+(pv?'1ª vez':'Recorrente')+'</span>';
+        html+='</div></div>';
+        html+='<div style="display:flex;gap:6px">';
+        if(waNum&&etapa.id!=='consulta')html+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="flex:1;text-align:center;padding:7px 0;background:#25d366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">WhatsApp</a>';
+        html+='<button onclick="marcarEtapaMobile('+p.id+',\''+etapa.id+'\',event)" style="flex:1;padding:7px 0;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">'+(etapa.id==='consulta'?'Compareceu':'Marcar feito')+'</button>';
+        html+='</div></div>';
+      });
+      html+='</div>';
+    });
+    c.innerHTML=html||'<div class="empty">Nenhum paciente na jornada este mês.</div>';
+  }catch(e){c.innerHTML='<div class="empty">Erro: '+escHtml(e.message)+'</div>';}
+}
+
+async function marcarEtapaMobile(patId,etapaId,evt){
+  if(evt)evt.stopPropagation();
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:etapaId,concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  if(etapaId==='confirmacao'){
+    await sb.from('planos_jornada').upsert({patient_id:patId,etapa:'consulta',concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  }
+  showToastMobile('✅ Marcado!');
+  renderRelacionamentoMobile();
+}
+
+function showToastMobile(msg){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1F2033;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-family:var(--font);z-index:9999;white-space:nowrap';
+  document.body.appendChild(t);
+  setTimeout(function(){t.remove();},2500);
+}
+
 loadAll();
 setInterval(loadAll,300000);
 </script>
