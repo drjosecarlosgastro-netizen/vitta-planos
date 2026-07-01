@@ -3281,7 +3281,8 @@ async function deletarLead(id){
 // ---- JORNADA AUTO TRIGGERS ----
 async function jornadaOnAgendado(patientId){
   // Insert patient into jornada at boasvindas stage if not already there
-  const {data:existing}=await sb.from('planos_jornada').select('id').eq('patient_id',patientId).eq('etapa','boasvindas').single().catch(()=>({data:null}));
+  let existing=null;
+  try{const{data:_ex}=await sb.from('planos_jornada').select('id').eq('patient_id',patientId).eq('etapa','boasvindas').single();existing=_ex;}catch(e){existing=null;}
   if(!existing){
     await sb.from('planos_jornada').insert({patient_id:patientId,etapa:'_preconsulta_ativo',concluida:false,updated_at:new Date().toISOString()}).catch(()=>{});
   }
