@@ -3115,10 +3115,11 @@ async function abrirLead(id){
   // Acoes rapidas de contato
   html+='<div style="margin-bottom:16px">';
   html+='<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Registrar contato</div>';
+  html+='<textarea id="reg-obs-'+id+'" rows="2" placeholder="Observação do contato (opcional)..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical;margin-bottom:8px"></textarea>';
   html+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
-  html+='<button onclick="registrarAtividade('+id+',\'contato_feito\',\'Contato realizado\')" style="padding:7px 14px;background:#e6f4f4;color:var(--tidal);border:1.5px solid var(--tidal);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📞 Contato feito</button>';
-  html+='<button onclick="registrarAtividade('+id+',\'nao_respondeu\',\'Tentativa sem resposta\')" style="padding:7px 14px;background:#fff8ed;color:#f59e0b;border:1.5px solid #f59e0b;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🔇 Não respondeu</button>';
-  html+='<button onclick="abrirNotaLead('+id+')" style="padding:7px 14px;background:#f5f3ff;color:#8b5cf6;border:1.5px solid #8b5cf6;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📝 Adicionar nota</button>';
+  html+='<button onclick="registrarAtividadeComObs('+id+',\'contato_feito\',\'Contato realizado\')" style="padding:7px 14px;background:#e6f4f4;color:var(--tidal);border:1.5px solid var(--tidal);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📞 Contato feito</button>';
+  html+='<button onclick="registrarAtividadeComObs('+id+',\'nao_respondeu\',\'Tentativa sem resposta\')" style="padding:7px 14px;background:#fff8ed;color:#f59e0b;border:1.5px solid #f59e0b;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🔇 Não respondeu</button>';
+  html+='<button onclick="registrarAtividadeComObs('+id+',\'nota\',\'\'" style="padding:7px 14px;background:#f5f3ff;color:#8b5cf6;border:1.5px solid #8b5cf6;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📝 Adicionar nota</button>';
   html+='</div></div>';
   // Campos de edicao
   html+='<div style="display:grid;gap:12px">';
@@ -3176,6 +3177,18 @@ async function abrirLead(id){
   html+='</div></div></div>';
   document.getElementById('modal-generic-content').innerHTML=html;
   openModal('modal-generic');
+}
+
+async function registrarAtividadeComObs(leadId,tipo,descricaoPadrao){
+  var el=document.getElementById('reg-obs-'+leadId);
+  var obs=el?el.value.trim():'';
+  // Se for nota pura, obs e obrigatorio
+  if(tipo==='nota'&&!obs){toast('Digite a nota antes de salvar','error');if(el)el.focus();return;}
+  // Monta descricao: padrao + obs se houver
+  var descricao=descricaoPadrao;
+  if(obs)descricao=(descricaoPadrao?descricaoPadrao+': ':'')+obs;
+  await registrarAtividade(leadId,tipo,descricao);
+  if(el)el.value='';
 }
 
 async function registrarAtividade(leadId,tipo,descricao){
