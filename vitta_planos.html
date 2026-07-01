@@ -3173,7 +3173,13 @@ async function abrirLead(id){
   html+='<button onclick="deletarLead('+id+')" style="padding:9px 14px;border:1.5px solid #ef4444;border-radius:8px;background:none;font-size:12px;font-family:var(--font);cursor:pointer;color:#ef4444">Excluir</button>';
   html+='<div style="display:flex;gap:8px">';
   if(waNum)html+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="padding:9px 14px;background:#25d366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center">WhatsApp</a>';
-  if(lead.status!=='agendado'&&lead.status!=='perdido')html+='<button onclick="closeModal(\'modal-generic\');abrirModalAgendarLead('+id+')" style="padding:9px 14px;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Agendar</button>';
+  if(lead.status!=='perdido'){
+    if(lead.status==='agendado'){
+      html+='<button onclick="closeModal(\'modal-generic\');reagendarLead('+id+',\''+escHtml(lead.nome)+'\')" style="padding:9px 14px;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Reagendar</button>';
+    } else {
+      html+='<button onclick="closeModal(\'modal-generic\');abrirModalAgendarLead('+id+')" style="padding:9px 14px;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Agendar</button>';
+    }
+  }
   html+='<button onclick="closeModal(\'modal-generic\')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer">Cancelar</button>';
   html+='<button onclick="salvarLead('+id+')" class="btn btn-primary">Salvar</button>';
   html+='</div></div></div>';
@@ -3272,6 +3278,27 @@ async function avancarLead(id){
     toast('Lead avançado!','success');
     await renderLeads();
   }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+async function reagendarLead(leadId,leadNome){
+  // Verifica se ja existe agendamento futuro para esse paciente
+  try{
+    var hoje=new Date();
+    var{data:pats}=await sb.from('planos_patients').select('id').eq('name',leadNome);
+    if(pats&&pats.length){
+      var patId=pats[0].id;
+      var{data:appts}=await sb.from('planos_appointments').select('date_str,time_str,status').eq('patient_id',patId).neq('status','Cancelado').order('date_str',{ascending:false}).limit(1);
+      if(appts&&appts.length){
+        var ultimo=appts[0];
+        if(confirm('Á aviso: '+escHtml(leadNome)+' já tem agendamento registrado ('+escHtml(ultimo.date_str||'')+(ultimo.time_str?' às '+escHtml(ultimo.time_str):'')+', status: '+escHtml(ultimo.status||'')+').\n\nDeseja criar um NOVO agendamento mesmo assim?')){
+          abrirModalAgendarLead(leadId);
+        }
+        return;
+      }
+    }
+  }catch(e){}
+  // Sem agendamento existente, abre normalmente
+  abrirModalAgendarLead(leadId);
 }
 
 function abrirModalAgendarLead(leadId){
