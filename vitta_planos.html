@@ -3291,13 +3291,15 @@ async function confirmarAgendarLead(leadId){
   if(btn){btn.textContent='Salvando...';btn.disabled=true;}
   try{
     var patId=null;
-    var{data:existing}=await sb.from('planos_patients').select('id').eq('name',lead.nome).maybeSingle();
-    if(existing&&existing.id){
-      patId=existing.id;
+    var _existingPat=null;
+    try{const{data:_ep}=await sb.from('planos_patients').select('id').eq('name',lead.nome).maybeSingle();_existingPat=_ep;}catch(e){_existingPat=null;}
+    if(_existingPat&&_existingPat.id){
+      patId=_existingPat.id;
     } else {
-      var{data:newPat}=await sb.from('planos_patients').insert({name:lead.nome,telefone:lead.telefone||'',email:lead.email||'',active:true}).select('id').single();
-      patId=newPat.id;
+      const{data:_np}=await sb.from('planos_patients').insert({name:lead.nome,telefone:lead.telefone||'',email:lead.email||'',active:true}).select('id');
+      patId=_np&&_np[0]?_np[0].id:null;
     }
+    if(!patId)throw new Error('N\u00e3o foi poss\u00edvel criar o paciente');
     await sb.from('planos_appointments').insert({patient_id:patId,date_str:dateStr,time_str:hora,profissional_nome:medico,status:'Agendado',observacao:obs||null});
     await jornadaOnAgendado(patId);
     await sb.from('planos_leads').update({status:'agendado',updated_at:new Date().toISOString()}).eq('id',leadId);
