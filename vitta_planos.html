@@ -3081,24 +3081,66 @@ async function salvarNovoLead(){
 async function abrirLead(id){
   var lead=(_leadsData||[]).find(function(l){return l.id===id;});
   if(!lead)return;
+  // Busca historico de atividades
+  var atividades=[];
+  try{var{data:atv}=await sb.from('planos_leads_atividades').select('*').eq('lead_id',id).order('created_at',{ascending:false});atividades=atv||[];}catch(e){}
   var statusOpts=[{id:'novo',label:'Novo Lead'},{id:'contato',label:'Contato Feito'},{id:'negociacao',label:'Em Negociação'},{id:'agendado',label:'Agendado'},{id:'perdido',label:'Perdido'}];
   var waNum=(lead.telefone||'').replace(/\D/g,'');
+  var tipoIcons={contato_feito:'📞',nao_respondeu:'🔇',mensagem:'💬',status_alterado:'🔄',agendado:'📅',nota:'📝'};
   var html='<div style="padding:4px">';
+  // Header
   html+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">';
   html+='<div style="width:44px;height:44px;border-radius:50%;background:var(--deep-ocean);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px">'+(lead.nome||'?').charAt(0).toUpperCase()+'</div>';
   html+='<div><div style="font-size:17px;font-weight:700">'+escHtml(lead.nome||'')+'</div>';
   html+='<div style="font-size:12px;color:var(--text-muted)">'+escHtml(lead.origem||'')+' · '+escHtml(lead.medico_interesse||'')+'</div></div></div>';
+  // Acoes rapidas de contato
+  html+='<div style="margin-bottom:16px">';
+  html+='<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Registrar contato</div>';
+  html+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
+  html+='<button onclick="registrarAtividade('+id+',\'contato_feito\',\'Contato realizado\')" style="padding:7px 14px;background:#e6f4f4;color:var(--tidal);border:1.5px solid var(--tidal);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📞 Contato feito</button>';
+  html+='<button onclick="registrarAtividade('+id+',\'nao_respondeu\',\'Tentativa sem resposta\')" style="padding:7px 14px;background:#fff8ed;color:#f59e0b;border:1.5px solid #f59e0b;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">🔇 Não respondeu</button>';
+  html+='<button onclick="abrirNotaLead('+id+')" style="padding:7px 14px;background:#f5f3ff;color:#8b5cf6;border:1.5px solid #8b5cf6;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font)">📝 Adicionar nota</button>';
+  html+='</div></div>';
+  // Campos de edicao
   html+='<div style="display:grid;gap:12px">';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Status</label><select id="edlead-status" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)">';
   statusOpts.forEach(function(s){html+='<option value="'+s.id+'"'+(lead.status===s.id?' selected':'')+'>'+s.label+'</option>';});
   html+='</select></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Próximo contato</label><input id="edlead-pc" type="date" value="'+(lead.proximo_contato||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='</div>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Telefone</label><input id="edlead-tel" type="text" value="'+escHtml(lead.telefone||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Email</label><input id="edlead-email" type="text" value="'+escHtml(lead.email||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='</div>';
-  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Próximo contato</label><input id="edlead-pc" type="date" value="'+(lead.proximo_contato||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
-  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><textarea id="edlead-obs" rows="3" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical">'+escHtml(lead.observacao||'')+'</textarea></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><textarea id="edlead-obs" rows="2" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical">'+escHtml(lead.observacao||'')+'</textarea></div>';
   html+='</div>';
+  // Historico de atividades
+  html+='<div style="margin-top:16px">';
+  html+='<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Histórico de contatos</div>';
+  if(!atividades.length){
+    html+='<div style="font-size:12px;color:var(--text-muted);padding:12px;background:var(--bg-page);border-radius:8px;text-align:center">Nenhum contato registrado ainda.</div>';
+  } else {
+    html+='<div style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">';
+    atividades.forEach(function(a){
+      var dt=new Date(a.created_at);
+      var dtStr=dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      var cor=a.tipo==='contato_feito'?'#e6f4f4':a.tipo==='nao_respondeu'?'#fff8ed':'#f5f3ff';
+      var borderCor=a.tipo==='contato_feito'?'var(--tidal)':a.tipo==='nao_respondeu'?'#f59e0b':'#8b5cf6';
+      var icon=tipoIcons[a.tipo]||'📝';
+      html+='<div style="padding:10px 12px;background:'+cor+';border-left:3px solid '+borderCor+';border-radius:8px">';
+      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+      html+='<span>'+icon+'</span>';
+      html+='<span style="font-size:12px;font-weight:600">'+escHtml(a.descricao||'')+'</span>';
+      html+='<span style="margin-left:auto;font-size:11px;color:var(--text-muted)">'+dtStr+'</span>';
+      html+='</div>';
+      if(a.registrado_por)html+='<div style="font-size:11px;color:var(--text-muted)">por '+escHtml(a.registrado_por)+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+  // Botoes
   html+='<div style="display:flex;gap:8px;justify-content:space-between;margin-top:18px;flex-wrap:wrap">';
   html+='<button onclick="deletarLead('+id+')" style="padding:9px 14px;border:1.5px solid #ef4444;border-radius:8px;background:none;font-size:12px;font-family:var(--font);cursor:pointer;color:#ef4444">Excluir</button>';
   html+='<div style="display:flex;gap:8px">';
@@ -3111,10 +3153,42 @@ async function abrirLead(id){
   openModal('modal-generic');
 }
 
+async function registrarAtividade(leadId,tipo,descricao){
+  try{
+    await sb.from('planos_leads_atividades').insert({lead_id:leadId,tipo:tipo,descricao:descricao,registrado_por:currentUser?currentUser.name:'Secretaria',created_at:new Date().toISOString()});
+    toast('Registrado!','success');
+    await abrirLead(leadId);
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+function abrirNotaLead(leadId){
+  var html='<div style="padding:4px">';
+  html+='<div style="font-size:15px;font-weight:700;margin-bottom:14px">Adicionar nota</div>';
+  html+='<textarea id="nota-texto" rows="4" placeholder="Descreva o que aconteceu no contato..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical"></textarea>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">';
+  html+='<button onclick="abrirLead('+leadId+')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer">Voltar</button>';
+  html+='<button onclick="salvarNotaLead('+leadId+')" class="btn btn-primary">Salvar nota</button>';
+  html+='</div></div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+}
+
+async function salvarNotaLead(leadId){
+  var texto=document.getElementById('nota-texto').value.trim();
+  if(!texto){toast('Digite a nota','error');return;}
+  await registrarAtividade(leadId,'nota',texto);
+}
+
 async function salvarLead(id){
-  var data={status:document.getElementById('edlead-status').value,telefone:document.getElementById('edlead-tel').value.trim(),email:document.getElementById('edlead-email').value.trim(),proximo_contato:document.getElementById('edlead-pc').value||null,observacao:document.getElementById('edlead-obs').value.trim()||null,updated_at:new Date().toISOString()};
+  var lead=(_leadsData||[]).find(function(l){return l.id===id;});
+  var novoStatus=document.getElementById('edlead-status').value;
+  var data={status:novoStatus,telefone:document.getElementById('edlead-tel').value.trim(),email:document.getElementById('edlead-email').value.trim(),proximo_contato:document.getElementById('edlead-pc').value||null,observacao:document.getElementById('edlead-obs').value.trim()||null,updated_at:new Date().toISOString()};
   try{
     await sb.from('planos_leads').update(data).eq('id',id);
+    // Registra automaticamente quando status muda
+    if(lead&&lead.status!==novoStatus){
+      var statusLabels={novo:'Novo Lead',contato:'Contato Feito',negociacao:'Em Negociação',agendado:'Agendado',perdido:'Perdido'};
+      await sb.from('planos_leads_atividades').insert({lead_id:id,tipo:'status_alterado',descricao:'Status alterado: '+(statusLabels[lead.status]||lead.status)+' → '+(statusLabels[novoStatus]||novoStatus),registrado_por:currentUser?currentUser.name:'Secretaria',created_at:new Date().toISOString()});
+    }
     closeModal('modal-generic');
     toast('Lead atualizado!','success');
     await renderLeads();
