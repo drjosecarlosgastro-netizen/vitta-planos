@@ -3325,10 +3325,10 @@ async function jornadaOnAgendado(patientId){
   let existing=null;
   try{const{data:_ex}=await sb.from('planos_jornada').select('id').eq('patient_id',patientId).eq('etapa','boasvindas').single();existing=_ex;}catch(e){existing=null;}
   if(!existing){
-    await sb.from('planos_jornada').insert({patient_id:patientId,etapa:'_preconsulta_ativo',concluida:false,updated_at:new Date().toISOString()}).catch(()=>{});
+    try{await sb.from('planos_jornada').insert({patient_id:patientId,etapa:'_preconsulta_ativo',concluida:false,updated_at:new Date().toISOString()});}catch(e){}
   }
   // Mark patient as active in pre-consulta pipeline
-  await sb.from('planos_jornada').upsert({patient_id:patientId,etapa:'_preconsulta_ativo',concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'}).catch(()=>{});
+  try{await sb.from('planos_jornada').upsert({patient_id:patientId,etapa:'_preconsulta_ativo',concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});}catch(e){}
 }
 
 async function jornadaOnCompareceu(patientId){
