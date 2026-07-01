@@ -2945,6 +2945,7 @@ async function renderFormBibliotecaCards(){
 // ========== END BIBLIOTECA ==========
 // ========== CRM LEADS ==========
 let _leadsData=null;
+let _leadsAtividades=[];
 let _leadsInterval=null;
 
 async function renderLeads(){
@@ -2953,9 +2954,13 @@ async function renderLeads(){
   const c=document.getElementById('main-content');
   c.innerHTML='<div style="padding:32px 24px;font-size:13px;color:var(--text-muted)">Carregando leads...</div>';
   try{
-    const{data:leads}=await sb.from('planos_leads').select('*').order('created_at',{ascending:false});
+    const[{data:leads},{data:ativs}]=await Promise.all([
+      sb.from('planos_leads').select('*').order('created_at',{ascending:false}),
+      sb.from('planos_leads_atividades').select('lead_id,tipo,descricao,created_at').order('created_at',{ascending:false})
+    ]);
     _leadsData=leads||[];
-  }catch(e){_leadsData=[];}
+    _leadsAtividades=ativs||[];
+  }catch(e){_leadsData=[];_leadsAtividades=[];}
   buildLeadsUI();
   // Auto-refresh a cada 2 minutos
   if(_leadsInterval)clearInterval(_leadsInterval);
@@ -3029,6 +3034,20 @@ function buildLeadsUI(){
         if(lead.telefone)h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">'+escHtml(lead.telefone)+'</div>';
         if(lead.proximo_contato)h+='<div style="font-size:11px;color:'+(atrasado?'#ef4444':'var(--text-muted)')+';margin-bottom:6px">'+(atrasado?'Atrasado: ':'')+lead.proximo_contato+'</div>';
         if(lead.observacao)h+='<div style="font-size:11px;color:var(--text-muted);background:var(--bg-page);border-radius:6px;padding:5px 8px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(lead.observacao)+'</div>';
+        // Ultimo contato registrado
+        var _ultimaAtiv=(_leadsAtividades||[]).find(function(a){return a.lead_id===lead.id;});
+        if(_ultimaAtiv){
+          var _ativIcons={contato_feito:'📞',nao_respondeu:'🔇',nota:'📝',status_alterado:'🔄',agendado:'📅'};
+          var _ativCores={contato_feito:'#e6f4f4',nao_respondeu:'#fff8ed',nota:'#f5f3ff',status_alterado:'#f0f7f8',agendado:'#ecfdf5'};
+          var _ativBorder={contato_feito:'var(--tidal)',nao_respondeu:'#f59e0b',nota:'#8b5cf6',status_alterado:'var(--sky)',agendado:'var(--success)'};
+          var _ativDt=new Date(_ultimaAtiv.created_at);
+          var _ativDtStr=_ativDt.toLocaleDateString('pt-BR')+' '+_ativDt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+          h+='<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:'+(_ativCores[_ultimaAtiv.tipo]||'#f9f9f9')+';border-left:3px solid '+(_ativBorder[_ultimaAtiv.tipo]||'var(--border)')+';border-radius:6px;margin-bottom:6px">';
+          h+='<span style="font-size:12px">'+(_ativIcons[_ultimaAtiv.tipo]||'📝')+'</span>';
+          h+='<span style="font-size:11px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(_ultimaAtiv.descricao||'')+'</span>';
+          h+='<span style="font-size:10px;color:var(--text-muted);flex-shrink:0">'+_ativDtStr+'</span>';
+          h+='</div>';
+        }
         if(lead.created_at){var _dt=new Date(lead.created_at);var _dtStr=_dt.toLocaleDateString('pt-BR')+' '+_dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});h+='<div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">\ud83d\udcc5 Entrada: '+_dtStr+'</div>';}
         h+='<div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">';
         if(waNum)h+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="flex:1;text-align:center;padding:5px 0;background:#25d366;color:#fff;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none">WhatsApp</a>';
@@ -3155,7 +3174,10 @@ async function abrirLead(id){
 
 async function registrarAtividade(leadId,tipo,descricao){
   try{
-    await sb.from('planos_leads_atividades').insert({lead_id:leadId,tipo:tipo,descricao:descricao,registrado_por:currentUser?currentUser.name:'Secretaria',created_at:new Date().toISOString()});
+    var novaAtiv={lead_id:leadId,tipo:tipo,descricao:descricao,registrado_por:currentUser?currentUser.name:'Secretaria',created_at:new Date().toISOString()};
+    await sb.from('planos_leads_atividades').insert(novaAtiv);
+    // Atualiza cache local para refletir no card
+    _leadsAtividades=[novaAtiv,...(_leadsAtividades||[])];
     toast('Registrado!','success');
     await abrirLead(leadId);
   }catch(e){toast('Erro: '+e.message,'error');}
