@@ -3507,6 +3507,10 @@ async function confirmarAgendarLead(leadId){
     var _tipo=document.getElementById('aglead-tipo')?document.getElementById('aglead-tipo').value:'Consulta';
     var _proc=document.getElementById('aglead-proc')?document.getElementById('aglead-proc').value.trim():'';
     await sb.from('planos_appointments').insert({patient_id:patId,date_str:dateStr,time_str:hora,profissional_nome:medico,tipo:_tipo,procedimento:_proc||'Consulta Dr '+medico,status:'Agendado',observacao:obs||null,registrado_por:currentUser?currentUser.name:'CRM'});
+    // Se tipo Avulsa, atualiza plan_type do paciente
+    if(_tipo==='Avulsa'){
+      try{await sb.from('planos_patients').update({plan_type:'Consulta Avulsa'}).eq('id',patId);}catch(e){}
+    }
     await jornadaOnAgendado(patId);
     await sb.from('planos_leads').update({status:'agendado',patient_id_vinculado:patId,updated_at:new Date().toISOString()}).eq('id',leadId);
     closeModal('modal-generic');
