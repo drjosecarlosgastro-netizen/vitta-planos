@@ -3045,47 +3045,57 @@ function buildLeadsUI(){
   const agendados=leads.filter(l=>l.status==='agendado').length;
   const atendidos=leads.filter(l=>l.status==='atendido').length;
   const taxa=total+leads.filter(l=>l.status==='perdido').length>0?Math.round((agendados+atendidos)/(total+leads.filter(l=>l.status==='perdido').length)*100):0;
-  h+='<div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">';
-  h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700">'+total+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Leads ativos</div></div>';
-  h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700;color:#3b82f6">'+novos+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Novos</div></div>';
-  h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700;color:#10b981">'+agendados+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Agendados</div></div>';
-  h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700">'+taxa+'%</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Taxa de conversão</div></div>';
-  h+='</div>';
-  // Bloco de faturamento por canal
+  // Layout 2 colunas: stats esquerda, faturamento direita
   var _leadsAtend=leads.filter(function(l){return l.status==='atendido'&&l.valor_atendimento;});
   var _totalFatCRM=_leadsAtend.reduce(function(s,l){return s+(parseFloat(l.valor_atendimento)||0);},0);
-  if(_leadsAtend.length>0){
-    var _canalMapCRM={};
-    _leadsAtend.forEach(function(l){
-      var _cls=(l.canal_marketing||'Direto').split(',');
-      _cls.forEach(function(canal){
-        var _ck=canal.trim()||'Direto';
-        if(!_canalMapCRM[_ck])_canalMapCRM[_ck]={count:0,valor:0};
-        _canalMapCRM[_ck].count++;
-        _canalMapCRM[_ck].valor+=(parseFloat(l.valor_atendimento)||0)/_cls.length;
-      });
+  var _canalMapCRM={};
+  _leadsAtend.forEach(function(l){
+    var _cls=(l.canal_marketing||'Direto').split(',');
+    _cls.forEach(function(canal){
+      var _ck=canal.trim()||'Direto';
+      if(!_canalMapCRM[_ck])_canalMapCRM[_ck]={count:0,valor:0};
+      _canalMapCRM[_ck].count++;
+      _canalMapCRM[_ck].valor+=(parseFloat(l.valor_atendimento)||0)/_cls.length;
     });
-    var _canalColorsCRM={Instagram:'#e1306c',TikTok:'#010101','Google Ads':'#4285f4',Indicação:'#10b981',WhatsApp:'#25d366',Outro:'#8b5cf6',Direto:'var(--ash)'};
-    h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:16px">';
-    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
-    h+='<span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">📣 Faturamento por Canal</span>';
-    h+='<span style="font-size:11px;color:var(--text-muted)">'+_leadsAtend.length+' atendido'+(_leadsAtend.length>1?'s':'')+'</span>';
-    h+='<span style="margin-left:auto;font-size:15px;font-weight:700;color:var(--tidal)">R$ '+_totalFatCRM.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>';
-    h+='</div>';
-    h+='<div style="display:flex;flex-direction:column;gap:6px">';
+  });
+  var _canalColorsCRM={Instagram:'#e1306c',TikTok:'#154C56','Google Ads':'#4285f4',Indicação:'#10b981',WhatsApp:'#25d366',Outro:'#8b5cf6',Direto:'var(--ash)'};
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">';
+  // Coluna esquerda: 4 stats em grade 2x2
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 18px"><div style="font-size:26px;font-weight:700;color:var(--midnight)">'+total+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Leads ativos</div></div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 18px"><div style="font-size:26px;font-weight:700;color:#3b82f6">'+novos+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Novos</div></div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 18px"><div style="font-size:26px;font-weight:700;color:var(--tidal)">'+agendados+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Agendados</div></div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 18px"><div style="font-size:26px;font-weight:700;color:var(--gold)">'+taxa+'%</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Taxa de conversão</div></div>';
+  h+='</div>';
+  // Coluna direita: faturamento por canal
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px">';
+  h+='<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">';
+  h+='<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Faturamento por Canal</div>';
+  h+='<div style="font-size:24px;font-weight:700;color:var(--tidal)">R$ '+_totalFatCRM.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
+  h+='<div style="font-size:11px;color:var(--text-muted)">'+_leadsAtend.length+' lead'+(_leadsAtend.length>1?'s':'')+' atendido'+(_leadsAtend.length>1?'s':'')+'</div>';
+  h+='</div>';
+  if(!_leadsAtend.length){
+    h+='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:16px 0">Nenhum atendimento registrado ainda.</div>';
+  } else {
+    h+='<div style="display:flex;flex-direction:column;gap:10px">';
     Object.keys(_canalMapCRM).sort(function(a,b){return _canalMapCRM[b].valor-_canalMapCRM[a].valor;}).forEach(function(canalKey){
       var item=_canalMapCRM[canalKey];
       var pct=_totalFatCRM>0?Math.round(item.valor/_totalFatCRM*100):0;
       var cor=_canalColorsCRM[canalKey]||'var(--ash)';
-      h+='<div style="display:flex;align-items:center;gap:8px">';
-      h+='<span style="font-size:11px;font-weight:600;min-width:90px">'+escHtml(canalKey)+'</span>';
-      h+='<div style="flex:1;height:6px;background:var(--border);border-radius:3px"><div style="height:6px;background:'+cor+';border-radius:3px;width:'+pct+'%"></div></div>';
-      h+='<span style="font-size:11px;font-weight:700;color:var(--tidal);min-width:80px;text-align:right">R$ '+item.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>';
-      h+='<span style="font-size:10px;color:var(--text-muted);min-width:30px;text-align:right">'+pct+'%</span>';
+      h+='<div>';
+      h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">';
+      h+='<span style="font-size:12px;font-weight:600;color:var(--text)">'+escHtml(canalKey)+'</span>';
+      h+='<span style="font-size:13px;font-weight:700;color:var(--midnight)">R$ '+item.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>';
+      h+='</div>';
+      h+='<div style="height:5px;background:var(--border);border-radius:3px">';
+      h+='<div style="height:5px;background:'+cor+';border-radius:3px;width:'+pct+'%"></div></div>';
+      h+='<div style="font-size:10px;color:var(--text-muted);margin-top:2px">'+item.count+' lead'+( item.count>1?'s':'')+' · '+pct+'%</div>';
       h+='</div>';
     });
-    h+='</div></div>';
+    h+='</div>';
   }
+  h+='</div>';
+  h+='</div>';
   h+='<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">';
   colunas.forEach(function(col){
     var colLeads=leads.filter(function(l){return (l.status||'novo')===col.id;});
