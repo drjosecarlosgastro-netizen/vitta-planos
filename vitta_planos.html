@@ -3068,28 +3068,24 @@ function buildLeadsUI(){
   h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 18px"><div style="font-size:26px;font-weight:700;color:var(--gold)">'+taxa+'%</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Taxa de conversão</div></div>';
   h+='</div>';
   // Coluna direita: faturamento por canal
-  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px">';
-  h+='<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">';
-  h+='<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Faturamento por Canal</div>';
-  h+='<div style="font-size:24px;font-weight:700;color:var(--tidal)">R$ '+_totalFatCRM.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
-  h+='<div style="font-size:11px;color:var(--text-muted)">'+_leadsAtend.length+' lead'+(_leadsAtend.length>1?'s':'')+' atendido'+(_leadsAtend.length>1?'s':'')+'</div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 16px">';
+  h+='<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">';
+  h+='<span style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">Faturamento por Canal</span>';
+  h+='<span style="font-size:18px;font-weight:700;color:var(--tidal);margin-left:auto">R$ '+_totalFatCRM.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>';
   h+='</div>';
   if(!_leadsAtend.length){
-    h+='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:16px 0">Nenhum atendimento registrado ainda.</div>';
+    h+='<div style="font-size:11px;color:var(--text-muted)">Nenhum atendimento ainda.</div>';
   } else {
-    h+='<div style="display:flex;flex-direction:column;gap:10px">';
+    h+='<div style="display:flex;flex-direction:column;gap:6px">';
     Object.keys(_canalMapCRM).sort(function(a,b){return _canalMapCRM[b].valor-_canalMapCRM[a].valor;}).forEach(function(canalKey){
       var item=_canalMapCRM[canalKey];
       var pct=_totalFatCRM>0?Math.round(item.valor/_totalFatCRM*100):0;
       var cor=_canalColorsCRM[canalKey]||'var(--ash)';
-      h+='<div>';
-      h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">';
-      h+='<span style="font-size:12px;font-weight:600;color:var(--text)">'+escHtml(canalKey)+'</span>';
-      h+='<span style="font-size:13px;font-weight:700;color:var(--midnight)">R$ '+item.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>';
-      h+='</div>';
-      h+='<div style="height:5px;background:var(--border);border-radius:3px">';
-      h+='<div style="height:5px;background:'+cor+';border-radius:3px;width:'+pct+'%"></div></div>';
-      h+='<div style="font-size:10px;color:var(--text-muted);margin-top:2px">'+item.count+' lead'+( item.count>1?'s':'')+' · '+pct+'%</div>';
+      h+='<div style="display:flex;align-items:center;gap:8px">';
+      h+='<span style="font-size:11px;font-weight:600;min-width:80px;color:var(--text)">'+escHtml(canalKey)+'</span>';
+      h+='<div style="flex:1;height:4px;background:var(--border);border-radius:2px"><div style="height:4px;background:'+cor+';border-radius:2px;width:'+pct+'%"></div></div>';
+      h+='<span style="font-size:11px;font-weight:600;color:var(--midnight);min-width:72px;text-align:right">R$ '+item.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>';
+      h+='<span style="font-size:10px;color:var(--text-muted);min-width:28px;text-align:right">'+pct+'%</span>';
       h+='</div>';
     });
     h+='</div>';
