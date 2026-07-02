@@ -3467,6 +3467,10 @@ function abrirModalAgendarLead(leadId){
   html+='<option value="Dr. José Carlos"'+(lead.medico_interesse==='Dr. José Carlos'?' selected':'')+'>Dr. José Carlos</option>';
   html+='<option value="Dra. Bruna"'+(lead.medico_interesse==='Dra. Bruna'?' selected':'')+'>Dra. Bruna</option>';
   html+='</select></div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Tipo</label><select id="aglead-tipo" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"><option value="Consulta">Consulta</option><option value="Retorno">Retorno</option><option value="Avulsa">Avulsa</option></select></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Procedimento</label><input id="aglead-proc" type="text" placeholder="Ex: Consulta inicial" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='</div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><input id="aglead-obs" type="text" placeholder="Opcional" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='</div>';
   html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">';
@@ -3500,7 +3504,9 @@ async function confirmarAgendarLead(leadId){
       patId=_np&&_np[0]?_np[0].id:null;
     }
     if(!patId)throw new Error('N\u00e3o foi poss\u00edvel criar o paciente');
-    await sb.from('planos_appointments').insert({patient_id:patId,date_str:dateStr,time_str:hora,profissional_nome:medico,status:'Agendado',observacao:obs||null});
+    var _tipo=document.getElementById('aglead-tipo')?document.getElementById('aglead-tipo').value:'Consulta';
+    var _proc=document.getElementById('aglead-proc')?document.getElementById('aglead-proc').value.trim():'';
+    await sb.from('planos_appointments').insert({patient_id:patId,date_str:dateStr,time_str:hora,profissional_nome:medico,tipo:_tipo,procedimento:_proc||'Consulta Dr '+medico,status:'Agendado',observacao:obs||null,registrado_por:currentUser?currentUser.name:'CRM'});
     await jornadaOnAgendado(patId);
     await sb.from('planos_leads').update({status:'agendado',patient_id_vinculado:patId,updated_at:new Date().toISOString()}).eq('id',leadId);
     closeModal('modal-generic');
