@@ -435,7 +435,7 @@ async function renderDashboard(){
     _fatHtml+='<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">';
     _fatHtml+='<div><div style="font-size:28px;font-weight:700;color:var(--tidal)">R$ '+_totalFat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
     _fatHtml+='<div style="font-size:12px;color:var(--text-muted)">Total convertido via CRM — '+_leadsA.length+' leads atendidos</div></div></div>';
-    var _canalColors={Instagram:'#e1306c',TikTok:'#010101','Google Ads':'#4285f4',Indicação:'#10b981',Facebook:'#1877f2',Outro:'#8b5cf6',Direto:'var(--ash)'};
+    var _canalColors={Instagram:'#e1306c',TikTok:'#010101','Google Ads':'#4285f4',Indicação:'#10b981',WhatsApp:'#25d366',Outro:'#8b5cf6',Direto:'var(--ash)'};
     Object.keys(_canalMap).sort(function(a,b){return _canalMap[b].valor-_canalMap[a].valor;}).forEach(function(canalKey){
       var item=_canalMap[canalKey];
       var pct=_totalFat>0?Math.round(item.valor/_totalFat*100):0;
@@ -3065,7 +3065,7 @@ function buildLeadsUI(){
         _canalMapCRM[_ck].valor+=(parseFloat(l.valor_atendimento)||0)/_cls.length;
       });
     });
-    var _canalColorsCRM={Instagram:'#e1306c',TikTok:'#010101','Google Ads':'#4285f4',Indicação:'#10b981',Facebook:'#1877f2',Outro:'#8b5cf6',Direto:'var(--ash)'};
+    var _canalColorsCRM={Instagram:'#e1306c',TikTok:'#010101','Google Ads':'#4285f4',Indicação:'#10b981',WhatsApp:'#25d366',Outro:'#8b5cf6',Direto:'var(--ash)'};
     h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:16px">';
     h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
     h+='<span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">📣 Faturamento por Canal</span>';
@@ -3154,7 +3154,7 @@ function abrirNovoLead(){
   html+='</div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Canal de marketing</label>';
   html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">';
-  ['Instagram','TikTok','Google Ads','Indicação','Facebook','Outro'].forEach(function(c){
+  ['Instagram','TikTok','Google Ads','Indicação','WhatsApp','Outro'].forEach(function(c){
     html+='<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" name="lead-canal" value="'+c+'" style="width:14px;height:14px;accent-color:var(--tidal)"> '+c+'</label>';
   });
   html+='</div></div>';
@@ -3220,7 +3220,7 @@ async function abrirLead(id){
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Canal de marketing</label>';
   html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">';
   var _canaisAtivos=(lead.canal_marketing||'').split(',').map(function(x){return x.trim();});
-  ['Instagram','TikTok','Google Ads','Indicação','Facebook','Outro'].forEach(function(canal){
+  ['Instagram','TikTok','Google Ads','Indicação','WhatsApp','Outro'].forEach(function(canal){
     var chk=_canaisAtivos.indexOf(canal)!==-1?' checked':'';
     html+='<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" name="edlead-canal" value="'+canal+'"'+chk+' style="width:14px;height:14px;accent-color:var(--tidal)"> '+canal+'</label>';
   });
