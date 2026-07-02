@@ -3051,6 +3051,40 @@ function buildLeadsUI(){
   h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700;color:#10b981">'+agendados+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Agendados</div></div>';
   h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700">'+taxa+'%</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Taxa de conversão</div></div>';
   h+='</div>';
+  // Bloco de faturamento por canal
+  var _leadsAtend=leads.filter(function(l){return l.status==='atendido'&&l.valor_atendimento;});
+  var _totalFatCRM=_leadsAtend.reduce(function(s,l){return s+(parseFloat(l.valor_atendimento)||0);},0);
+  if(_leadsAtend.length>0){
+    var _canalMapCRM={};
+    _leadsAtend.forEach(function(l){
+      var _cls=(l.canal_marketing||'Direto').split(',');
+      _cls.forEach(function(canal){
+        var _ck=canal.trim()||'Direto';
+        if(!_canalMapCRM[_ck])_canalMapCRM[_ck]={count:0,valor:0};
+        _canalMapCRM[_ck].count++;
+        _canalMapCRM[_ck].valor+=(parseFloat(l.valor_atendimento)||0)/_cls.length;
+      });
+    });
+    var _canalColorsCRM={Instagram:'#e1306c',TikTok:'#010101','Google Ads':'#4285f4',Indicação:'#10b981',Facebook:'#1877f2',Outro:'#8b5cf6',Direto:'var(--ash)'};
+    h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px">';
+    h+='<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">';
+    h+='<div style="font-size:13px">📣</div>';
+    h+='<div><div style="font-size:14px;font-weight:700">Faturamento por Canal</div><div style="font-size:11px;color:var(--text-muted)">'+_leadsAtend.length+' lead'+(_leadsAtend.length>1?'s':'')+' atendidos</div></div>';
+    h+='<div style="margin-left:auto;text-align:right"><div style="font-size:22px;font-weight:700;color:var(--tidal)">R$ '+_totalFatCRM.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div style="font-size:11px;color:var(--text-muted)">Total</div></div>';
+    h+='</div>';
+    Object.keys(_canalMapCRM).sort(function(a,b){return _canalMapCRM[b].valor-_canalMapCRM[a].valor;}).forEach(function(canalKey){
+      var item=_canalMapCRM[canalKey];
+      var pct=_totalFatCRM>0?Math.round(item.valor/_totalFatCRM*100):0;
+      var cor=_canalColorsCRM[canalKey]||'var(--ash)';
+      h+='<div style="margin-bottom:12px">';
+      h+='<div style="display:flex;justify-content:space-between;margin-bottom:5px">';
+      h+='<span style="font-size:13px;font-weight:600">'+escHtml(canalKey)+'</span>';
+      h+='<div><span style="font-size:13px;font-weight:700;color:var(--tidal)">R$ '+item.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span><span style="font-size:11px;color:var(--text-muted);margin-left:8px">('+item.count+' lead'+(item.count>1?'s':'')+' · '+pct+'%)</span></div></div>';
+      h+='<div style="height:8px;background:var(--border);border-radius:4px"><div style="height:8px;background:'+cor+';border-radius:4px;width:'+pct+'%"></div></div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
   h+='<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">';
   colunas.forEach(function(col){
     var colLeads=leads.filter(function(l){return (l.status||'novo')===col.id;});
