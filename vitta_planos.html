@@ -350,13 +350,14 @@ function mainNav(section){
 }
 
 async function renderDashboard(){
-  const[{data:patients},{data:appts},{data:sessoes},{data:envios},{data:pends},{data:pendItens}]=await Promise.all([
+  const[{data:patients},{data:appts},{data:sessoes},{data:envios},{data:pends},{data:pendItens},{data:leadsAtend}]=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
     sb.from('planos_appointments').select('*'),
     sb.from('planos_soro_sessoes').select('*'),
     sb.from('planos_soro_envios').select('*'),
     sb.from('planos_pendencias').select('*'),
-    sb.from('planos_pendencias_itens').select('*').eq('concluida',false)
+    sb.from('planos_pendencias_itens').select('*').eq('concluida',false),
+    sb.from('planos_leads').select('canal_marketing,valor_atendimento,status').eq('status','atendido')
   ]);
   allPatients=patients||[];
   const c=document.getElementById('main-content');
@@ -414,6 +415,41 @@ async function renderDashboard(){
     '<div class="dash-card" onclick="showPatientListModal(\'365 dias\','+p365ids+')"><div class="dash-card-num">'+p365.length+'</div><div class="dash-card-label">\u00daltimos 365 dias</div></div>'+
     '</div>'+
     '<div class="dash-card" onclick="mainNav(\'patients\')"><div class="dash-card-num">'+allPatients.length+'</div><div class="dash-card-label">Total de Pacientes</div></div>';
+  // Bloco faturamento por canal CRM
+  var _leadsA=leadsAtend||[];
+  var _totalFat=_leadsA.reduce(function(s,l){return s+(parseFloat(l.valor_atendimento)||0);},0);
+  if(_leadsA.length>0){
+    var _canalMap={};
+    _leadsA.forEach(function(l){
+      var canais=(l.canal_marketing||'Direto').split(',');
+      canais.forEach(function(canal){
+        var c=canal.trim()||'Direto';
+        if(!_canalMap[c])_canalMap[c]={count:0,valor:0};
+        _canalMap[c].count++;
+        _canalMap[c].valor+=(parseFloat(l.valor_atendimento)||0)/canais.length;
+      });
+    });
+    c.innerHTML+='<div class="card" style="margin-top:16px">';
+    c.innerHTML+='<div class="card-title" style="margin-bottom:14px">📣 Faturamento por Canal de Marketing</div>';
+    c.innerHTML+='<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">';
+    c.innerHTML+='<div><div style="font-size:28px;font-weight:700;color:var(--tidal)">R$ '+_totalFat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div><div style="font-size:12px;color:var(--text-muted)">Total convertido via CRM \u2014 '+_leadsA.length+' leads atendidos</div></div></div>';
+    var _fatHtml='';
+    var _canalColors={Instagram:'#e1306c',TikTok:'#010101','Google Ads':'#4285f4',Indicação:'#10b981',Facebook:'#1877f2',Outro:'#8b5cf6',Direto:'var(--ash)'};
+    Object.keys(_canalMap).sort(function(a,b){return _canalMap[b].valor-_canalMap[a].valor;}).forEach(function(canal){
+      var item=_canalMap[canal];
+      var pct=_totalFat>0?Math.round(item.valor/_totalFat*100):0;
+      var cor=_canalColors[canal]||'var(--ash)';
+      _fatHtml+='<div style="margin-bottom:10px">';
+      _fatHtml+='<div style="display:flex;justify-content:space-between;margin-bottom:4px">';
+      _fatHtml+='<span style="font-size:13px;font-weight:600">'+canal+'</span>';
+      _fatHtml+='<div style="text-align:right"><span style="font-size:13px;font-weight:700;color:var(--tidal)">R$ '+item.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span><span style="font-size:11px;color:var(--text-muted);margin-left:8px">('+item.count+' leads · '+pct+'%)</span></div>';
+      _fatHtml+='</div>';
+      _fatHtml+='<div style="height:6px;background:var(--border);border-radius:3px"><div style="height:6px;background:'+cor+';border-radius:3px;width:'+pct+'%"></div></div>';
+      _fatHtml+='</div>';
+    });
+    c.innerHTML+='<div>'+_fatHtml+'</div>';
+    c.innerHTML+='</div>';
+  }
 }
 
 function showPatientListModal(title,ids){
@@ -2988,6 +3024,7 @@ function buildLeadsUI(){
     {id:'contato',label:'Contato Feito',color:'#f59e0b',bg:'#fffbeb'},
     {id:'negociacao',label:'Em Negocição',color:'#8b5cf6',bg:'#f5f3ff'},
     {id:'agendado',label:'Agendado',color:'#10b981',bg:'#ecfdf5'},
+    {id:'atendido',label:'Atendido',color:'#154C56',bg:'#f0faf9'},
     {id:'perdido',label:'Perdido',color:'#ef4444',bg:'#fef2f2'}
   ];
   const hoje=new Date().toISOString().split('T')[0];
@@ -3003,7 +3040,8 @@ function buildLeadsUI(){
   const total=leads.filter(l=>l.status!=='perdido').length;
   const novos=leads.filter(l=>l.status==='novo').length;
   const agendados=leads.filter(l=>l.status==='agendado').length;
-  const taxa=total+leads.filter(l=>l.status==='perdido').length>0?Math.round(agendados/(total+leads.filter(l=>l.status==='perdido').length)*100):0;
+  const atendidos=leads.filter(l=>l.status==='atendido').length;
+  const taxa=total+leads.filter(l=>l.status==='perdido').length>0?Math.round((agendados+atendidos)/(total+leads.filter(l=>l.status==='perdido').length)*100):0;
   h+='<div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">';
   h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700">'+total+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Leads ativos</div></div>';
   h+='<div style="flex:1;min-width:120px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px"><div style="font-size:22px;font-weight:700;color:#3b82f6">'+novos+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Novos</div></div>';
@@ -3033,6 +3071,8 @@ function buildLeadsUI(){
         h+='</div>';
         if(lead.telefone)h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">'+escHtml(lead.telefone)+'</div>';
         if(lead.proximo_contato)h+='<div style="font-size:11px;color:'+(atrasado?'#ef4444':'var(--text-muted)')+';margin-bottom:6px">'+(atrasado?'Atrasado: ':'')+lead.proximo_contato+'</div>';
+        if(lead.canal_marketing)h+='<div style="font-size:10px;font-weight:700;color:#8b5cf6;background:#f5f3ff;border-radius:20px;padding:2px 8px;display:inline-block;margin-bottom:6px">📣 '+escHtml(lead.canal_marketing)+'</div>';
+        if(lead.status==='atendido'&&lead.valor_atendimento)h+='<div style="font-size:13px;font-weight:700;color:var(--tidal);margin-bottom:6px">💰 R$ '+(parseFloat(lead.valor_atendimento)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
         if(lead.observacao)h+='<div style="font-size:11px;color:var(--text-muted);background:var(--bg-page);border-radius:6px;padding:5px 8px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(lead.observacao)+'</div>';
         // Ultimo contato registrado
         var _ultimaAtiv=(_leadsAtividades||[]).find(function(a){return a.lead_id===lead.id;});
@@ -3051,7 +3091,7 @@ function buildLeadsUI(){
         if(lead.created_at){var _dt=new Date(lead.created_at);var _dtStr=_dt.toLocaleDateString('pt-BR')+' '+_dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});h+='<div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">\ud83d\udcc5 Entrada: '+_dtStr+'</div>';}
         h+='<div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">';
         if(waNum)h+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="flex:1;text-align:center;padding:5px 0;background:#25d366;color:#fff;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none">WhatsApp</a>';
-        if(col.id!=='agendado'&&col.id!=='perdido')h+='<button onclick="avancarLead('+lead.id+')" style="flex:1;padding:5px 0;background:'+col.color+';color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">Avançar \u2192</button>';
+        if(col.id!=='agendado'&&col.id!=='atendido'&&col.id!=='perdido')h+='<button onclick="avancarLead('+lead.id+')" style="flex:1;padding:5px 0;background:'+col.color+';color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">Avançar \u2192</button>';
         h+='</div></div>';
       });
     }
@@ -3071,9 +3111,15 @@ function abrirNovoLead(){
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Email</label><input id="lead-email" type="text" placeholder="email@exemplo.com" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='</div>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Origem</label><select id="lead-origem" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"><option>Email/Google</option><option>WhatsApp</option><option>Instagram</option><option>Indicação</option><option>Outro</option></select></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Origem do contato</label><select id="lead-origem" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"><option>Email/Google</option><option>WhatsApp</option><option>Instagram</option><option>Indicação</option><option>Outro</option></select></div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Médico de interesse</label><select id="lead-medico" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)"><option>Dr. José Carlos</option><option>Dra. Bruna</option><option>Indiferente</option></select></div>';
   html+='</div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Canal de marketing</label>';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">';
+  ['Instagram','TikTok','Google Ads','Indicação','Facebook','Outro'].forEach(function(c){
+    html+='<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" name="lead-canal" value="'+c+'" style="width:14px;height:14px;accent-color:var(--tidal)"> '+c+'</label>';
+  });
+  html+='</div></div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Próximo contato</label><input id="lead-pc" type="date" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><textarea id="lead-obs" rows="2" placeholder="Anotações sobre o lead..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical"></textarea></div>';
   html+='</div>';
@@ -3088,7 +3134,8 @@ function abrirNovoLead(){
 async function salvarNovoLead(){
   var nome=document.getElementById('lead-nome').value.trim();
   if(!nome){toast('Informe o nome','error');return;}
-  var data={nome:nome,telefone:document.getElementById('lead-tel').value.trim(),email:document.getElementById('lead-email').value.trim(),origem:document.getElementById('lead-origem').value,medico_interesse:document.getElementById('lead-medico').value,proximo_contato:document.getElementById('lead-pc').value||null,observacao:document.getElementById('lead-obs').value.trim()||null,status:'novo',created_at:new Date().toISOString()};
+  var _canais=Array.from(document.querySelectorAll('input[name="lead-canal"]:checked')).map(function(c){return c.value;}).join(', ');
+  var data={nome:nome,telefone:document.getElementById('lead-tel').value.trim(),email:document.getElementById('lead-email').value.trim(),origem:document.getElementById('lead-origem').value,canal_marketing:_canais||null,medico_interesse:document.getElementById('lead-medico').value,proximo_contato:document.getElementById('lead-pc').value||null,observacao:document.getElementById('lead-obs').value.trim()||null,status:'novo',created_at:new Date().toISOString()};
   try{
     await sb.from('planos_leads').insert(data);
     closeModal('modal-generic');
@@ -3103,7 +3150,7 @@ async function abrirLead(id){
   // Busca historico de atividades
   var atividades=[];
   try{var{data:atv}=await sb.from('planos_leads_atividades').select('*').eq('lead_id',id).order('created_at',{ascending:false});atividades=atv||[];}catch(e){}
-  var statusOpts=[{id:'novo',label:'Novo Lead'},{id:'contato',label:'Contato Feito'},{id:'negociacao',label:'Em Negociação'},{id:'agendado',label:'Agendado'},{id:'perdido',label:'Perdido'}];
+  var statusOpts=[{id:'novo',label:'Novo Lead'},{id:'contato',label:'Contato Feito'},{id:'negociacao',label:'Em Negociação'},{id:'agendado',label:'Agendado'},{id:'atendido',label:'Atendido'},{id:'perdido',label:'Perdido'}];
   var waNum=(lead.telefone||'').replace(/\D/g,'');
   var tipoIcons={contato_feito:'📞',nao_respondeu:'🔇',mensagem:'💬',status_alterado:'🔄',agendado:'📅',nota:'📝'};
   var html='<div style="padding:4px">';
@@ -3132,6 +3179,14 @@ async function abrirLead(id){
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Telefone</label><input id="edlead-tel" type="text" value="'+escHtml(lead.telefone||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Email</label><input id="edlead-email" type="text" value="'+escHtml(lead.email||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='</div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Canal de marketing</label>';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">';
+  var _canaisAtivos=(lead.canal_marketing||'').split(',').map(function(x){return x.trim();});
+  ['Instagram','TikTok','Google Ads','Indicação','Facebook','Outro'].forEach(function(canal){
+    var chk=_canaisAtivos.indexOf(canal)!==-1?' checked':'';
+    html+='<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" name="edlead-canal" value="'+canal+'"'+chk+' style="width:14px;height:14px;accent-color:var(--tidal)"> '+canal+'</label>';
+  });
+  html+='</div></div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><textarea id="edlead-obs" rows="2" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical">'+escHtml(lead.observacao||'')+'</textarea></div>';
   html+='</div>';
   // Historico de atividades
@@ -3173,7 +3228,7 @@ async function abrirLead(id){
   html+='<button onclick="deletarLead('+id+')" style="padding:9px 14px;border:1.5px solid #ef4444;border-radius:8px;background:none;font-size:12px;font-family:var(--font);cursor:pointer;color:#ef4444">Excluir</button>';
   html+='<div style="display:flex;gap:8px">';
   if(waNum)html+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="padding:9px 14px;background:#25d366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center">WhatsApp</a>';
-  if(lead.status!=='perdido'){
+  if(lead.status!=='perdido'&&lead.status!=='atendido'){
     if(lead.status==='agendado'){
       html+='<button onclick="closeModal(\'modal-generic\');reagendarLead('+id+',\''+escHtml(lead.nome)+'\')" style="padding:9px 14px;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Reagendar</button>';
     } else {
@@ -3251,12 +3306,13 @@ async function salvarNotaLead(leadId){
 async function salvarLead(id){
   var lead=(_leadsData||[]).find(function(l){return l.id===id;});
   var novoStatus=document.getElementById('edlead-status').value;
-  var data={status:novoStatus,telefone:document.getElementById('edlead-tel').value.trim(),email:document.getElementById('edlead-email').value.trim(),proximo_contato:document.getElementById('edlead-pc').value||null,observacao:document.getElementById('edlead-obs').value.trim()||null,updated_at:new Date().toISOString()};
+  var _canaisEd=Array.from(document.querySelectorAll('input[name="edlead-canal"]:checked')).map(function(c){return c.value;}).join(', ');
+  var data={status:novoStatus,telefone:document.getElementById('edlead-tel').value.trim(),email:document.getElementById('edlead-email').value.trim(),canal_marketing:_canaisEd||null,proximo_contato:document.getElementById('edlead-pc').value||null,observacao:document.getElementById('edlead-obs').value.trim()||null,updated_at:new Date().toISOString()};
   try{
     await sb.from('planos_leads').update(data).eq('id',id);
     // Registra automaticamente quando status muda
     if(lead&&lead.status!==novoStatus){
-      var statusLabels={novo:'Novo Lead',contato:'Contato Feito',negociacao:'Em Negociação',agendado:'Agendado',perdido:'Perdido'};
+      var statusLabels={novo:'Novo Lead',contato:'Contato Feito',negociacao:'Em Negociação',agendado:'Agendado',atendido:'Atendido',perdido:'Perdido'};
       await sb.from('planos_leads_atividades').insert({lead_id:id,tipo:'status_alterado',descricao:'Status alterado: '+(statusLabels[lead.status]||lead.status)+' → '+(statusLabels[novoStatus]||novoStatus),registrado_por:currentUser?currentUser.name:'Secretaria',created_at:new Date().toISOString()});
     }
     closeModal('modal-generic');
@@ -3268,16 +3324,65 @@ async function salvarLead(id){
 async function avancarLead(id){
   var lead=(_leadsData||[]).find(function(l){return l.id===id;});
   if(!lead)return;
-  var ordem=['novo','contato','negociacao','agendado'];
+  var ordem=['novo','contato','negociacao','agendado','atendido'];
   var idx=ordem.indexOf(lead.status||'novo');
   if(idx<0||idx>=ordem.length-1)return;
   var proximo=ordem[idx+1];
   if(proximo==='agendado'){abrirModalAgendarLead(id);return;}
+  if(proximo==='atendido'){abrirModalAtendido(id);return;}
   try{
     await sb.from('planos_leads').update({status:proximo,updated_at:new Date().toISOString()}).eq('id',id);
     toast('Lead avançado!','success');
     await renderLeads();
   }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+async function abrirModalAtendido(leadId){
+  var lead=(_leadsData||[]).find(function(l){return l.id===leadId;});
+  if(!lead)return;
+  var patId=lead.patient_id_vinculado;
+  var valorFin=0;var formaFin='';var dataFin='';
+  if(patId){
+    try{
+      var{data:fins}=await sb.from('planos_financeiro').select('valor,forma,data_pagamento').eq('patient_id',patId).order('data_pagamento',{ascending:false}).limit(1);
+      if(fins&&fins.length){valorFin=fins[0].valor||0;formaFin=fins[0].forma||'';dataFin=fins[0].data_pagamento||'';}
+    }catch(e){}
+  }
+  var html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:6px">Marcar como Atendido</div>';
+  html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:18px">'+escHtml(lead.nome)+'</div>';
+  html+='<div style="display:grid;gap:12px">';
+  if(valorFin>0){
+    html+='<div style="padding:12px 16px;background:#f0faf9;border:1.5px solid var(--tidal);border-radius:10px">';
+    html+='<div style="font-size:11px;font-weight:600;color:var(--tidal);text-transform:uppercase;margin-bottom:4px">Pagamento encontrado no financeiro</div>';
+    html+='<div style="font-size:18px;font-weight:700;color:var(--tidal)">R$ '+valorFin.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
+    html+='<div style="font-size:12px;color:var(--text-muted)">'+escHtml(formaFin)+(dataFin?' · '+escHtml(dataFin):'')+'</div></div>';
+  }
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Valor do atendimento (R$)</label>';
+  html+='<input id="atend-valor" type="number" step="0.01" value="'+valorFin+'" placeholder="0,00" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label>';
+  html+='<input id="atend-obs" type="text" placeholder="Opcional" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">';
+  html+='<button onclick="closeModal(\'modal-generic\')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer">Cancelar</button>';
+  html+='<button onclick="confirmarAtendido('+leadId+')" class="btn btn-primary">✓ Confirmar atendimento</button>';
+  html+='</div></div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+
+async function confirmarAtendido(leadId){
+  var valor=parseFloat(document.getElementById('atend-valor').value)||0;
+  var obs=document.getElementById('atend-obs').value.trim();
+  var btn=document.querySelector('#modal-generic-content .btn-primary');
+  if(btn){btn.textContent='Salvando...';btn.disabled=true;}
+  try{
+    await sb.from('planos_leads').update({status:'atendido',valor_atendimento:valor||null,updated_at:new Date().toISOString()}).eq('id',leadId);
+    await sb.from('planos_leads_atividades').insert({lead_id:leadId,tipo:'status_alterado',descricao:'Atendido'+(valor?' — R$ '+valor.toLocaleString('pt-BR',{minimumFractionDigits:2}):'')+(obs?' — '+obs:''),registrado_por:currentUser?currentUser.name:'Secretaria',created_at:new Date().toISOString()});
+    closeModal('modal-generic');
+    toast(lead?' ✅ Atendimento registrado!':'Atendido!','success');
+    await renderLeads();
+  }catch(e){toast('Erro: '+e.message,'error');if(btn){btn.textContent='✓ Confirmar atendimento';btn.disabled=false;}}
 }
 
 async function reagendarLead(leadId,leadNome){
@@ -3352,7 +3457,7 @@ async function confirmarAgendarLead(leadId){
     if(!patId)throw new Error('N\u00e3o foi poss\u00edvel criar o paciente');
     await sb.from('planos_appointments').insert({patient_id:patId,date_str:dateStr,time_str:hora,profissional_nome:medico,status:'Agendado',observacao:obs||null});
     await jornadaOnAgendado(patId);
-    await sb.from('planos_leads').update({status:'agendado',updated_at:new Date().toISOString()}).eq('id',leadId);
+    await sb.from('planos_leads').update({status:'agendado',patient_id_vinculado:patId,updated_at:new Date().toISOString()}).eq('id',leadId);
     closeModal('modal-generic');
     toast(lead.nome+' agendado! Já aparece na Agenda e no Relacionamento.','success');
     await renderLeads();
