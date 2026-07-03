@@ -3875,8 +3875,41 @@ async function indicCarregarFormularios(){
   const wrap=document.getElementById('indic-form-wrap');
   if(!wrap)return;
   let forms=[];
+  let npsRespostas=[];
   try{const{data}=await sb.from('planos_indicacao_formularios').select('*').order('created_at',{ascending:false});forms=data||[];}catch(e){}
+  try{const{data}=await sb.from('planos_nps_respostas').select('*').order('created_at',{ascending:false}).limit(100);npsRespostas=data||[];}catch(e){}
   let html='';
+  // Resultados da pesquisa NPS
+  html+='<div class="card" style="margin-bottom:20px"><div class="card-title">\ud83d\udcca Respostas da Pesquisa de Satisfa\u00e7\u00e3o (NPS)</div>';
+  if(!npsRespostas.length){
+    html+='<div style="font-size:12px;color:var(--text-muted)">Nenhuma resposta ainda. Envie o link da pesquisa pra um paciente pela aba Info do prontu\u00e1rio dele.</div></div>';
+  } else {
+    const media=npsRespostas.reduce(function(s,r){return s+r.nota;},0)/npsRespostas.length;
+    const promotores=npsRespostas.filter(function(r){return r.categoria==='promotor';}).length;
+    const neutros=npsRespostas.filter(function(r){return r.categoria==='neutro';}).length;
+    const detratores=npsRespostas.filter(function(r){return r.categoria==='detrator';}).length;
+    const npsScore=Math.round((promotores-detratores)/npsRespostas.length*100);
+    html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">';
+    html+='<div class="dash-card"><div class="dash-card-num">'+media.toFixed(1)+'</div><div class="dash-card-label">Nota m\u00e9dia</div></div>';
+    html+='<div class="dash-card"><div class="dash-card-num" style="color:#19807f">'+promotores+'</div><div class="dash-card-label">Promotores (9-10)</div></div>';
+    html+='<div class="dash-card"><div class="dash-card-num" style="color:#C9B382">'+neutros+'</div><div class="dash-card-label">Neutros (7-8)</div></div>';
+    html+='<div class="dash-card"><div class="dash-card-num" style="color:#ef4444">'+detratores+'</div><div class="dash-card-label">Detratores (0-6)</div></div>';
+    html+='</div>';
+    html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">NPS geral: <strong style="color:var(--midnight)">'+npsScore+'</strong> (% promotores \u2212 % detratores)</div>';
+    html+='<div style="max-height:420px;overflow-y:auto">';
+    npsRespostas.forEach(function(r){
+      const nome=r.patient_id?nomePacientePorId(r.patient_id):(r.nome_livre||'An\u00f4nimo');
+      const cor=r.categoria==='promotor'?'#19807f':r.categoria==='neutro'?'#C9B382':'#ef4444';
+      html+='<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)">';
+      html+='<div style="width:32px;height:32px;border-radius:50%;background:'+cor+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">'+r.nota+'</div>';
+      html+='<div style="flex:1">';
+      html+='<div style="font-size:13px;font-weight:600">'+escHtml(nome||'')+' <span style="font-size:10px;font-weight:700;color:'+cor+'">\u00b7 '+r.categoria.toUpperCase()+'</span></div>';
+      if(r.comentario)html+='<div style="font-size:12px;color:var(--text-muted);margin-top:2px">"'+escHtml(r.comentario)+'"</div>';
+      html+='<div style="font-size:10px;color:var(--text-muted);margin-top:2px">'+(r.created_at?new Date(r.created_at).toLocaleDateString('pt-BR'):'')+'</div>';
+      html+='</div></div>';
+    });
+    html+='</div></div>';
+  }
   // Scripts de mensagens
   html+='<div class="card" style="margin-bottom:20px"><div class="card-title">\ud83d\udcac Scripts de mensagens da secret\u00e1ria</div>';
   html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Esses textos alimentam os bot\u00f5es de WhatsApp em Duplo A e na Pesquisa de recompensa. Placeholders dispon\u00edveis aparecem abaixo de cada campo — use exatamente como mostrado, entre chaves.</div>';
