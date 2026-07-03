@@ -223,7 +223,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="ntab" id="ntab-pendencias" onclick="mainNav('pendencias')">Pend&#234;ncias</button>
     <button class="ntab" id="ntab-leads" onclick="mainNav('leads')">CRM Leads</button>
     <button class="ntab" id="ntab-relacionamento" onclick="mainNav('relacionamento')">Relacionamento</button>
-    <button class="ntab" id="ntab-indicacoes" onclick="mainNav('indicacoes')">&#127873; Indica&#231;&#245;es<span id="nav-badge-indicacoes" style="display:none;margin-left:6px;background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;font-weight:700"></span></button>
+    <button class="ntab" id="ntab-indicacoes" onclick="mainNav('indicacoes')">Indica&#231;&#245;es<span id="nav-badge-indicacoes" style="display:none;margin-left:6px;background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;font-weight:700"></span></button>
     <button class="ntab" id="ntab-financeiro-global" onclick="mainNav('financeiro-global')">Financeiro</button>
     <button class="ntab" id="ntab-relatorios" onclick="mainNav('relatorios')">Relat&#243;rios</button>
     <button class="ntab" id="ntab-config" onclick="mainNav('config')">&#9881; Configura&#231;&#245;es</button>
@@ -438,6 +438,14 @@ async function renderDashboard(){
     if(!pat)return;
     alertItems.push({id:pat.id,name:pat.name,msg:'\ud83d\udccc '+escHtml(it.texto||'Pend\u00eancia em aberto'),type:'warning'});
   });
+  // Alertas de Duplo A pendente (agradecer quem indicou)
+  allPatients.filter(p=>p.indicado_por_patient_id&&p.duplo_a_status!=='feito').forEach(p=>{
+    const indicador=allPatients.find(x=>x.id===p.indicado_por_patient_id);
+    const indicadorNome=indicador?indicador.name:(p.indicado_por_nome_livre||'algu\u00e9m');
+    const horasDesde=p.created_at?(Date.now()-new Date(p.created_at).getTime())/3600000:0;
+    const atrasado=horasDesde>72;
+    alertItems.push({id:p.id,name:indicadorNome,msg:(atrasado?'\ud83d\udd34 ':'\ud83c\udf81 ')+'Agradecer indica\u00e7\u00e3o de '+escHtml(p.name)+(atrasado?' (atrasado)':''),type:atrasado?'danger':'warning',action:'indicacoes'});
+  });
   function lastConsultDays(pid){const pa=(appts||[]).filter(a=>a.patient_id===pid&&a.status==='Compareceu'&&!a.origem_tabela);if(!pa.length)return null;return daysAgo(pa.sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str))[0].date_str);}
   const p90=allPatients.filter(p=>{const d=lastConsultDays(p.id);return d!==null&&d<=90;});
   const p120=allPatients.filter(p=>{const d=lastConsultDays(p.id);return d!==null&&d<=120;});
@@ -452,7 +460,8 @@ async function renderDashboard(){
     alertsHtml+='<div class="section-title" style="font-size:14px;margin-bottom:10px">&#128276; Alertas</div>';
     alertItems.forEach(a=>{
       const isDanger=a.type==='danger';
-      alertsHtml+='<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;margin-bottom:8px;font-size:13px;cursor:pointer;background:'+(isDanger?'#fff5f5':'#fffbeb')+';border:1px solid '+(isDanger?'#fca5a5':'#fcd34d')+';color:'+(isDanger?'#991b1b':'#92400e')+'" onclick="openPatient('+a.id+')">';
+      const clickAction=a.action==='indicacoes'?"mainNav('indicacoes')":('openPatient('+a.id+')');
+      alertsHtml+='<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;margin-bottom:8px;font-size:13px;cursor:pointer;background:'+(isDanger?'#fff5f5':'#fffbeb')+';border:1px solid '+(isDanger?'#fca5a5':'#fcd34d')+';color:'+(isDanger?'#991b1b':'#92400e')+'" onclick="'+clickAction+'">';
       alertsHtml+='<div><strong>'+escHtml(a.name)+'</strong><br/>'+a.msg+'</div>';
       alertsHtml+='</div>';
     });
