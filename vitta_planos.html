@@ -3649,6 +3649,14 @@ async function deletarLead(id){
 
 // ========== PROGRAMA DE INDICAÇÃO (Etapas 3-7) ==========
 let _indicTab='duploa';
+let _indicScripts={agradecimento:'',pesquisa:''};
+const INDIC_SCRIPT_DEFAULT_AGRADECIMENTO='Oi {primeiro_nome_indicador}, aqui \u00e9 da Cl\u00ednica Vitta! Passando rapidinho pra te contar que {nome_indicado} veio at\u00e9 a gente e disse que foi voc\u00ea quem indicou. Queria muito te agradecer por isso \u2014 pra gente \u00e9 muito importante saber que voc\u00ea confia no nosso trabalho a ponto de recomendar. Se voc\u00ea conhecer mais algu\u00e9m que possa se beneficiar do nosso cuidado, fica \u00e0 vontade pra continuar indicando \u2014 vamos cuidar bem da pessoa, do jeito que cuidamos de voc\u00ea. \ud83d\udc99';
+const INDIC_SCRIPT_DEFAULT_PESQUISA='Oi {primeiro_nome}, tudo bem? Aqui \u00e9 da Cl\u00ednica Vitta. A gente t\u00e1 pensando em criar uma forma de reconhecer melhor os pacientes que confiam na gente e indicam pra amigos e familiares \u2014 e antes de decidir o que fazer, eu queria muito ouvir sua opini\u00e3o: o que faria sentido pra voc\u00ea, como um gesto nosso de agradecimento?';
+function aplicarPlaceholders(tpl,map){
+  let s=tpl||'';
+  Object.keys(map).forEach(function(k){s=s.split('{'+k+'}').join(map[k]);});
+  return s;
+}
 
 async function atualizarBadgeIndicacoes(){
   try{
@@ -3661,7 +3669,7 @@ async function atualizarBadgeIndicacoes(){
 }
 
 function indicSubtabsHtml(){
-  const tabs=[{id:'duploa',label:'\ud83d\udc4b Duplo A'},{id:'indicadores',label:'\u2b50 Indicadores'},{id:'metricas',label:'\ud83d\udcca M\u00e9tricas'},{id:'regras',label:'\ud83d\udccb Regra interna'}];
+  const tabs=[{id:'duploa',label:'\ud83d\udc4b Duplo A'},{id:'indicadores',label:'\u2b50 Indicadores'},{id:'metricas',label:'\ud83d\udcca M\u00e9tricas'},{id:'regras',label:'\ud83d\udccb Regra interna'},{id:'formularios',label:'\ud83d\udcdd Formul\u00e1rios & Scripts'}];
   let h='<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">';
   tabs.forEach(function(t){
     h+='<button class="subtab '+(_indicTab===t.id?'active':'')+'" onclick="renderIndicacoes(\''+t.id+'\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_indicTab===t.id?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_indicTab===t.id?'var(--accent)':'transparent')+';margin-bottom:-2px">'+t.label+'</button>';
@@ -3675,21 +3683,28 @@ async function renderIndicacoes(tab){
   const c=document.getElementById('main-content');
   c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
   try{
-    const[{data:patients},{data:appts},{data:fin},{data:leads}]=await Promise.all([
+    const[{data:patients},{data:appts},{data:fin},{data:leads},{data:cfgScripts}]=await Promise.all([
       sb.from('planos_patients').select('*').order('name'),
       sb.from('planos_appointments').select('patient_id,status').eq('status','Compareceu'),
       sb.from('planos_financeiro').select('patient_id,valor'),
-      sb.from('planos_leads').select('canal_marketing,status')
+      sb.from('planos_leads').select('canal_marketing,status'),
+      sb.from('planos_config').select('key,value').in('key',['indic_script_agradecimento','indic_script_pesquisa'])
     ]);
     allPatients=patients||[];
+    const cAgrad=(cfgScripts||[]).find(function(r){return r.key==='indic_script_agradecimento';});
+    const cPesq=(cfgScripts||[]).find(function(r){return r.key==='indic_script_pesquisa';});
+    _indicScripts.agradecimento=(cAgrad&&cAgrad.value)?cAgrad.value:INDIC_SCRIPT_DEFAULT_AGRADECIMENTO;
+    _indicScripts.pesquisa=(cPesq&&cPesq.value)?cPesq.value:INDIC_SCRIPT_DEFAULT_PESQUISA;
     let html='<div class="section-header"><div class="section-title">\ud83c\udf81 Programa de Indica\u00e7\u00e3o</div></div>';
     html+=indicSubtabsHtml();
     if(_indicTab==='duploa')html+=indicRenderDuploA(allPatients);
     else if(_indicTab==='indicadores')html+=indicRenderIndicadores(allPatients,appts||[]);
     else if(_indicTab==='metricas')html+=indicRenderMetricas(allPatients,fin||[],leads||[]);
     else if(_indicTab==='regras')html+='<div id="indic-regras-wrap">Carregando regra...</div>';
+    else if(_indicTab==='formularios')html+='<div id="indic-form-wrap">Carregando...</div>';
     c.innerHTML=html;
     if(_indicTab==='regras')indicCarregarRegra();
+    else if(_indicTab==='formularios')indicCarregarFormularios();
     atualizarBadgeIndicacoes();
   }catch(e){c.innerHTML='<div class="empty">Erro ao carregar: '+e.message+'</div>';}
 }
@@ -3712,7 +3727,7 @@ function indicRenderDuploA(patients){
       const horasDesde=p.created_at?(Date.now()-new Date(p.created_at).getTime())/3600000:0;
       const atrasado=horasDesde>72;
       const primeiroNome=(indicadorNome||'').split(' ')[0]||indicadorNome;
-      const msg='Oi '+primeiroNome+', aqui \u00e9 da Cl\u00ednica Vitta! Passando rapidinho pra te contar que '+p.name+' veio at\u00e9 a gente e disse que foi voc\u00ea quem indicou. Queria muito te agradecer por isso — pra gente \u00e9 muito importante saber que voc\u00ea confia no nosso trabalho a ponto de recomendar. Se voc\u00ea conhecer mais algu\u00e9m que possa se beneficiar do nosso cuidado, fica \u00e0 vontade pra continuar indicando — vamos cuidar bem da pessoa, do jeito que cuidamos de voc\u00ea. \ud83d\udc99';
+      const msg=aplicarPlaceholders(_indicScripts.agradecimento,{primeiro_nome_indicador:primeiroNome,nome_indicador:indicadorNome,nome_indicado:p.name});
       html+='<div class="card" style="margin-bottom:10px;border:1.5px solid '+(atrasado?'#ef4444':'var(--border)')+';border-radius:12px;padding:14px 16px">';
       html+='<div style="display:flex;align-items:flex-start;gap:10px">';
       html+='<div class="patient-avatar" style="width:36px;height:36px;font-size:14px;flex-shrink:0;background:'+(atrasado?'#ef4444':'var(--accent)')+'">'+(indicadorNome||'?').charAt(0).toUpperCase()+'</div>';
@@ -3792,10 +3807,15 @@ function indicRenderIndicadores(patients,appts){
 function indicAbrirPesquisa(patientId){
   const p=(allPatients||[]).find(function(x){return x.id===patientId;});
   if(!p)return;
+  const primeiroNome=(p.name||'').split(' ')[0]||p.name;
+  const msg=aplicarPlaceholders(_indicScripts.pesquisa,{primeiro_nome:primeiroNome,nome:p.name});
+  const waNum=(p.telefone||'').replace(/\D/g,'');
   let html='<div style="padding:4px">';
   html+='<div style="font-size:16px;font-weight:700;margin-bottom:6px">Pesquisa de recompensa</div>';
   html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">'+escHtml(p.name)+'</div>';
-  html+='<div style="background:#f5f3ff;border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px;color:#6d28d9">"A gente t\u00e1 pensando em criar uma forma de reconhecer melhor os pacientes que confiam na gente e indicam pra amigos e familiares — o que faria sentido pra voc\u00ea, como um gesto nosso de agradecimento?"</div>';
+  html+='<div style="background:#f5f3ff;border-radius:10px;padding:12px;margin-bottom:10px;font-size:12px;color:#6d28d9">'+escHtml(msg)+'</div>';
+  if(waNum)html+='<a href="https://wa.me/55'+waNum+'?text='+encodeURIComponent(msg)+'" target="_blank" style="display:block;text-align:center;padding:8px 0;background:#25d366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;margin-bottom:16px">\ud83d\udcac Enviar via WhatsApp</a>';
+  else html+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:16px">Sem telefone cadastrado — ligar manualmente.</div>';
   html+='<div class="field"><label>Status do contato</label><select id="pesq-status"><option value="contatado"'+(p.pesquisa_recompensa_status==='contatado'?' selected':'')+'>Ligou, mas ainda sem resposta</option><option value="respondeu"'+(p.pesquisa_recompensa_status==='respondeu'?' selected':'')+'>Respondeu</option></select></div>';
   html+='<div class="field"><label>O que a pessoa disse</label><textarea id="pesq-resposta" rows="3" placeholder="Anote a resposta livre da pessoa...">'+(p.pesquisa_recompensa_resposta||'')+'</textarea></div>';
   html+='<button class="btn btn-primary btn-full" onclick="indicSalvarPesquisa('+patientId+')">Salvar</button>';
@@ -3867,6 +3887,123 @@ async function indicSalvarRegra(){
   try{
     await sb.from('planos_config').upsert({key:'regra_indicacao',value:texto});
     toast('Regra salva!','success');
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+// ---- Subtab Formulários & Scripts ----
+async function indicCarregarFormularios(){
+  const wrap=document.getElementById('indic-form-wrap');
+  if(!wrap)return;
+  let forms=[];
+  try{const{data}=await sb.from('planos_indicacao_formularios').select('*').order('created_at',{ascending:false});forms=data||[];}catch(e){}
+  let html='';
+  // Scripts de mensagens
+  html+='<div class="card" style="margin-bottom:20px"><div class="card-title">\ud83d\udcac Scripts de mensagens da secret\u00e1ria</div>';
+  html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Esses textos alimentam os bot\u00f5es de WhatsApp em Duplo A e na Pesquisa de recompensa. Placeholders dispon\u00edveis aparecem abaixo de cada campo — use exatamente como mostrado, entre chaves.</div>';
+  html+='<div style="margin-bottom:18px"><label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">Agradecimento por indica\u00e7\u00e3o (Duplo A)</label>';
+  html+='<textarea id="indic-script-agradecimento" rows="5" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical">'+escHtml(_indicScripts.agradecimento)+'</textarea>';
+  html+='<div style="font-size:11px;color:var(--text-muted);margin-top:4px">Placeholders: {primeiro_nome_indicador} \u00b7 {nome_indicador} \u00b7 {nome_indicado}</div>';
+  html+='<button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="indicSalvarScript(\'indic_script_agradecimento\',\'indic-script-agradecimento\')">\ud83d\udcbe Salvar</button></div>';
+  html+='<div><label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">Convite para a pesquisa de recompensa</label>';
+  html+='<textarea id="indic-script-pesquisa" rows="5" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical">'+escHtml(_indicScripts.pesquisa)+'</textarea>';
+  html+='<div style="font-size:11px;color:var(--text-muted);margin-top:4px">Placeholders: {primeiro_nome} \u00b7 {nome}</div>';
+  html+='<button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="indicSalvarScript(\'indic_script_pesquisa\',\'indic-script-pesquisa\')">\ud83d\udcbe Salvar</button></div>';
+  html+='</div>';
+  // Formulários de pesquisa
+  html+='<div class="card"><div class="section-header" style="margin-bottom:14px"><div class="card-title" style="margin:0">\ud83d\udcc4 Formul\u00e1rios de pesquisa</div><button class="btn btn-primary btn-sm" onclick="indicNovoFormulario()">+ Novo formul\u00e1rio</button></div>';
+  html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Suba um arquivo (PDF/imagem) j\u00e1 pronto, ou crie um formul\u00e1rio em texto direto no sistema — ambos ficam edit\u00e1veis aqui, sem precisar mexer no c\u00f3digo.</div>';
+  if(!forms.length){
+    html+='<div style="font-size:12px;color:var(--text-muted)">Nenhum formul\u00e1rio cadastrado ainda.</div>';
+  } else {
+    forms.forEach(function(f){
+      html+='<div class="card" style="margin-bottom:12px;background:var(--bg-page)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      html+='<div><strong style="font-size:13px">'+escHtml(f.titulo)+'</strong> <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:'+(f.tipo==='arquivo'?'#dbeafe':'#dcfce7')+';color:'+(f.tipo==='arquivo'?'#1e40af':'#166534')+';font-weight:700;margin-left:6px">'+(f.tipo==='arquivo'?'ARQUIVO':'TEXTO')+'</span></div>';
+      html+='<button onclick="indicExcluirFormulario('+f.id+')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:12px;font-weight:600">Excluir</button>';
+      html+='</div>';
+      if(f.tipo==='arquivo'){
+        html+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+        if(f.arquivo_path)html+='<button onclick="openFile(\'documents\',\''+f.arquivo_path+'\')" style="padding:7px 14px;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">\ud83d\udcc2 Abrir arquivo</button>';
+        html+='<label style="font-size:11px;color:var(--text-muted);cursor:pointer">Substituir: <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="indicSubstituirArquivo('+f.id+',this)" style="font-size:11px"/></label>';
+        html+='</div>';
+      } else {
+        html+='<textarea id="indic-form-txt-'+f.id+'" rows="4" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical">'+escHtml(f.conteudo||'')+'</textarea>';
+        html+='<button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="indicSalvarFormularioTexto('+f.id+')">\ud83d\udcbe Salvar altera\u00e7\u00f5es</button>';
+      }
+      html+='</div>';
+    });
+  }
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+async function indicSalvarScript(key,textareaId){
+  const texto=document.getElementById(textareaId).value;
+  try{
+    await sb.from('planos_config').upsert({key:key,value:texto});
+    if(key==='indic_script_agradecimento')_indicScripts.agradecimento=texto;
+    if(key==='indic_script_pesquisa')_indicScripts.pesquisa=texto;
+    toast('Script salvo!','success');
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+function indicNovoFormulario(){
+  let html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:16px">Novo formul\u00e1rio de pesquisa</div>';
+  html+='<div class="field"><label>T\u00edtulo</label><input id="nf-titulo" placeholder="Ex: Pesquisa de recompensa — roteiro de liga\u00e7\u00e3o"/></div>';
+  html+='<div class="field"><label>Tipo</label><select id="nf-tipo" onchange="document.getElementById(\'nf-texto-wrap\').style.display=this.value===\'texto\'?\'block\':\'none\';document.getElementById(\'nf-arquivo-wrap\').style.display=this.value===\'arquivo\'?\'block\':\'none\'"><option value="texto">Texto (editar direto no sistema)</option><option value="arquivo">Arquivo (PDF ou imagem j\u00e1 pronto)</option></select></div>';
+  html+='<div class="field" id="nf-texto-wrap"><label>Conte\u00fado</label><textarea id="nf-texto" rows="6" placeholder="Cole ou digite o formul\u00e1rio aqui..."></textarea></div>';
+  html+='<div class="field" id="nf-arquivo-wrap" style="display:none"><label>Arquivo</label><input type="file" id="nf-arquivo" accept=".pdf,.jpg,.jpeg,.png"/></div>';
+  html+='<button class="btn btn-primary btn-full" onclick="indicSalvarNovoFormulario()">Criar formul\u00e1rio</button>';
+  html+='</div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+async function indicSalvarNovoFormulario(){
+  const titulo=document.getElementById('nf-titulo').value.trim();
+  if(!titulo){toast('Informe um t\u00edtulo','error');return;}
+  const tipo=document.getElementById('nf-tipo').value;
+  try{
+    if(tipo==='arquivo'){
+      const file=document.getElementById('nf-arquivo').files[0];
+      if(!file){toast('Selecione um arquivo','error');return;}
+      const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
+      const path='indicacao_formularios/'+Date.now()+'_'+safeName;
+      const{error:upErr}=await sb.storage.from('documents').upload(path,file,{contentType:file.type||'application/octet-stream'});
+      if(upErr){toast('Erro no upload: '+upErr.message,'error');return;}
+      await sb.from('planos_indicacao_formularios').insert({titulo:titulo,tipo:'arquivo',arquivo_path:path,arquivo_nome:file.name,created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+    } else {
+      const conteudo=document.getElementById('nf-texto').value.trim();
+      await sb.from('planos_indicacao_formularios').insert({titulo:titulo,tipo:'texto',conteudo:conteudo,created_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+    }
+    closeModal('modal-generic');
+    toast('Formul\u00e1rio criado!','success');
+    await indicCarregarFormularios();
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+async function indicSalvarFormularioTexto(id){
+  const texto=document.getElementById('indic-form-txt-'+id).value;
+  try{
+    await sb.from('planos_indicacao_formularios').update({conteudo:texto,updated_at:new Date().toISOString()}).eq('id',id);
+    toast('Formul\u00e1rio atualizado!','success');
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+async function indicSubstituirArquivo(id,inputEl){
+  const file=inputEl.files[0];
+  if(!file)return;
+  try{
+    const safeName=file.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]/g,'_');
+    const path='indicacao_formularios/'+Date.now()+'_'+safeName;
+    const{error:upErr}=await sb.storage.from('documents').upload(path,file,{contentType:file.type||'application/octet-stream'});
+    if(upErr){toast('Erro no upload: '+upErr.message,'error');return;}
+    await sb.from('planos_indicacao_formularios').update({arquivo_path:path,arquivo_nome:file.name,updated_at:new Date().toISOString()}).eq('id',id);
+    toast('Arquivo substitu\u00eddo!','success');
+    await indicCarregarFormularios();
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+async function indicExcluirFormulario(id){
+  if(!confirm('Excluir este formul\u00e1rio?'))return;
+  try{
+    await sb.from('planos_indicacao_formularios').delete().eq('id',id);
+    toast('Formul\u00e1rio exclu\u00eddo','success');
+    await indicCarregarFormularios();
   }catch(e){toast('Erro: '+e.message,'error');}
 }
 // ========== END PROGRAMA DE INDICAÇÃO ==========
