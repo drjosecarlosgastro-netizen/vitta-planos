@@ -330,7 +330,7 @@ function indicBotaoEnviarNps(p){
   const primeiroNome=(p.name||'').split(' ')[0]||p.name;
   const msg='Oi '+primeiroNome+', tudo bem? Aqui \u00e9 da Cl\u00ednica Vitta! Voc\u00ea pode nos ajudar respondendo uma pesquisinha bem rapidinha sobre sua experi\u00eancia com a gente? '+link;
   const waNum=(p.telefone||'').replace(/\D/g,'');
-  let h='<div style="margin-bottom:14px">';
+  let h='<div style="margin-top:-4px;margin-bottom:4px">';
   if(waNum)h+='<a href="https://wa.me/55'+waNum+'?text='+encodeURIComponent(msg)+'" target="_blank" style="display:block;text-align:center;padding:9px 0;background:#25d366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">\ud83d\udcdd Enviar pesquisa de satisfa\u00e7\u00e3o (NPS) via WhatsApp</a>';
   else h+='<div style="font-size:11px;color:var(--text-muted)">Cadastre um telefone pra poder enviar a pesquisa de satisfa\u00e7\u00e3o por WhatsApp. Link direto: <a href="'+link+'" target="_blank">'+link+'</a></div>';
   h+='</div>';
@@ -715,15 +715,21 @@ async function renderPatInfo(){
     +'<div style="display:flex;gap:8px;align-items:center"><input type="text" id="new-tag-name" placeholder="Nome" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/><input type="color" id="new-tag-color" value="#6b7280" style="width:36px;height:34px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer"/><button class="btn btn-primary btn-sm" onclick="saveNewTagFromInfo()">Criar</button></div>'
     +'</div></div>'
     +'<div class="card"><div class="card-title">\ud83c\udf81 Programa de Indica\u00e7\u00e3o</div>'
+    +'<div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase">Como chegou at\u00e9 a gente</div>'
     +origemIndicacaoFieldsHtml('pi',p.origem||'',p.indicado_por_patient_id?nomePacientePorId(p.indicado_por_patient_id):(p.indicado_por_nome_livre||''),false)
-    +'<div class="grid-2">'
+    +'<div style="border-top:1px solid var(--border-light);padding-top:14px;margin-top:6px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase">Satisfa\u00e7\u00e3o</div>'
     +'<div class="field"><label>NPS / Satisfa\u00e7\u00e3o (0-10)</label><input id="pi-nps" type="number" min="0" max="10" value="'+(p.nps_nota!=null?p.nps_nota:'')+'" placeholder="Ex: 9"/></div>'
-    +'<div class="field"><label>Status da recompensa</label><select id="pi-recompensa-status"><option value="nenhuma"'+(!p.recompensa_status||p.recompensa_status==='nenhuma'?' selected':'')+'>Nenhuma</option><option value="pendente"'+(p.recompensa_status==='pendente'?' selected':'')+'>Pendente</option><option value="entregue"'+(p.recompensa_status==='entregue'?' selected':'')+'>Entregue</option></select></div>'
-    +'</div>'
     +indicBotaoEnviarNps(p)
+    +'</div>'
+    +'<div style="border-top:1px solid var(--border-light);padding-top:14px;margin-top:6px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase">Reconhecimento</div>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="pi-candidato" '+(p.candidato_indicador?'checked':'')+' style="width:16px;height:16px;accent-color:var(--tidal)"/> Candidato a indicador (demonstrou satisfa\u00e7\u00e3o espont\u00e2nea)</label>'
+    +'<div class="grid-2">'
+    +'<div class="field"><label>Status da recompensa</label><select id="pi-recompensa-status"><option value="nenhuma"'+(!p.recompensa_status||p.recompensa_status==='nenhuma'?' selected':'')+'>Nenhuma</option><option value="pendente"'+(p.recompensa_status==='pendente'?' selected':'')+'>Pendente</option><option value="entregue"'+(p.recompensa_status==='entregue'?' selected':'')+'>Entregue</option></select></div>'
     +'<div class="field"><label>Detalhe da recompensa</label><input id="pi-recompensa-detalhe" value="'+(p.recompensa_detalhe||'')+'" placeholder="Ex: 10% de desconto, brinde..."/></div>'
-    +'<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:8px 0;cursor:pointer"><input type="checkbox" id="pi-candidato" '+(p.candidato_indicador?'checked':'')+' style="width:16px;height:16px;accent-color:var(--tidal)"/> Candidato a indicador (demonstrou satisfa\u00e7\u00e3o espont\u00e2nea)</label>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid var(--border-light)">'
+    +'</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;padding-top:14px;border-top:1px solid var(--border-light)">'
     +'<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--tidal)">'+(p.total_indicacoes||0)+'</div><div style="font-size:11px;color:var(--text-muted)">Indica\u00e7\u00f5es feitas</div></div>'
     +'<div style="text-align:center"><div style="font-size:13px;font-weight:600;color:var(--midnight)">'+(p.data_ultima_indicacao?new Date(p.data_ultima_indicacao).toLocaleDateString('pt-BR'):'\u2014')+'</div><div style="font-size:11px;color:var(--text-muted)">\u00daltima indica\u00e7\u00e3o</div></div>'
     +'</div></div>'
