@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Pesquisa de Satisfação — Clínica Vitta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --border:#e4eaed;--border-light:#edf1f3;
+  --accent:#19807f;--danger:#ef4444;
+  --font:'DM Sans',sans-serif;--font-display:'Cormorant Garamond',serif;
+  --deep-ocean:#154C56;--tidal:#19807f;--ivory:#FFFAE5;--gold:#C9B382;--midnight:#1F2033;--ash:#5A7381;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:linear-gradient(180deg,var(--ivory) 0%,#fff 260px);color:var(--midnight);min-height:100vh;display:flex;justify-content:center;padding:0 0 40px}
+.wrap{width:100%;max-width:520px;padding:32px 20px}
+.brand{text-align:center;margin-bottom:28px}
+.brand-name{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--deep-ocean)}
+.brand-sub{font-size:12px;color:var(--ash);letter-spacing:.5px;text-transform:uppercase;margin-top:2px}
+.card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px 22px;box-shadow:0 4px 24px rgba(21,76,86,.06)}
+.greeting{font-size:15px;color:var(--ash);margin-bottom:6px}
+.question{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--midnight);line-height:1.35;margin-bottom:22px}
+.scale-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--ash);margin-bottom:8px;padding:0 2px}
+.scale{display:grid;grid-template-columns:repeat(11,1fr);gap:5px;margin-bottom:26px}
+.scale button{aspect-ratio:1;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-family:var(--font);font-weight:700;font-size:13px;color:var(--midnight);cursor:pointer;transition:transform .1s}
+.scale button:active{transform:scale(.92)}
+.scale button.sel{color:#fff;border-color:transparent;transform:scale(1.05)}
+.followup{display:none}
+.followup.show{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.followup label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--midnight)}
+.followup textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:var(--font);resize:vertical;min-height:90px}
+.followup textarea:focus{outline:none;border-color:var(--tidal)}
+.namefield{margin-bottom:18px}
+.namefield label{display:block;font-size:13px;font-weight:600;margin-bottom:8px}
+.namefield input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:var(--font)}
+.submit-btn{width:100%;padding:15px;margin-top:22px;background:var(--deep-ocean);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:var(--font);cursor:pointer;display:none}
+.submit-btn.show{display:block}
+.submit-btn:disabled{opacity:.6;cursor:default}
+.thanks{text-align:center;padding:20px 0}
+.thanks-icon{font-size:44px;margin-bottom:14px}
+.thanks-title{font-family:var(--font-display);font-size:24px;font-weight:700;color:var(--deep-ocean);margin-bottom:10px}
+.thanks-msg{font-size:14px;color:var(--ash);line-height:1.6}
+.error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:18px;display:none}
+.error.show{display:block}
+.footer-note{text-align:center;font-size:11px;color:var(--ash);margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-name">Clínica Vitta</div>
+    <div class="brand-sub">Planos de Cuidado</div>
+  </div>
+  <div class="card" id="card-form">
+    <div class="error" id="error-box"></div>
+    <div class="greeting" id="greeting">Sua opinião é muito importante pra gente.</div>
+    <div class="question">De 0 a 10, o quanto você recomendaria a Clínica Vitta a um amigo ou familiar?</div>
+    <div class="scale-labels"><span>Nada provável</span><span>Certamente</span></div>
+    <div class="scale" id="scale"></div>
+    <div class="namefield" id="namefield" style="display:none">
+      <label>Seu nome</label>
+      <input type="text" id="nome-manual" placeholder="Digite seu nome"/>
+    </div>
+    <div class="followup" id="followup">
+      <label id="followup-label"></label>
+      <textarea id="comentario" placeholder="Fique à vontade..."></textarea>
+    </div>
+    <button class="submit-btn" id="btn-enviar" onclick="enviarResposta()">Enviar resposta</button>
+  </div>
+  <div class="card" id="card-thanks" style="display:none">
+    <div class="thanks">
+      <div class="thanks-icon">💙</div>
+      <div class="thanks-title">Obrigado pelo seu tempo!</div>
+      <div class="thanks-msg" id="thanks-msg">Sua resposta foi registrada. Agradecemos muito por compartilhar sua opinião com a gente.</div>
+    </div>
+  </div>
+  <div class="footer-note">Suas respostas ajudam a Clínica Vitta a cuidar cada vez melhor de você.</div>
+</div>
+<script>
+const SUPABASE_URL='https://tzsamyaobtzswpklxpzx.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6c2FteWFvYnR6c3dwa2x4cHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkxNjEsImV4cCI6MjA5NDg1NTE2MX0.okDoh3yP2HHPQKIUFf64X0UzBp0aWK_5WirprPsL8vM';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const params=new URLSearchParams(window.location.search);
+const patientId=params.get('p')?parseInt(params.get('p')):null;
+let notaEscolhida=null;
+let pacienteNome='';
+
+function montarEscala(){
+  const cores={};
+  for(let i=0;i<=6;i++)cores[i]='#ef4444';
+  for(let i=7;i<=8;i++)cores[i]='#C9B382';
+  for(let i=9;i<=10;i++)cores[i]='#19807f';
+  const scaleEl=document.getElementById('scale');
+  let html='';
+  for(let i=0;i<=10;i++){
+    html+='<button type="button" onclick="selecionarNota('+i+')" id="nota-'+i+'">'+i+'</button>';
+  }
+  scaleEl.innerHTML=html;
+}
+
+function selecionarNota(n){
+  notaEscolhida=n;
+  const cores={};
+  for(let i=0;i<=6;i++)cores[i]='#ef4444';
+  for(let i=7;i<=8;i++)cores[i]='#C9B382';
+  for(let i=9;i<=10;i++)cores[i]='#19807f';
+  for(let i=0;i<=10;i++){
+    const btn=document.getElementById('nota-'+i);
+    if(i===n){btn.classList.add('sel');btn.style.background=cores[i];}
+    else{btn.classList.remove('sel');btn.style.background='#fff';}
+  }
+  const label=document.getElementById('followup-label');
+  if(n<=6)label.textContent='O que podemos melhorar na sua experiência com a gente?';
+  else if(n<=8)label.textContent='O que faria você nos dar nota 10?';
+  else label.textContent='Que bom! O que você mais gostou no seu atendimento?';
+  document.getElementById('followup').classList.add('show');
+  document.getElementById('btn-enviar').classList.add('show');
+}
+
+async function carregarPaciente(){
+  if(!patientId){
+    document.getElementById('namefield').style.display='block';
+    return;
+  }
+  try{
+    const{data}=await sb.from('planos_patients').select('name').eq('id',patientId).maybeSingle();
+    if(data&&data.name){
+      pacienteNome=data.name;
+      const primeiro=pacienteNome.split(' ')[0];
+      document.getElementById('greeting').textContent='Oi, '+primeiro+'! Sua opinião é muito importante pra gente.';
+    } else {
+      document.getElementById('namefield').style.display='block';
+    }
+  }catch(e){
+    document.getElementById('namefield').style.display='block';
+  }
+}
+
+async function enviarResposta(){
+  const errorBox=document.getElementById('error-box');
+  errorBox.classList.remove('show');
+  if(notaEscolhida===null){errorBox.textContent='Selecione uma nota de 0 a 10.';errorBox.classList.add('show');return;}
+  let nomeFinal=pacienteNome;
+  if(!patientId||!pacienteNome){
+    const nomeInput=document.getElementById('nome-manual');
+    if(nomeInput&&nomeInput.value.trim())nomeFinal=nomeInput.value.trim();
+  }
+  const comentario=document.getElementById('comentario').value.trim();
+  const categoria=notaEscolhida<=6?'detrator':notaEscolhida<=8?'neutro':'promotor';
+  const btn=document.getElementById('btn-enviar');
+  btn.disabled=true;btn.textContent='Enviando...';
+  try{
+    await sb.from('planos_nps_respostas').insert({
+      patient_id:patientId,
+      nome_livre:patientId?null:(nomeFinal||null),
+      nota:notaEscolhida,
+      categoria:categoria,
+      comentario:comentario||null,
+      created_at:new Date().toISOString()
+    });
+    if(patientId){
+      const updateData={nps_nota:notaEscolhida};
+      if(notaEscolhida>=9)updateData.candidato_indicador=true;
+      await sb.from('planos_patients').update(updateData).eq('id',patientId);
+    }
+    document.getElementById('card-form').style.display='none';
+    const thanksMsg=document.getElementById('thanks-msg');
+    if(categoria==='promotor')thanksMsg.textContent='Sua resposta foi registrada. Ficamos muito felizes em saber disso — e se conhecer alguém que possa se beneficiar do nosso cuidado, ficaríamos honrados em receber sua indicação.';
+    else thanksMsg.textContent='Sua resposta foi registrada. Agradecemos muito por compartilhar sua opinião — ela nos ajuda a cuidar cada vez melhor de você.';
+    document.getElementById('card-thanks').style.display='block';
+  }catch(e){
+    errorBox.textContent='Não foi possível enviar agora. Tente novamente em instantes.';
+    errorBox.classList.add('show');
+    btn.disabled=false;btn.textContent='Enviar resposta';
+  }
+}
+
+montarEscala();
+carregarPaciente();
+</script>
+</body>
+</html>
