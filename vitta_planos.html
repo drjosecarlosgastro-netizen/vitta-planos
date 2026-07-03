@@ -270,6 +270,59 @@ const TIPOS_SESSAO=['Soroterapia EV','Soroterapia IM','Soroterapia EV + IM','Out
 const titleCase=s=>s?s.toLowerCase().replace(/(?:^|\s|'|-)[a-z\u00e1\u00e0\u00e3\u00e2\u00e9\u00ea\u00ed\u00f3\u00f4\u00f5\u00fa\u00e7]/g,c=>c.toUpperCase()):'';
 const normStr=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 function parseDateInt(d){if(!d)return 0;const p=d.split('/');if(p.length!==3)return 0;return parseInt(p[2]+p[1]+p[0]);}
+
+// ---- PROGRAMA DE INDICAÇÃO: helpers reutilizados nos formulários de paciente e lead ----
+const ORIGENS_OPCOES=['Direto','Instagram','TikTok','Google Ads','Indicação','WhatsApp','Outro'];
+async function ensureAllPatientsLoaded(){
+  if(!allPatients||!allPatients.length){
+    try{const{data}=await sb.from('planos_patients').select('id,name').order('name');if(data)allPatients=data;}catch(e){}
+  }
+}
+function buscarPacientePorNome(nome){
+  if(!nome)return null;
+  const n=nome.trim().toLowerCase();
+  if(!n)return null;
+  return (allPatients||[]).find(p=>(p.name||'').trim().toLowerCase()===n)||null;
+}
+function nomePacientePorId(id){
+  if(!id)return '';
+  const p=(allPatients||[]).find(x=>x.id===id);
+  return p?p.name:'';
+}
+function patientsDatalistHtml(listId){
+  return '<datalist id="'+listId+'">'+(allPatients||[]).map(p=>'<option value="'+escHtml(p.name)+'">').join('')+'</datalist>';
+}
+// Bloco de campos "Como chegou até a gente? / Quem indicou?" — usado em paciente novo, edição de paciente e leads
+function origemIndicacaoFieldsHtml(prefix,origemAtual,nomeIndicador,obrigatorio){
+  const req=obrigatorio?' *':'';
+  let h='<div class="field"><label>Como chegou até a gente?'+req+'</label>';
+  h+='<select id="'+prefix+'-origem" onchange="toggleIndicadorField(\''+prefix+'\')">';
+  h+='<option value="">Selecione...</option>';
+  ORIGENS_OPCOES.forEach(o=>{h+='<option value="'+o+'"'+(origemAtual===o?' selected':'')+'>'+o+'</option>';});
+  h+='</select></div>';
+  h+='<div class="field" id="'+prefix+'-indicador-wrap" style="display:'+(origemAtual==='Indicação'?'block':'none')+'">';
+  h+='<label>Quem indicou?</label>';
+  h+='<input id="'+prefix+'-indicador" list="'+prefix+'-pat-list" value="'+escHtml(nomeIndicador||'')+'" placeholder="Nome de quem indicou"/>';
+  h+='<div style="font-size:11px;color:var(--text-muted);margin-top:3px">Se a pessoa já é paciente, o nome aparece sugerido automaticamente.</div>';
+  h+=patientsDatalistHtml(prefix+'-pat-list');
+  h+='</div>';
+  return h;
+}
+function toggleIndicadorField(prefix){
+  const sel=document.getElementById(prefix+'-origem');
+  const wrap=document.getElementById(prefix+'-indicador-wrap');
+  if(!sel||!wrap)return;
+  wrap.style.display=sel.value==='Indicação'?'block':'none';
+}
+// Resolve o texto digitado em "Quem indicou?" para {id, nomeLivre}
+function resolveIndicador(prefix){
+  const el=document.getElementById(prefix+'-indicador');
+  if(!el)return{id:null,nomeLivre:null};
+  const nome=el.value.trim();
+  if(!nome)return{id:null,nomeLivre:null};
+  const pat=buscarPacientePorNome(nome);
+  return pat?{id:pat.id,nomeLivre:null}:{id:null,nomeLivre:nome};
+}
 function fmtDate(d){if(!d)return'';if(d.includes('/'))return d;const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d;}
 function todayStr(){const n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+String(n.getMonth()+1).padStart(2,'0')+'/'+n.getFullYear();}
 function todayISO(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
@@ -630,6 +683,7 @@ function patTab(tab){
 
 async function renderPatInfo(){
   const p=currentPatientData;
+  await ensureAllPatientsLoaded();
   const[{data:etCfg},{data:appts},{data:soro},{data:impl}]=await Promise.all([
     sb.from('planos_config').select('value').eq('key','etiquetas').single(),
     sb.from('planos_appointments').select('*').eq('patient_id',currentPatientId),
@@ -675,6 +729,18 @@ async function renderPatInfo(){
     +'<div style="border-top:1px solid var(--border-light);padding-top:12px"><div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase">Nova Etiqueta</div>'
     +'<div style="display:flex;gap:8px;align-items:center"><input type="text" id="new-tag-name" placeholder="Nome" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-size:13px"/><input type="color" id="new-tag-color" value="#6b7280" style="width:36px;height:34px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer"/><button class="btn btn-primary btn-sm" onclick="saveNewTagFromInfo()">Criar</button></div>'
     +'</div></div>'
+    +'<div class="card"><div class="card-title">\ud83c\udf81 Programa de Indica\u00e7\u00e3o</div>'
+    +origemIndicacaoFieldsHtml('pi',p.origem||'',p.indicado_por_patient_id?nomePacientePorId(p.indicado_por_patient_id):(p.indicado_por_nome_livre||''),false)
+    +'<div class="grid-2">'
+    +'<div class="field"><label>NPS / Satisfa\u00e7\u00e3o (0-10)</label><input id="pi-nps" type="number" min="0" max="10" value="'+(p.nps_nota!=null?p.nps_nota:'')+'" placeholder="Ex: 9"/></div>'
+    +'<div class="field"><label>Status da recompensa</label><select id="pi-recompensa-status"><option value="nenhuma"'+(!p.recompensa_status||p.recompensa_status==='nenhuma'?' selected':'')+'>Nenhuma</option><option value="pendente"'+(p.recompensa_status==='pendente'?' selected':'')+'>Pendente</option><option value="entregue"'+(p.recompensa_status==='entregue'?' selected':'')+'>Entregue</option></select></div>'
+    +'</div>'
+    +'<div class="field"><label>Detalhe da recompensa</label><input id="pi-recompensa-detalhe" value="'+(p.recompensa_detalhe||'')+'" placeholder="Ex: 10% de desconto, brinde..."/></div>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:8px 0;cursor:pointer"><input type="checkbox" id="pi-candidato" '+(p.candidato_indicador?'checked':'')+' style="width:16px;height:16px;accent-color:var(--tidal)"/> Candidato a indicador (demonstrou satisfa\u00e7\u00e3o espont\u00e2nea)</label>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid var(--border-light)">'
+    +'<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--tidal)">'+(p.total_indicacoes||0)+'</div><div style="font-size:11px;color:var(--text-muted)">Indica\u00e7\u00f5es feitas</div></div>'
+    +'<div style="text-align:center"><div style="font-size:13px;font-weight:600;color:var(--midnight)">'+(p.data_ultima_indicacao?new Date(p.data_ultima_indicacao).toLocaleDateString('pt-BR'):'\u2014')+'</div><div style="font-size:11px;color:var(--text-muted)">\u00daltima indica\u00e7\u00e3o</div></div>'
+    +'</div></div>'
     +'<div class="card"><div class="card-title">Auditoria</div><div style="font-size:12px;color:var(--text-muted)">'+(p.updated_by?'Last altera\u00e7\u00e3o por <strong>'+p.updated_by+'</strong> em '+isoToDisplay(p.updated_at||''):'  \u2014 ')+'</div></div>'
     +'<button class="btn btn-primary btn-full" onclick="savePatInfo()">\ud83d\udcbe Salvar Altera\u00e7\u00f5es</button>';
 }
@@ -697,6 +763,9 @@ async function saveNewTagFromInfo(){
   toast('Etiqueta criada!','success');renderPatInfo();
 }
 async function savePatInfo(){
+  const indic=resolveIndicador('pi');
+  if(indic.id&&indic.id===currentPatientId){toast('Um paciente n\u00e3o pode ser indicador de si mesmo','error');return;}
+  const npsVal=document.getElementById('pi-nps').value;
   const data={
     name:titleCase(document.getElementById('pi-name').value.trim()),
     dob:displayToISO(document.getElementById('pi-dob').value.trim())||null,
@@ -704,6 +773,13 @@ async function savePatInfo(){
     telefone:document.getElementById('pi-tel').value.trim(),
     email:document.getElementById('pi-email').value.trim(),
     etiquetas:JSON.parse(document.getElementById('pi-tags').value||'[]'),
+    origem:document.getElementById('pi-origem').value||null,
+    indicado_por_patient_id:indic.id,
+    indicado_por_nome_livre:indic.nomeLivre,
+    nps_nota:npsVal!==''?parseInt(npsVal):null,
+    candidato_indicador:document.getElementById('pi-candidato').checked,
+    recompensa_status:document.getElementById('pi-recompensa-status').value,
+    recompensa_detalhe:document.getElementById('pi-recompensa-detalhe').value.trim()||null,
     updated_by:currentUser.name,
     updated_at:new Date().toISOString()
   };
@@ -3145,7 +3221,8 @@ function buildLeadsUI(){
   document.getElementById('main-content').innerHTML=h;
 }
 
-function abrirNovoLead(){
+async function abrirNovoLead(){
+  await ensureAllPatientsLoaded();
   var html='<div style="padding:4px">';
   html+='<div style="font-size:16px;font-weight:700;margin-bottom:18px">Novo Lead</div>';
   html+='<div style="display:grid;gap:12px">';
@@ -3161,9 +3238,14 @@ function abrirNovoLead(){
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Canal de marketing</label>';
   html+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">';
   ['Instagram','TikTok','Google Ads','Indicação','WhatsApp','Outro'].forEach(function(c){
-    html+='<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" name="lead-canal" value="'+c+'" style="width:14px;height:14px;accent-color:var(--tidal)"> '+c+'</label>';
+    html+='<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" name="lead-canal" value="'+c+'" onchange="toggleIndicadorLead(\'lead\')" style="width:14px;height:14px;accent-color:var(--tidal)"> '+c+'</label>';
   });
   html+='</div></div>';
+  html+='<div class="field" id="lead-indicador-wrap" style="display:none">';
+  html+='<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Quem indicou?</label>';
+  html+='<input id="lead-indicador" list="lead-pat-list" placeholder="Nome de quem indicou" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box">';
+  html+=patientsDatalistHtml('lead-pat-list');
+  html+='</div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Próximo contato</label><input id="lead-pc" type="date" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><textarea id="lead-obs" rows="2" placeholder="Anotações sobre o lead..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical"></textarea></div>';
   html+='</div>';
@@ -3175,11 +3257,22 @@ function abrirNovoLead(){
   openModal('modal-generic');
 }
 
+// Mostra/esconde o campo "Quem indicou?" conforme o checkbox "Indicação" do canal de marketing
+function toggleIndicadorLead(prefix){
+  var checks=document.querySelectorAll('input[name="'+prefix+'-canal"]:checked');
+  var temIndicacao=Array.from(checks).some(function(c){return c.value==='Indicação';});
+  var wrap=document.getElementById(prefix+'-indicador-wrap');
+  if(wrap)wrap.style.display=temIndicacao?'block':'none';
+}
+
 async function salvarNovoLead(){
   var nome=document.getElementById('lead-nome').value.trim();
   if(!nome){toast('Informe o nome','error');return;}
   var _canais=Array.from(document.querySelectorAll('input[name="lead-canal"]:checked')).map(function(c){return c.value;}).join(', ');
-  var data={nome:nome,telefone:document.getElementById('lead-tel').value.trim(),email:document.getElementById('lead-email').value.trim(),origem:document.getElementById('lead-origem').value,canal_marketing:_canais||null,medico_interesse:document.getElementById('lead-medico').value,proximo_contato:document.getElementById('lead-pc').value||null,observacao:document.getElementById('lead-obs').value.trim()||null,status:'novo',created_at:new Date().toISOString()};
+  var _indEl=document.getElementById('lead-indicador');
+  var _indNome=_indEl?_indEl.value.trim():'';
+  var _indPat=_indNome?buscarPacientePorNome(_indNome):null;
+  var data={nome:nome,telefone:document.getElementById('lead-tel').value.trim(),email:document.getElementById('lead-email').value.trim(),origem:document.getElementById('lead-origem').value,canal_marketing:_canais||null,indicado_por_patient_id:_indPat?_indPat.id:null,indicado_por_nome_livre:_indPat?null:(_indNome||null),medico_interesse:document.getElementById('lead-medico').value,proximo_contato:document.getElementById('lead-pc').value||null,observacao:document.getElementById('lead-obs').value.trim()||null,status:'novo',created_at:new Date().toISOString()};
   try{
     await sb.from('planos_leads').insert(data);
     closeModal('modal-generic');
@@ -3191,6 +3284,7 @@ async function salvarNovoLead(){
 async function abrirLead(id){
   var lead=(_leadsData||[]).find(function(l){return l.id===id;});
   if(!lead)return;
+  await ensureAllPatientsLoaded();
   // Busca historico de atividades
   var atividades=[];
   try{var{data:atv}=await sb.from('planos_leads_atividades').select('*').eq('lead_id',id).order('created_at',{ascending:false});atividades=atv||[];}catch(e){}
@@ -3228,9 +3322,16 @@ async function abrirLead(id){
   var _canaisAtivos=(lead.canal_marketing||'').split(',').map(function(x){return x.trim();});
   ['Instagram','TikTok','Google Ads','Indicação','WhatsApp','Outro'].forEach(function(canal){
     var chk=_canaisAtivos.indexOf(canal)!==-1?' checked':'';
-    html+='<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" name="edlead-canal" value="'+canal+'"'+chk+' style="width:14px;height:14px;accent-color:var(--tidal)"> '+canal+'</label>';
+    html+='<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" name="edlead-canal" value="'+canal+'"'+chk+' onchange="toggleIndicadorLead(\'edlead\')" style="width:14px;height:14px;accent-color:var(--tidal)"> '+canal+'</label>';
   });
   html+='</div></div>';
+  var _temIndicacaoEd=_canaisAtivos.indexOf('Indicação')!==-1;
+  var _nomeIndicadorEd=lead.indicado_por_patient_id?nomePacientePorId(lead.indicado_por_patient_id):(lead.indicado_por_nome_livre||'');
+  html+='<div class="field" id="edlead-indicador-wrap" style="display:'+(_temIndicacaoEd?'block':'none')+'">';
+  html+='<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Quem indicou?</label>';
+  html+='<input id="edlead-indicador" list="edlead-pat-list" value="'+escHtml(_nomeIndicadorEd)+'" placeholder="Nome de quem indicou" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box">';
+  html+=patientsDatalistHtml('edlead-pat-list');
+  html+='</div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação</label><textarea id="edlead-obs" rows="2" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical">'+escHtml(lead.observacao||'')+'</textarea></div>';
   html+='</div>';
   // Historico de atividades
@@ -3351,7 +3452,10 @@ async function salvarLead(id){
   var lead=(_leadsData||[]).find(function(l){return l.id===id;});
   var novoStatus=document.getElementById('edlead-status').value;
   var _canaisEd=Array.from(document.querySelectorAll('input[name="edlead-canal"]:checked')).map(function(c){return c.value;}).join(', ');
-  var data={status:novoStatus,telefone:document.getElementById('edlead-tel').value.trim(),email:document.getElementById('edlead-email').value.trim(),canal_marketing:_canaisEd||null,proximo_contato:document.getElementById('edlead-pc').value||null,observacao:document.getElementById('edlead-obs').value.trim()||null,updated_at:new Date().toISOString()};
+  var _indElEd=document.getElementById('edlead-indicador');
+  var _indNomeEd=_indElEd?_indElEd.value.trim():'';
+  var _indPatEd=_indNomeEd?buscarPacientePorNome(_indNomeEd):null;
+  var data={status:novoStatus,telefone:document.getElementById('edlead-tel').value.trim(),email:document.getElementById('edlead-email').value.trim(),canal_marketing:_canaisEd||null,indicado_por_patient_id:_indPatEd?_indPatEd.id:null,indicado_por_nome_livre:_indPatEd?null:(_indNomeEd||null),proximo_contato:document.getElementById('edlead-pc').value||null,observacao:document.getElementById('edlead-obs').value.trim()||null,updated_at:new Date().toISOString()};
   try{
     await sb.from('planos_leads').update(data).eq('id',id);
     // Registra automaticamente quando status muda
@@ -3500,7 +3604,8 @@ async function confirmarAgendarLead(leadId){
     if(_existingPat&&_existingPat.id){
       patId=_existingPat.id;
     } else {
-      const{data:_np}=await sb.from('planos_patients').insert({name:lead.nome,telefone:lead.telefone||'',email:lead.email||'',active:true}).select('id');
+      var _origemPat=(lead.canal_marketing&&lead.canal_marketing.indexOf('Indicação')!==-1)?'Indicação':(lead.origem||null);
+      const{data:_np}=await sb.from('planos_patients').insert({name:lead.nome,telefone:lead.telefone||'',email:lead.email||'',origem:_origemPat,indicado_por_patient_id:lead.indicado_por_patient_id||null,indicado_por_nome_livre:lead.indicado_por_nome_livre||null,active:true}).select('id');
       patId=_np&&_np[0]?_np[0].id:null;
     }
     if(!patId)throw new Error('N\u00e3o foi poss\u00edvel criar o paciente');
@@ -5071,7 +5176,8 @@ async function updateProfissional(id){
   closeModal('modal-generic');toast('Atualizado!','success');renderConfig();
 }
 async function deleteProfissional(id){if(!confirm('Remover?'))return;await sb.from('planos_profissionais').delete().eq('id',id);toast('Removido','success');renderConfig();}
-function showNewPatientModal(){
+async function showNewPatientModal(){
+  await ensureAllPatientsLoaded();
   document.getElementById('new-patient-form').innerHTML=
     '<div class="field"><label>Nome Completo *</label><input id="np-name" oninput="this.value=titleCase(this.value)" placeholder="Nome do paciente"/></div>'
     +'<div class="grid-2"><div class="field"><label>Data de Nascimento</label><input id="np-dob" placeholder="DD/MM/AAAA"/></div><div class="field"><label>CPF</label><input id="np-cpf" placeholder="000.000.000-00"/></div></div>'
@@ -5079,6 +5185,7 @@ function showNewPatientModal(){
     +'<div class="field"><label>E-mail</label><input id="np-email" type="email" placeholder="email@exemplo.com"/></div>'
     +'<div class="grid-2"><div class="field"><label>Tipo de Plano</label><select id="np-plan"><option>Plano 3 meses</option><option>Plano 6 meses</option><option>Consulta Avulsa</option></select></div><div class="field"><label>Modalidade</label><select id="np-modality"><option>Presencial</option><option>Online</option></select></div></div>'
     +'<div class="field"><label>Data de In\u00edcio</label><input id="np-inicio" value="'+todayStr()+'"/></div>'
+    +origemIndicacaoFieldsHtml('np','','',true)
     +'<div class="field"><label>Observa\u00e7\u00e3o</label><textarea id="np-obs" rows="2"></textarea></div>'
     +'<button class="btn btn-primary btn-full" onclick="saveNewPatient()">Criar Paciente</button>';
   openModal('modal-new-patient');
@@ -5086,12 +5193,15 @@ function showNewPatientModal(){
 async function saveNewPatient(){
   const btn=document.querySelector('#new-patient-form .btn-primary');
   if(btn&&btn.disabled)return;
-  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
   const name=titleCase(document.getElementById('np-name').value.trim());
-  if(!name){toast('Nome obrigat\u00f3rio','error');if(btn){btn.disabled=false;btn.textContent='Criar Paciente';}return;}
+  if(!name){toast('Nome obrigat\u00f3rio','error');return;}
+  const origem=document.getElementById('np-origem').value;
+  if(!origem){toast('Informe como o paciente chegou at\u00e9 a cl\u00ednica','error');document.getElementById('np-origem').focus();return;}
+  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
   const planType=document.getElementById('np-plan').value;
   const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
-  const{error,data:newPat}=await sb.from('planos_patients').insert({name,dob:displayToISO(document.getElementById('np-dob').value)||null,cpf:document.getElementById('np-cpf').value.trim(),telefone:document.getElementById('np-tel').value.trim(),email:document.getElementById('np-email').value.trim(),plan_type:planType,duracao_programa:duracao,modality:document.getElementById('np-modality').value,inicio_programa:displayToISO(document.getElementById('np-inicio').value)||null,observacao:document.getElementById('np-obs').value.trim(),active:true,etiquetas:[],created_by:currentUser.name,created_at:new Date().toISOString()}).select().single();
+  const indic=resolveIndicador('np');
+  const{error,data:newPat}=await sb.from('planos_patients').insert({name,dob:displayToISO(document.getElementById('np-dob').value)||null,cpf:document.getElementById('np-cpf').value.trim(),telefone:document.getElementById('np-tel').value.trim(),email:document.getElementById('np-email').value.trim(),plan_type:planType,duracao_programa:duracao,modality:document.getElementById('np-modality').value,inicio_programa:displayToISO(document.getElementById('np-inicio').value)||null,origem:origem,indicado_por_patient_id:indic.id,indicado_por_nome_livre:indic.nomeLivre,observacao:document.getElementById('np-obs').value.trim(),active:true,etiquetas:[],created_by:currentUser.name,created_at:new Date().toISOString()}).select().single();
   if(error){toast('Erro: '+error.message,'error');const b=document.querySelector('#new-patient-form .btn-primary');if(b){b.disabled=false;b.textContent='Criar Paciente';}return;}
   closeModal('modal-new-patient');toast('Paciente criado!','success');await openPatient(newPat.id);
 }
