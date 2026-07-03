@@ -727,7 +727,7 @@ async function renderPatInfo(){
     +'<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="pi-candidato" '+(p.candidato_indicador?'checked':'')+' style="width:16px;height:16px;accent-color:var(--tidal)"/> Candidato a indicador (demonstrou satisfa\u00e7\u00e3o espont\u00e2nea)</label>'
     +'<div class="grid-2">'
     +'<div class="field"><label>Status da recompensa</label><select id="pi-recompensa-status"><option value="nenhuma"'+(!p.recompensa_status||p.recompensa_status==='nenhuma'?' selected':'')+'>Nenhuma</option><option value="pendente"'+(p.recompensa_status==='pendente'?' selected':'')+'>Pendente</option><option value="entregue"'+(p.recompensa_status==='entregue'?' selected':'')+'>Entregue</option></select></div>'
-    +'<div class="field"><label>Detalhe da recompensa</label><input id="pi-recompensa-detalhe" value="'+(p.recompensa_detalhe||'')+'" placeholder="Ex: 10% de desconto, brinde..."/></div>'
+    +'<div class="field"><label>Detalhe da recompensa</label><input id="pi-recompensa-detalhe" value="'+(p.recompensa_detalhe||'')+'" placeholder="Ex: kit de bem-estar, carta assinada..."/><button type="button" onclick="indicEscolherRecompensa('+p.id+')" style="margin-top:6px;padding:7px 12px;background:none;border:1.5px solid var(--tidal);color:var(--tidal);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">\ud83c\udf81 Escolher do cat\u00e1logo</button></div>'
     +'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;padding-top:14px;border-top:1px solid var(--border-light)">'
     +'<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--tidal)">'+(p.total_indicacoes||0)+'</div><div style="font-size:11px;color:var(--text-muted)">Indica\u00e7\u00f5es feitas</div></div>'
@@ -3649,7 +3649,7 @@ async function atualizarBadgeIndicacoes(){
 }
 
 function indicSubtabsHtml(){
-  const tabs=[{id:'duploa',label:'\ud83d\udc4b Duplo A'},{id:'indicadores',label:'\u2b50 Indicadores'},{id:'metricas',label:'\ud83d\udcca M\u00e9tricas'},{id:'regras',label:'\ud83d\udccb Regra interna'},{id:'formularios',label:'\ud83d\udcdd Formul\u00e1rios & Scripts'}];
+  const tabs=[{id:'duploa',label:'\ud83d\udc4b Duplo A'},{id:'indicadores',label:'\u2b50 Indicadores'},{id:'metricas',label:'\ud83d\udcca M\u00e9tricas'},{id:'catalogo',label:'\ud83c\udf81 Cat\u00e1logo de recompensas'},{id:'regras',label:'\ud83d\udccb Regra interna'},{id:'formularios',label:'\ud83d\udcdd Formul\u00e1rios & Scripts'}];
   let h='<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">';
   tabs.forEach(function(t){
     h+='<button class="subtab '+(_indicTab===t.id?'active':'')+'" onclick="renderIndicacoes(\''+t.id+'\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_indicTab===t.id?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_indicTab===t.id?'var(--accent)':'transparent')+';margin-bottom:-2px">'+t.label+'</button>';
@@ -3680,11 +3680,13 @@ async function renderIndicacoes(tab){
     if(_indicTab==='duploa')html+=indicRenderDuploA(allPatients);
     else if(_indicTab==='indicadores')html+=indicRenderIndicadores(allPatients,appts||[]);
     else if(_indicTab==='metricas')html+=indicRenderMetricas(allPatients,fin||[],leads||[]);
+    else if(_indicTab==='catalogo')html+='<div id="indic-catalogo-wrap">Carregando...</div>';
     else if(_indicTab==='regras')html+='<div id="indic-regras-wrap">Carregando regra...</div>';
     else if(_indicTab==='formularios')html+='<div id="indic-form-wrap">Carregando...</div>';
     c.innerHTML=html;
     if(_indicTab==='regras')indicCarregarRegra();
     else if(_indicTab==='formularios')indicCarregarFormularios();
+    else if(_indicTab==='catalogo')indicCarregarCatalogo();
     atualizarBadgeIndicacoes();
   }catch(e){c.innerHTML='<div class="empty">Erro ao carregar: '+e.message+'</div>';}
 }
@@ -3846,7 +3848,127 @@ function indicRenderMetricas(patients,fin,leads){
   return html;
 }
 
-// ---- Subtab Regra interna (Etapa 5) ----
+// ---- Subtab Catálogo de recompensas ----
+async function indicCarregarCatalogo(){
+  const wrap=document.getElementById('indic-catalogo-wrap');
+  if(!wrap)return;
+  let itens=[];
+  try{const{data}=await sb.from('planos_indicacao_recompensas').select('*').order('categoria').order('ordem');itens=data||[];}catch(e){}
+  const podeEditar=currentUser&&currentUser.type==='doctor';
+  const categorias=[];
+  itens.forEach(function(it){if(categorias.indexOf(it.categoria)===-1)categorias.push(it.categoria);});
+  let html='<div class="section-header" style="margin-bottom:14px"><div style="font-size:12px;color:var(--text-muted);max-width:640px">Op\u00e7\u00f5es de reconhecimento para quem indica — sempre gestos simb\u00f3licos, nunca desconto em consulta/procedimento ou qualquer valor em dinheiro. Use esse cat\u00e1logo na hora de decidir o que oferecer.</div>'+(podeEditar?'<button class="btn btn-primary btn-sm" onclick="indicNovaRecompensa()">+ Nova recompensa</button>':'')+'</div>';
+  if(!itens.length){
+    html+='<div class="empty">Nenhuma recompensa cadastrada ainda.</div>';
+  } else {
+    categorias.forEach(function(cat){
+      html+='<div style="margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">'+escHtml(cat)+'</div>';
+      itens.filter(function(it){return it.categoria===cat;}).forEach(function(it){
+        html+='<div class="card" style="margin-bottom:10px;opacity:'+(it.ativo?'1':'.5')+'">';
+        html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">';
+        html+='<div style="flex:1"><div style="font-weight:700;font-size:14px">'+escHtml(it.nome)+(it.ativo?'':' <span style="font-size:10px;color:var(--text-muted);font-weight:600">(inativa)</span>')+'</div>';
+        if(it.nivel_sugerido)html+='<div style="font-size:11px;color:var(--tidal);font-weight:600;margin-top:2px">'+escHtml(it.nivel_sugerido)+'</div>';
+        html+='<div style="font-size:12px;color:var(--text-muted);margin-top:6px">'+escHtml(it.descricao||'')+'</div></div>';
+        if(podeEditar){
+          html+='<div style="display:flex;gap:6px;flex-shrink:0">';
+          html+='<button onclick="indicEditarRecompensa('+it.id+')" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:var(--font)">Editar</button>';
+          html+='<button onclick="indicToggleRecompensa('+it.id+','+(!it.ativo)+')" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:var(--font)">'+(it.ativo?'Desativar':'Ativar')+'</button>';
+          html+='</div>';
+        }
+        html+='</div></div>';
+      });
+      html+='</div>';
+    });
+  }
+  wrap.innerHTML=html;
+}
+function indicNovaRecompensa(){
+  let html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:16px">Nova recompensa</div>';
+  html+='<div class="field"><label>Nome</label><input id="rec-nome" placeholder="Ex: Kit de bem-estar"/></div>';
+  html+='<div class="field"><label>Categoria</label><input id="rec-categoria" placeholder="Ex: Bem-estar" list="rec-cat-list"/><datalist id="rec-cat-list"><option value="Reconhecimento simb\u00f3lico"><option value="Bem-estar"><option value="Conte\u00fado exclusivo"><option value="Reconhecimento progressivo"><option value="Gesto social"></datalist></div>';
+  html+='<div class="field"><label>N\u00edvel sugerido (opcional)</label><input id="rec-nivel" placeholder="Ex: 3+ indica\u00e7\u00f5es"/></div>';
+  html+='<div class="field"><label>Descri\u00e7\u00e3o</label><textarea id="rec-descricao" rows="3" placeholder="O que \u00e9, como funciona..."></textarea></div>';
+  html+='<button class="btn btn-primary btn-full" onclick="indicSalvarNovaRecompensa()">Criar</button>';
+  html+='</div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+async function indicSalvarNovaRecompensa(){
+  const nome=document.getElementById('rec-nome').value.trim();
+  if(!nome){toast('Informe um nome','error');return;}
+  try{
+    await sb.from('planos_indicacao_recompensas').insert({nome:nome,categoria:document.getElementById('rec-categoria').value.trim()||'Reconhecimento simb\u00f3lico',nivel_sugerido:document.getElementById('rec-nivel').value.trim()||null,descricao:document.getElementById('rec-descricao').value.trim()||null,ativo:true,ordem:99});
+    closeModal('modal-generic');
+    toast('Recompensa criada!','success');
+    await indicCarregarCatalogo();
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+async function indicEditarRecompensa(id){
+  const{data:it}=await sb.from('planos_indicacao_recompensas').select('*').eq('id',id).single();
+  if(!it)return;
+  let html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:16px">Editar recompensa</div>';
+  html+='<div class="field"><label>Nome</label><input id="rec-nome" value="'+escHtml(it.nome)+'"/></div>';
+  html+='<div class="field"><label>Categoria</label><input id="rec-categoria" value="'+escHtml(it.categoria)+'" list="rec-cat-list"/><datalist id="rec-cat-list"><option value="Reconhecimento simb\u00f3lico"><option value="Bem-estar"><option value="Conte\u00fado exclusivo"><option value="Reconhecimento progressivo"><option value="Gesto social"></datalist></div>';
+  html+='<div class="field"><label>N\u00edvel sugerido (opcional)</label><input id="rec-nivel" value="'+escHtml(it.nivel_sugerido||'')+'"/></div>';
+  html+='<div class="field"><label>Descri\u00e7\u00e3o</label><textarea id="rec-descricao" rows="3">'+escHtml(it.descricao||'')+'</textarea></div>';
+  html+='<button class="btn btn-primary btn-full" onclick="indicSalvarEdicaoRecompensa('+id+')">Salvar altera\u00e7\u00f5es</button>';
+  html+='</div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+async function indicSalvarEdicaoRecompensa(id){
+  const nome=document.getElementById('rec-nome').value.trim();
+  if(!nome){toast('Informe um nome','error');return;}
+  try{
+    await sb.from('planos_indicacao_recompensas').update({nome:nome,categoria:document.getElementById('rec-categoria').value.trim()||'Reconhecimento simb\u00f3lico',nivel_sugerido:document.getElementById('rec-nivel').value.trim()||null,descricao:document.getElementById('rec-descricao').value.trim()||null}).eq('id',id);
+    closeModal('modal-generic');
+    toast('Recompensa atualizada!','success');
+    await indicCarregarCatalogo();
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+async function indicToggleRecompensa(id,novoAtivo){
+  try{
+    await sb.from('planos_indicacao_recompensas').update({ativo:novoAtivo}).eq('id',id);
+    await indicCarregarCatalogo();
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+// Modal que a secretária usa a partir do prontuário do paciente, pra escolher a recompensa
+async function indicEscolherRecompensa(patientId){
+  let itens=[];
+  try{const{data}=await sb.from('planos_indicacao_recompensas').select('*').eq('ativo',true).order('categoria').order('ordem');itens=data||[];}catch(e){}
+  const categorias=[];
+  itens.forEach(function(it){if(categorias.indexOf(it.categoria)===-1)categorias.push(it.categoria);});
+  let html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:4px">Escolher recompensa</div>';
+  html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Clique numa op\u00e7\u00e3o pra preencher o campo automaticamente.</div>';
+  if(!itens.length){
+    html+='<div style="font-size:12px;color:var(--text-muted)">Nenhuma recompensa ativa no cat\u00e1logo. Peça pro m\u00e9dico cadastrar em Indica\u00e7\u00f5es \u2192 Cat\u00e1logo de recompensas.</div>';
+  } else {
+    categorias.forEach(function(cat){
+      html+='<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">'+escHtml(cat)+'</div>';
+      itens.filter(function(it){return it.categoria===cat;}).forEach(function(it){
+        html+='<div onclick="indicUsarRecompensa('+patientId+',\''+escHtml(it.nome).replace(/'/g,"\\'")+'\')" style="cursor:pointer;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px" onmouseover="this.style.borderColor=\'var(--tidal)\'" onmouseout="this.style.borderColor=\'var(--border)\'">';
+        html+='<div style="font-weight:700;font-size:13px">'+escHtml(it.nome)+'</div>';
+        if(it.nivel_sugerido)html+='<div style="font-size:11px;color:var(--tidal);font-weight:600;margin-top:2px">'+escHtml(it.nivel_sugerido)+'</div>';
+        html+='<div style="font-size:12px;color:var(--text-muted);margin-top:4px">'+escHtml(it.descricao||'')+'</div>';
+        html+='</div>';
+      });
+    });
+  }
+  html+='</div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+function indicUsarRecompensa(patientId,nome){
+  const campo=document.getElementById('pi-recompensa-detalhe');
+  if(campo)campo.value=nome;
+  const status=document.getElementById('pi-recompensa-status');
+  if(status&&status.value==='nenhuma')status.value='pendente';
+  closeModal('modal-generic');
+  toast('Recompensa selecionada — clique em Salvar Altera\u00e7\u00f5es pra confirmar','success');
+}
 async function indicCarregarRegra(){
   const wrap=document.getElementById('indic-regras-wrap');
   if(!wrap)return;
@@ -3876,12 +3998,19 @@ async function indicCarregarFormularios(){
   if(!wrap)return;
   let forms=[];
   let npsRespostas=[];
+  let npsErro=null;
   try{const{data}=await sb.from('planos_indicacao_formularios').select('*').order('created_at',{ascending:false});forms=data||[];}catch(e){}
-  try{const{data}=await sb.from('planos_nps_respostas').select('*').order('created_at',{ascending:false}).limit(100);npsRespostas=data||[];}catch(e){}
+  try{
+    const{data,error}=await sb.from('planos_nps_respostas').select('*').order('created_at',{ascending:false}).limit(100);
+    if(error){npsErro=error.message;console.error('Erro ao buscar planos_nps_respostas:',error);}
+    npsRespostas=data||[];
+  }catch(e){npsErro=e.message;}
   let html='';
   // Resultados da pesquisa NPS
   html+='<div class="card" style="margin-bottom:20px"><div class="card-title">\ud83d\udcca Respostas da Pesquisa de Satisfa\u00e7\u00e3o (NPS)</div>';
-  if(!npsRespostas.length){
+  if(npsErro){
+    html+='<div style="font-size:12px;color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px">N\u00e3o consegui carregar as respostas: '+escHtml(npsErro)+'<br/>Confira se o script <strong>sql_nps.sql</strong> foi rodado no Supabase (tabela planos_nps_respostas).</div></div>';
+  } else if(!npsRespostas.length){
     html+='<div style="font-size:12px;color:var(--text-muted)">Nenhuma resposta ainda. Envie o link da pesquisa pra um paciente pela aba Info do prontu\u00e1rio dele.</div></div>';
   } else {
     const media=npsRespostas.reduce(function(s,r){return s+r.nota;},0)/npsRespostas.length;

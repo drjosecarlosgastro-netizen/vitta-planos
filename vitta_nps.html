@@ -155,7 +155,7 @@ async function enviarResposta(){
   const btn=document.getElementById('btn-enviar');
   btn.disabled=true;btn.textContent='Enviando...';
   try{
-    await sb.from('planos_nps_respostas').insert({
+    const{error:insErr}=await sb.from('planos_nps_respostas').insert({
       patient_id:patientId,
       nome_livre:patientId?null:(nomeFinal||null),
       nota:notaEscolhida,
@@ -163,6 +163,7 @@ async function enviarResposta(){
       comentario:comentario||null,
       created_at:new Date().toISOString()
     });
+    if(insErr)throw insErr;
     if(patientId){
       const updateData={nps_nota:notaEscolhida};
       if(notaEscolhida>=9)updateData.candidato_indicador=true;
@@ -174,7 +175,8 @@ async function enviarResposta(){
     else thanksMsg.textContent='Sua resposta foi registrada. Agradecemos muito por compartilhar sua opinião — ela nos ajuda a cuidar cada vez melhor de você.';
     document.getElementById('card-thanks').style.display='block';
   }catch(e){
-    errorBox.textContent='Não foi possível enviar agora. Tente novamente em instantes.';
+    console.error('Erro ao salvar resposta NPS:',e);
+    errorBox.textContent='N\u00e3o foi poss\u00edvel enviar agora ('+(e.message||'erro desconhecido')+'). Tente novamente em instantes.';
     errorBox.classList.add('show');
     btn.disabled=false;btn.textContent='Enviar resposta';
   }
