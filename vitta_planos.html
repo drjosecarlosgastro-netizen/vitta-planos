@@ -406,14 +406,13 @@ function mainNav(section){
 }
 
 async function renderDashboard(){
-  const[{data:patients},{data:appts},{data:sessoes},{data:envios},{data:pends},{data:pendItens},{data:leadsAtend}]=await Promise.all([
+  const[{data:patients},{data:appts},{data:sessoes},{data:envios},{data:pends},{data:pendItens}]=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
     sb.from('planos_appointments').select('*'),
     sb.from('planos_soro_sessoes').select('*'),
     sb.from('planos_soro_envios').select('*'),
     sb.from('planos_pendencias').select('*'),
-    sb.from('planos_pendencias_itens').select('*').eq('concluida',false),
-    sb.from('planos_leads').select('canal_marketing,valor_atendimento,status').eq('status','atendido')
+    sb.from('planos_pendencias_itens').select('*').eq('concluida',false)
   ]);
   allPatients=patients||[];
   const c=document.getElementById('main-content');
@@ -480,44 +479,6 @@ async function renderDashboard(){
     '<div class="dash-card" onclick="showPatientListModal(\'365 dias\','+p365ids+')"><div class="dash-card-num">'+p365.length+'</div><div class="dash-card-label">\u00daltimos 365 dias</div></div>'+
     '</div>'+
     '<div class="dash-card" onclick="mainNav(\'patients\')"><div class="dash-card-num">'+allPatients.length+'</div><div class="dash-card-label">Total de Pacientes</div></div>';
-  // Bloco faturamento por canal CRM
-  var _leadsA=leadsAtend||[];
-  var _totalFat=_leadsA.reduce(function(s,l){return s+(parseFloat(l.valor_atendimento)||0);},0);
-  var _dashContainer=document.getElementById('main-content');
-  if(_leadsA.length>0){
-    var _canalMap={};
-    _leadsA.forEach(function(l){
-      var _canaisList=(l.canal_marketing||'Direto').split(',');
-      _canaisList.forEach(function(canal){
-        var _ck=canal.trim()||'Direto';
-        if(!_canalMap[_ck])_canalMap[_ck]={count:0,valor:0};
-        _canalMap[_ck].count++;
-        _canalMap[_ck].valor+=(parseFloat(l.valor_atendimento)||0)/_canaisList.length;
-      });
-    });
-    var _fatHtml='<div class="card" style="margin-top:16px">';
-    _fatHtml+='<div class="card-title" style="margin-bottom:14px">📣 Faturamento por Canal de Marketing</div>';
-    _fatHtml+='<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">';
-    _fatHtml+='<div><div style="font-size:28px;font-weight:700;color:var(--tidal)">R$ '+_totalFat.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
-    _fatHtml+='<div style="font-size:12px;color:var(--text-muted)">Total convertido via CRM — '+_leadsA.length+' leads atendidos</div></div></div>';
-    var _canalColors={Instagram:'#e1306c',TikTok:'#010101','Google Ads':'#4285f4',Indicação:'#10b981',WhatsApp:'#25d366',Outro:'#8b5cf6',Direto:'var(--ash)'};
-    Object.keys(_canalMap).sort(function(a,b){return _canalMap[b].valor-_canalMap[a].valor;}).forEach(function(canalKey){
-      var item=_canalMap[canalKey];
-      var pct=_totalFat>0?Math.round(item.valor/_totalFat*100):0;
-      var cor=_canalColors[canalKey]||'var(--ash)';
-      _fatHtml+='<div style="margin-bottom:12px">';
-      _fatHtml+='<div style="display:flex;justify-content:space-between;margin-bottom:5px">';
-      _fatHtml+='<span style="font-size:13px;font-weight:600">'+escHtml(canalKey)+'</span>';
-      _fatHtml+='<div><span style="font-size:13px;font-weight:700;color:var(--tidal)">R$ '+item.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>';
-      _fatHtml+='<span style="font-size:11px;color:var(--text-muted);margin-left:8px">('+item.count+' lead'+(item.count>1?'s':'')+' · '+pct+'%)</span></div></div>';
-      _fatHtml+='<div style="height:8px;background:var(--border);border-radius:4px"><div style="height:8px;background:'+cor+';border-radius:4px;width:'+pct+'%"></div></div>';
-      _fatHtml+='</div>';
-    });
-    _fatHtml+='</div>';
-    var _fatDiv=document.createElement('div');
-    _fatDiv.innerHTML=_fatHtml;
-    _dashContainer.appendChild(_fatDiv);
-  }
 }
 
 function showPatientListModal(title,ids){
