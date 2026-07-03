@@ -223,6 +223,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="ntab" id="ntab-pendencias" onclick="mainNav('pendencias')">Pend&#234;ncias</button>
     <button class="ntab" id="ntab-leads" onclick="mainNav('leads')">CRM Leads</button>
     <button class="ntab" id="ntab-relacionamento" onclick="mainNav('relacionamento')">Relacionamento</button>
+    <button class="ntab" id="ntab-indicacoes" onclick="mainNav('indicacoes')">&#127873; Indica&#231;&#245;es<span id="nav-badge-indicacoes" style="display:none;margin-left:6px;background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;font-weight:700"></span></button>
     <button class="ntab" id="ntab-financeiro-global" onclick="mainNav('financeiro-global')">Financeiro</button>
     <button class="ntab" id="ntab-relatorios" onclick="mainNav('relatorios')">Relat&#243;rios</button>
     <button class="ntab" id="ntab-config" onclick="mainNav('config')">&#9881; Configura&#231;&#245;es</button>
@@ -377,6 +378,7 @@ async function doLogin(){
     currentUser={type:loginType,name:loginType==='doctor'?'Dr. Jos\u00e9 Carlos':'Secret\u00e1ria'};
     document.getElementById('topbar-user').textContent='\u00b7 '+currentUser.name;
     showScreen('app');mainNav('dashboard');
+    atualizarBadgeIndicacoes();
   }else{document.getElementById('login-error').textContent='Senha incorreta';document.getElementById('login-error').style.display='block';}
 }
 function logout(){currentUser=null;showScreen('login');document.getElementById('login-pass').value='';}
@@ -396,6 +398,7 @@ function mainNav(section){
   else if(section==='avulsas')renderAvulsas();
   else if(section==='pendencias')renderPendenciasTab();
   else if(section==='relacionamento')renderRelacionamento();
+  else if(section==='indicacoes')renderIndicacoes();
   else if(section==='leads')renderLeads();
   else if(section==='financeiro-global')renderFinanceiroGlobal();
   else if(section==='config')renderConfig();
@@ -3634,6 +3637,230 @@ async function deletarLead(id){
   }catch(e){toast('Erro: '+e.message,'error');}
 }
 // ========== END CRM LEADS ==========
+
+// ========== PROGRAMA DE INDICAÇÃO (Etapas 3-7) ==========
+let _indicTab='duploa';
+
+async function atualizarBadgeIndicacoes(){
+  try{
+    const{data}=await sb.from('planos_patients').select('id').not('indicado_por_patient_id','is',null).neq('duplo_a_status','feito');
+    const n=(data||[]).length;
+    const badge=document.getElementById('nav-badge-indicacoes');
+    if(!badge)return;
+    if(n>0){badge.textContent=n;badge.style.display='inline-block';}else{badge.style.display='none';}
+  }catch(e){}
+}
+
+function indicSubtabsHtml(){
+  const tabs=[{id:'duploa',label:'\ud83d\udc4b Duplo A'},{id:'indicadores',label:'\u2b50 Indicadores'},{id:'metricas',label:'\ud83d\udcca M\u00e9tricas'},{id:'regras',label:'\ud83d\udccb Regra interna'}];
+  let h='<div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">';
+  tabs.forEach(function(t){
+    h+='<button class="subtab '+(_indicTab===t.id?'active':'')+'" onclick="renderIndicacoes(\''+t.id+'\')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:'+(_indicTab===t.id?'var(--text)':'var(--text-muted)')+';border-bottom:2px solid '+(_indicTab===t.id?'var(--accent)':'transparent')+';margin-bottom:-2px">'+t.label+'</button>';
+  });
+  h+='</div>';
+  return h;
+}
+
+async function renderIndicacoes(tab){
+  if(tab)_indicTab=tab;
+  const c=document.getElementById('main-content');
+  c.innerHTML='<div class="loading"><div class="spinner"></div>Carregando...</div>';
+  try{
+    const[{data:patients},{data:appts},{data:fin},{data:leads}]=await Promise.all([
+      sb.from('planos_patients').select('*').order('name'),
+      sb.from('planos_appointments').select('patient_id,status').eq('status','Compareceu'),
+      sb.from('planos_financeiro').select('patient_id,valor'),
+      sb.from('planos_leads').select('canal_marketing,status')
+    ]);
+    allPatients=patients||[];
+    let html='<div class="section-header"><div class="section-title">\ud83c\udf81 Programa de Indica\u00e7\u00e3o</div></div>';
+    html+=indicSubtabsHtml();
+    if(_indicTab==='duploa')html+=indicRenderDuploA(allPatients);
+    else if(_indicTab==='indicadores')html+=indicRenderIndicadores(allPatients,appts||[]);
+    else if(_indicTab==='metricas')html+=indicRenderMetricas(allPatients,fin||[],leads||[]);
+    else if(_indicTab==='regras')html+='<div id="indic-regras-wrap">Carregando regra...</div>';
+    c.innerHTML=html;
+    if(_indicTab==='regras')indicCarregarRegra();
+    atualizarBadgeIndicacoes();
+  }catch(e){c.innerHTML='<div class="empty">Erro ao carregar: '+e.message+'</div>';}
+}
+
+// ---- Subtab Duplo A (Etapa 3: Agradecer + Ativar) ----
+function indicRenderDuploA(patients){
+  const pendentes=patients.filter(function(p){return p.indicado_por_patient_id&&p.duplo_a_status!=='feito';})
+    .sort(function(a,b){return new Date(a.created_at||0)-new Date(b.created_at||0);});
+  const feitos=patients.filter(function(p){return p.indicado_por_patient_id&&p.duplo_a_status==='feito';})
+    .sort(function(a,b){return new Date(b.duplo_a_data||0)-new Date(a.duplo_a_data||0);}).slice(0,10);
+  let html='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Toda vez que um paciente chega por indica\u00e7\u00e3o, quem indicou precisa ser agradecido em at\u00e9 48-72h — enquanto ainda est\u00e1 fresco. Ligue ou mande WhatsApp <strong>privado</strong>, nunca mensagem em massa.</div>';
+  if(!pendentes.length){
+    html+='<div class="empty"><div class="empty-icon">\u2705</div>Nenhum agradecimento pendente. Tudo em dia!</div>';
+  } else {
+    pendentes.forEach(function(p){
+      const indicadorNome=p.indicado_por_patient_id?nomePacientePorId(p.indicado_por_patient_id):(p.indicado_por_nome_livre||'');
+      const indicadorPat=p.indicado_por_patient_id?(allPatients||[]).find(function(x){return x.id===p.indicado_por_patient_id;}):null;
+      const tel=indicadorPat?(indicadorPat.telefone||''):'';
+      const waNum=tel.replace(/\D/g,'');
+      const horasDesde=p.created_at?(Date.now()-new Date(p.created_at).getTime())/3600000:0;
+      const atrasado=horasDesde>72;
+      const primeiroNome=(indicadorNome||'').split(' ')[0]||indicadorNome;
+      const msg='Oi '+primeiroNome+', aqui \u00e9 da Cl\u00ednica Vitta! Passando rapidinho pra te contar que '+p.name+' veio at\u00e9 a gente e disse que foi voc\u00ea quem indicou. Queria muito te agradecer por isso — pra gente \u00e9 muito importante saber que voc\u00ea confia no nosso trabalho a ponto de recomendar. Se voc\u00ea conhecer mais algu\u00e9m que possa se beneficiar do nosso cuidado, fica \u00e0 vontade pra continuar indicando — vamos cuidar bem da pessoa, do jeito que cuidamos de voc\u00ea. \ud83d\udc99';
+      html+='<div class="card" style="margin-bottom:10px;border:1.5px solid '+(atrasado?'#ef4444':'var(--border)')+';border-radius:12px;padding:14px 16px">';
+      html+='<div style="display:flex;align-items:flex-start;gap:10px">';
+      html+='<div class="patient-avatar" style="width:36px;height:36px;font-size:14px;flex-shrink:0;background:'+(atrasado?'#ef4444':'var(--accent)')+'">'+(indicadorNome||'?').charAt(0).toUpperCase()+'</div>';
+      html+='<div style="flex:1">';
+      html+='<div style="font-weight:700;font-size:14px">'+escHtml(indicadorNome||'N\u00e3o identificado')+'</div>';
+      html+='<div style="font-size:12px;color:var(--text-muted);margin-top:2px">indicou <strong>'+escHtml(p.name)+'</strong>'+(indicadorPat?'':' \u00b7 n\u00e3o \u00e9 paciente cadastrado')+'</div>';
+      html+='<div style="font-size:11px;margin-top:4px;font-weight:600;color:'+(atrasado?'#ef4444':'#16a34a')+'">'+(atrasado?'\ud83d\udd34 Atrasado — j\u00e1 passou de 72h, priorize':'\ud83d\udfe2 Dentro da janela ideal (at\u00e9 72h)')+'</div>';
+      html+='</div></div>';
+      html+='<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">';
+      if(waNum)html+='<a href="https://wa.me/55'+waNum+'?text='+encodeURIComponent(msg)+'" target="_blank" style="flex:1;text-align:center;padding:8px 0;background:#25d366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">\ud83d\udcac Enviar WhatsApp de agradecimento</a>';
+      else html+='<div style="flex:1;text-align:center;padding:8px 0;background:var(--bg-page);color:var(--text-muted);border-radius:8px;font-size:12px">Sem telefone cadastrado — ligar manualmente</div>';
+      html+='<button onclick="indicMarcarDuploA('+p.id+')" style="padding:8px 14px;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">\u2705 Marcar feito</button>';
+      html+='</div></div>';
+    });
+  }
+  if(feitos.length){
+    html+='<div style="margin-top:24px"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Agradecimentos recentes</div>';
+    feitos.forEach(function(p){
+      const indicadorNome=p.indicado_por_patient_id?nomePacientePorId(p.indicado_por_patient_id):(p.indicado_por_nome_livre||'');
+      html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0fdf4;border-radius:8px;margin-bottom:6px;font-size:12px"><span>\u2705</span><span style="flex:1"><strong>'+escHtml(indicadorNome)+'</strong> agradecido por indicar '+escHtml(p.name)+'</span><span style="color:var(--text-muted)">'+(p.duplo_a_data?new Date(p.duplo_a_data).toLocaleDateString('pt-BR'):'')+'</span></div>';
+    });
+    html+='</div>';
+  }
+  return html;
+}
+async function indicMarcarDuploA(patientId){
+  try{
+    await sb.from('planos_patients').update({duplo_a_status:'feito',duplo_a_data:new Date().toISOString()}).eq('id',patientId);
+    toast('Agradecimento registrado!','success');
+    await renderIndicacoes('duploa');
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+// ---- Subtab Indicadores (ranking + Etapa 4: pesquisa de recompensa) ----
+function indicRenderIndicadores(patients,appts){
+  const consultaCount={};
+  (appts||[]).forEach(function(a){consultaCount[a.patient_id]=(consultaCount[a.patient_id]||0)+1;});
+  const indicadores=patients.filter(function(p){return (p.total_indicacoes||0)>0;})
+    .sort(function(a,b){return (b.total_indicacoes||0)-(a.total_indicacoes||0);});
+  const candidatos=patients.filter(function(p){
+    const consultas=consultaCount[p.id]||0;
+    const satisfeito=(p.nps_nota!=null&&p.nps_nota>=9)||p.candidato_indicador===true;
+    return satisfeito&&consultas>=2&&(p.pesquisa_recompensa_status||'nao_contatado')==='nao_contatado';
+  }).slice(0,20);
+  let html='<div class="card" style="margin-bottom:20px"><div class="card-title">\ud83c\udfc6 Ranking de Indicadores</div>';
+  if(!indicadores.length){
+    html+='<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Ainda nenhum paciente indicou outro. Assim que registrar a primeira indica\u00e7\u00e3o (aba Pacientes), o ranking aparece aqui.</div>';
+  } else {
+    indicadores.forEach(function(p,i){
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">';
+      html+='<div style="width:22px;text-align:center;font-weight:700;color:var(--text-muted);font-size:12px">'+(i+1)+'\u00ba</div>';
+      html+='<div style="flex:1;font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
+      html+='<div style="font-size:12px;color:var(--tidal);font-weight:700">'+p.total_indicacoes+' indica\u00e7\u00e3'+(p.total_indicacoes>1?'\u00f5es':'o')+'</div>';
+      const recCor=p.recompensa_status==='entregue'?'#16a34a':p.recompensa_status==='pendente'?'#f59e0b':'var(--text-muted)';
+      const recLabel=p.recompensa_status==='entregue'?'Recompensa entregue':p.recompensa_status==='pendente'?'Recompensa pendente':'Sem recompensa';
+      html+='<div style="font-size:11px;color:'+recCor+';font-weight:600;min-width:130px;text-align:right">'+recLabel+'</div>';
+      html+='</div>';
+    });
+  }
+  html+='</div>';
+  html+='<div class="card"><div class="card-title">\ud83d\udcde Amostra para Pesquisa de Recompensa</div>';
+  html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Pacientes com boa satisfa\u00e7\u00e3o e pelo menos 2 consultas — ligue e pergunte o que faria sentido como reconhecimento, antes de decidir o que oferecer. N\u00e3o sugira nada primeiro, deixe a pessoa falar.</div>';
+  if(!candidatos.length){
+    html+='<div style="font-size:12px;color:var(--text-muted)">Nenhum candidato novo no momento. Marque pacientes como "candidato a indicador" na aba Info deles, ou registre o NPS, para eles aparecerem aqui.</div>';
+  } else {
+    candidatos.forEach(function(p){
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">';
+      html+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
+      html+='<div style="font-size:11px;color:var(--text-muted)">'+(p.nps_nota!=null?'NPS '+p.nps_nota:'Satisfa\u00e7\u00e3o espont\u00e2nea')+' \u00b7 '+(consultaCount[p.id]||0)+' consultas</div></div>';
+      html+='<button onclick="indicAbrirPesquisa('+p.id+')" style="padding:6px 12px;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">Registrar contato</button>';
+      html+='</div>';
+    });
+  }
+  html+='</div>';
+  return html;
+}
+function indicAbrirPesquisa(patientId){
+  const p=(allPatients||[]).find(function(x){return x.id===patientId;});
+  if(!p)return;
+  let html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:6px">Pesquisa de recompensa</div>';
+  html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">'+escHtml(p.name)+'</div>';
+  html+='<div style="background:#f5f3ff;border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px;color:#6d28d9">"A gente t\u00e1 pensando em criar uma forma de reconhecer melhor os pacientes que confiam na gente e indicam pra amigos e familiares — o que faria sentido pra voc\u00ea, como um gesto nosso de agradecimento?"</div>';
+  html+='<div class="field"><label>Status do contato</label><select id="pesq-status"><option value="contatado"'+(p.pesquisa_recompensa_status==='contatado'?' selected':'')+'>Ligou, mas ainda sem resposta</option><option value="respondeu"'+(p.pesquisa_recompensa_status==='respondeu'?' selected':'')+'>Respondeu</option></select></div>';
+  html+='<div class="field"><label>O que a pessoa disse</label><textarea id="pesq-resposta" rows="3" placeholder="Anote a resposta livre da pessoa...">'+(p.pesquisa_recompensa_resposta||'')+'</textarea></div>';
+  html+='<button class="btn btn-primary btn-full" onclick="indicSalvarPesquisa('+patientId+')">Salvar</button>';
+  html+='</div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+async function indicSalvarPesquisa(patientId){
+  const status=document.getElementById('pesq-status').value;
+  const resposta=document.getElementById('pesq-resposta').value.trim();
+  try{
+    await sb.from('planos_patients').update({pesquisa_recompensa_status:status,pesquisa_recompensa_resposta:resposta||null}).eq('id',patientId);
+    closeModal('modal-generic');
+    toast('Registrado!','success');
+    await renderIndicacoes('indicadores');
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+
+// ---- Subtab Métricas (Etapa 7) ----
+function indicRenderMetricas(patients,fin,leads){
+  const ativos=patients.filter(function(p){return p.active;});
+  const indicadores=patients.filter(function(p){return (p.total_indicacoes||0)>0;});
+  const indicados=patients.filter(function(p){return p.indicado_por_patient_id;});
+  const taxaAdesao=ativos.length?Math.round(indicadores.length/ativos.length*1000)/10:0;
+  const idsIndicacao=patients.filter(function(p){return p.origem==='Indica\u00e7\u00e3o'||p.indicado_por_patient_id;}).map(function(p){return p.id;});
+  const receitaIndicacao=(fin||[]).filter(function(f){return idsIndicacao.indexOf(f.patient_id)!==-1;}).reduce(function(s,f){return s+(parseFloat(f.valor)||0);},0);
+  const leadsIndicacao=(leads||[]).filter(function(l){return (l.canal_marketing||'').indexOf('Indica\u00e7\u00e3o')!==-1;});
+  const leadsIndicacaoConvertidos=leadsIndicacao.filter(function(l){return l.status==='agendado'||l.status==='atendido';});
+  const taxaConversao=leadsIndicacao.length?Math.round(leadsIndicacaoConvertidos.length/leadsIndicacao.length*1000)/10:0;
+  const top5=indicadores.slice().sort(function(a,b){return (b.total_indicacoes||0)-(a.total_indicacoes||0);}).slice(0,5);
+  let html='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">';
+  html+='<div class="dash-card"><div class="dash-card-num">'+indicadores.length+'</div><div class="dash-card-label">Pacientes indicadores</div></div>';
+  html+='<div class="dash-card"><div class="dash-card-num">'+indicados.length+'</div><div class="dash-card-label">Pacientes indicados</div></div>';
+  html+='<div class="dash-card"><div class="dash-card-num">'+taxaAdesao+'%</div><div class="dash-card-label">Taxa de ades\u00e3o</div></div>';
+  html+='<div class="dash-card"><div class="dash-card-num">'+taxaConversao+'%</div><div class="dash-card-label">Convers\u00e3o leads indica\u00e7\u00e3o</div></div>';
+  html+='</div>';
+  html+='<div class="card" style="margin-bottom:20px"><div class="card-title">Receita gerada por indica\u00e7\u00e3o</div>';
+  html+='<div style="font-size:28px;font-weight:700;color:var(--tidal)">R$ '+receitaIndicacao.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
+  html+='<div style="font-size:12px;color:var(--text-muted);margin-top:4px">Soma de pagamentos de pacientes com origem "Indica\u00e7\u00e3o" ou vinculados a um indicador.</div></div>';
+  html+='<div class="card"><div class="card-title">Top 5 indicadores</div>';
+  if(!top5.length){html+='<div style="font-size:12px;color:var(--text-muted)">Sem dados ainda.</div>';}
+  else{
+    top5.forEach(function(p,i){
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0"><div style="width:20px;font-weight:700;color:var(--text-muted);font-size:12px">'+(i+1)+'\u00ba</div><div style="flex:1;font-size:13px;font-weight:600">'+escHtml(p.name)+'</div><div style="font-size:12px;color:var(--tidal);font-weight:700">'+p.total_indicacoes+'</div></div>';
+    });
+  }
+  html+='</div>';
+  return html;
+}
+
+// ---- Subtab Regra interna (Etapa 5) ----
+async function indicCarregarRegra(){
+  const wrap=document.getElementById('indic-regras-wrap');
+  if(!wrap)return;
+  let regra='';
+  try{const{data}=await sb.from('planos_config').select('value').eq('key','regra_indicacao').maybeSingle();regra=data?data.value:'';}catch(e){}
+  const podeEditar=currentUser&&currentUser.type==='doctor';
+  const placeholder='Ex:\n\nQuem qualifica como indicador: NPS \u2265 9, m\u00ednimo 2 consultas\nO que a cl\u00ednica oferece: (definir ap\u00f3s pesquisa de recompensa)\nQuando entregar: ap\u00f3s a 1\u00aa indica\u00e7\u00e3o confirmada\nQuem autoriza e entrega: ';
+  let html='<div class="card"><div class="card-title">\ud83d\udccb Regra interna do Programa de Indica\u00e7\u00e3o</div>';
+  html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Documento de uso exclusivo da equipe — nunca publicado. Define quem qualifica como indicador, o que a cl\u00ednica oferece como reconhecimento, quando entregar e quem autoriza.</div>';
+  html+='<textarea id="indic-regra-texto" rows="10" placeholder="'+placeholder+'" '+(podeEditar?'':'readonly')+' style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;resize:vertical">'+escHtml(regra)+'</textarea>';
+  if(podeEditar)html+='<button class="btn btn-primary" style="margin-top:12px" onclick="indicSalvarRegra()">\ud83d\udcbe Salvar regra</button>';
+  else html+='<div style="font-size:11px;color:var(--text-muted);margin-top:8px">Somente o m\u00e9dico pode editar esta regra.</div>';
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+async function indicSalvarRegra(){
+  const texto=document.getElementById('indic-regra-texto').value;
+  try{
+    await sb.from('planos_config').upsert({key:'regra_indicacao',value:texto});
+    toast('Regra salva!','success');
+  }catch(e){toast('Erro: '+e.message,'error');}
+}
+// ========== END PROGRAMA DE INDICAÇÃO ==========
 
 
 // ---- JORNADA AUTO TRIGGERS ----
