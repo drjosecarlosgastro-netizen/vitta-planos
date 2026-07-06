@@ -2861,11 +2861,13 @@ async function excluirAgendamentoPat(id){
   patTab('agenda');
 }
 function showAddApptPatient(){
+  const modalAtual=(currentPatientData&&currentPatientData.modality)||'Presencial';
   showGenericModal(
     '<div class="grid-2"><div class="field"><label>Data</label><input id="ap-date" value="'+todayStr()+'"/></div><div class="field"><label>Hora</label><input id="ap-time" type="time" value="09:00"/></div></div>'
     +'<div class="field"><label>Procedimento</label><select id="ap-proc"><option>Consulta Avulsa</option><option>Consulta de Plano de Acompanhamento</option><option>Enfermeira</option><option>Nutricionista</option><option>Exame</option><option>Preparador F\u00edsico</option></select></div>'
     +'<div class="field"><label>Tipo</label><select id="ap-tipo"><option>Consulta</option><option>Ijet\u00e1vel</option><option>Teste Respirat\u00f3rio</option><option>Bioimpedância</option></select></div>'
     +'<div class="field"><label>Profissional</label><select id="ap-prof"><option value="">— Selecionar —</option></select></div>'
+    +'<div class="field"><label>Modalidade</label><select id="ap-modality"><option value="Presencial"'+(modalAtual==='Presencial'?' selected':'')+'>Presencial</option><option value="Online"'+(modalAtual==='Online'?' selected':'')+'>Online</option></select></div>'
     +'<div class="field"><label>Observa\u00e7\u00e3o</label><input type="text" id="ap-obs"/></div>'
     +'<button class="btn btn-primary btn-full" onclick="saveApptPatient()">Salvar</button>',
     'Novo Agendamento'
@@ -2873,7 +2875,13 @@ function showAddApptPatient(){
   loadProfsIntoSelect('ap-prof');
 }
 async function saveApptPatient(){
-  await sb.from('planos_appointments').insert({patient_id:currentPatientId,date_str:document.getElementById('ap-date').value,time_str:document.getElementById('ap-time').value,procedimento:document.getElementById('ap-proc').value,tipo:document.getElementById('ap-tipo').value,observacao:document.getElementById('ap-obs').value.trim(),profissional_nome:document.getElementById('ap-prof')?.value||null,status:'Agendado',registrado_por:currentUser.name});
+  const modalidade=document.getElementById('ap-modality').value;
+  await sb.from('planos_appointments').insert({patient_id:currentPatientId,date_str:document.getElementById('ap-date').value,time_str:document.getElementById('ap-time').value,procedimento:document.getElementById('ap-proc').value,tipo:document.getElementById('ap-tipo').value,observacao:document.getElementById('ap-obs').value.trim(),profissional_nome:document.getElementById('ap-prof')?.value||null,modalidade:modalidade,status:'Agendado',registrado_por:currentUser.name});
+  // Mant\u00e9m a modalidade do cadastro do paciente sincronizada com o agendamento
+  if(currentPatientData&&currentPatientData.modality!==modalidade){
+    await sb.from('planos_patients').update({modality:modalidade}).eq('id',currentPatientId);
+    currentPatientData.modality=modalidade;
+  }
   // Add to jornada pre-consulta automatically
   await jornadaOnAgendado(currentPatientId);
   closeModal('modal-generic');toast('Agendamento salvo','success');patTab('agenda');
@@ -3853,12 +3861,19 @@ async function indicCarregarCatalogo(){
   const wrap=document.getElementById('indic-catalogo-wrap');
   if(!wrap)return;
   let itens=[];
-  try{const{data}=await sb.from('planos_indicacao_recompensas').select('*').order('categoria').order('ordem');itens=data||[];}catch(e){}
+  let erro=null;
+  try{
+    const{data,error}=await sb.from('planos_indicacao_recompensas').select('*').order('categoria').order('ordem');
+    if(error){erro=error.message;console.error('Erro ao buscar planos_indicacao_recompensas:',error);}
+    itens=data||[];
+  }catch(e){erro=e.message;}
   const podeEditar=currentUser&&currentUser.type==='doctor';
   const categorias=[];
   itens.forEach(function(it){if(categorias.indexOf(it.categoria)===-1)categorias.push(it.categoria);});
   let html='<div class="section-header" style="margin-bottom:14px"><div style="font-size:12px;color:var(--text-muted);max-width:640px">Op\u00e7\u00f5es de reconhecimento para quem indica — sempre gestos simb\u00f3licos, nunca desconto em consulta/procedimento ou qualquer valor em dinheiro. Use esse cat\u00e1logo na hora de decidir o que oferecer.</div>'+(podeEditar?'<button class="btn btn-primary btn-sm" onclick="indicNovaRecompensa()">+ Nova recompensa</button>':'')+'</div>';
-  if(!itens.length){
+  if(erro){
+    html+='<div style="font-size:12px;color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px">N\u00e3o consegui carregar o cat\u00e1logo: '+escHtml(erro)+'<br/>Confira se o script <strong>sql_catalogo_recompensas.sql</strong> foi rodado no Supabase.</div>';
+  } else if(!itens.length){
     html+='<div class="empty">Nenhuma recompensa cadastrada ainda.</div>';
   } else {
     categorias.forEach(function(cat){
@@ -3937,14 +3952,21 @@ async function indicToggleRecompensa(id,novoAtivo){
 // Modal que a secretária usa a partir do prontuário do paciente, pra escolher a recompensa
 async function indicEscolherRecompensa(patientId){
   let itens=[];
-  try{const{data}=await sb.from('planos_indicacao_recompensas').select('*').eq('ativo',true).order('categoria').order('ordem');itens=data||[];}catch(e){}
+  let erro=null;
+  try{
+    const{data,error}=await sb.from('planos_indicacao_recompensas').select('*').eq('ativo',true).order('categoria').order('ordem');
+    if(error){erro=error.message;console.error('Erro ao buscar planos_indicacao_recompensas:',error);}
+    itens=data||[];
+  }catch(e){erro=e.message;}
   const categorias=[];
   itens.forEach(function(it){if(categorias.indexOf(it.categoria)===-1)categorias.push(it.categoria);});
   let html='<div style="padding:4px">';
   html+='<div style="font-size:16px;font-weight:700;margin-bottom:4px">Escolher recompensa</div>';
   html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Clique numa op\u00e7\u00e3o pra preencher o campo automaticamente.</div>';
-  if(!itens.length){
-    html+='<div style="font-size:12px;color:var(--text-muted)">Nenhuma recompensa ativa no cat\u00e1logo. Peça pro m\u00e9dico cadastrar em Indica\u00e7\u00f5es \u2192 Cat\u00e1logo de recompensas.</div>';
+  if(erro){
+    html+='<div style="font-size:12px;color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px">N\u00e3o consegui carregar o cat\u00e1logo: '+escHtml(erro)+'<br/>Confira se o script <strong>sql_catalogo_recompensas.sql</strong> foi rodado no Supabase.</div>';
+  } else if(!itens.length){
+    html+='<div style="font-size:12px;color:var(--text-muted)">Nenhuma recompensa ativa no cat\u00e1logo. Pe\u00e7a pro m\u00e9dico cadastrar em Indica\u00e7\u00f5es \u2192 Cat\u00e1logo de recompensas.</div>';
   } else {
     categorias.forEach(function(cat){
       html+='<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">'+escHtml(cat)+'</div>';
@@ -4728,11 +4750,13 @@ async function editAppt(id){
   const tipos=['Consulta','Ijet\u00e1vel','Teste Respirat\u00f3rio','Bioimpedância'];
   const procOpts=procs.map(p=>'<option '+(a.procedimento===p?'selected':'')+'>'+p+'</option>').join('');
   const tipoOpts=tipos.map(t=>'<option '+(a.tipo===t?'selected':'')+'>'+t+'</option>').join('');
+  const modalAtual=a.modalidade||(function(){const pat=(allPatients||[]).find(function(p){return p.id===a.patient_id;});return pat?pat.modality:'Presencial';})();
   showGenericModal(
     '<div class="grid-2"><div class="field"><label>Data</label><input id="ea-date" value="'+(a.date_str||todayStr())+'"/></div><div class="field"><label>Hora</label><input id="ea-time" type="time" value="'+(a.time_str||'09:00')+'"/></div></div>'
     +'<div class="field"><label>Procedimento</label><select id="ea-proc">'+procOpts+'</select></div>'
     +'<div class="field"><label>Tipo</label><select id="ea-tipo">'+tipoOpts+'</select></div>'
     +'<div class="field"><label>Profissional</label><select id="ea-prof"><option value="">— Selecionar —</option></select></div>'
+    +'<div class="field"><label>Modalidade</label><select id="ea-modality"><option value="Presencial"'+(modalAtual==='Presencial'?' selected':'')+'>Presencial</option><option value="Online"'+(modalAtual==='Online'?' selected':'')+'>Online</option></select></div>'
     +'<div class="field"><label>Observa\u00e7\u00e3o</label><input type="text" id="ea-obs" value="'+(a.observacao||'').replace(/"/g,'&quot;')+'"/></div>'
     +'<button class="btn btn-primary btn-full" onclick="saveEditAppt('+id+')">Salvar altera\u00e7\u00f5es</button>',
     '\u270f\ufe0f Editar Agendamento'
@@ -4746,17 +4770,21 @@ async function editAppt(id){
   },200);
 }
 async function saveEditAppt(id){
+  const{data:apptAtual}=await sb.from('planos_appointments').select('patient_id').eq('id',id).single();
+  const modalidade=document.getElementById('ea-modality').value;
   const updates={
     date_str:document.getElementById('ea-date').value,
     time_str:document.getElementById('ea-time').value,
     procedimento:document.getElementById('ea-proc').value,
     tipo:document.getElementById('ea-tipo').value,
     profissional_nome:document.getElementById('ea-prof')?.value||null,
+    modalidade:modalidade,
     observacao:document.getElementById('ea-obs').value.trim(),
     updated_by:currentUser?currentUser.name:'Sistema'
   };
   const{error}=await sb.from('planos_appointments').update(updates).eq('id',id);
   if(error){toast('Erro ao salvar: '+error.message,'error');return;}
+  if(apptAtual&&apptAtual.patient_id)await sb.from('planos_patients').update({modality:modalidade}).eq('id',apptAtual.patient_id);
   closeModal('modal-generic');
   toast('Agendamento atualizado!','success');
   if(typeof window.renderAgendaContent==='function')window.renderAgendaContent();
@@ -4769,6 +4797,7 @@ function showAddApptGlobal(){
     +'<div class="field"><label>Procedimento</label><select id="gag-proc"><option>Consulta Avulsa</option><option>Consulta de Plano de Acompanhamento</option><option>Enfermeira</option><option>Nutricionista</option><option>Exame</option><option>Preparador F\u00edsico</option></select></div>'
     +'<div class="field"><label>Tipo</label><select id="gag-tipo"><option>Consulta</option><option>Ijet\u00e1vel</option><option>Teste Respirat\u00f3rio</option><option>Bioimpedância</option></select></div>'
     +'<div class="field"><label>Profissional</label><select id="gag-prof"><option value="">— Selecionar —</option></select></div>'
+    +'<div class="field"><label>Modalidade</label><select id="gag-modality"><option value="Presencial">Presencial</option><option value="Online">Online</option></select></div>'
     +'<div class="field"><label>Observa\u00e7\u00e3o</label><input type="text" id="gag-obs"/></div>'
     +'<button class="btn btn-primary btn-full" onclick="saveApptGlobal()">Salvar</button>',
     'Novo Agendamento'
@@ -4781,11 +4810,19 @@ function searchPatForAppt(q){
   if(!res||!q)return;
   res.innerHTML=matches.map(p=>'<div style="padding:6px 10px;cursor:pointer;background:var(--bg);border-radius:6px;margin-bottom:3px;font-size:13px" onclick="selectPatAppt('+p.id+',\''+p.name.replace(/'/g,"\\'")+'\')">'+p.name+'</div>').join('');
 }
-function selectPatAppt(id,name){document.getElementById('gag-pat-id').value=id;document.getElementById('gag-pat-name').value=name;document.getElementById('gag-pat-results').innerHTML='';}
+function selectPatAppt(id,name){
+  document.getElementById('gag-pat-id').value=id;document.getElementById('gag-pat-name').value=name;document.getElementById('gag-pat-results').innerHTML='';
+  const pat=(allPatients||[]).find(function(p){return p.id===id;});
+  const modSel=document.getElementById('gag-modality');
+  if(pat&&pat.modality&&modSel)modSel.value=pat.modality;
+}
 async function saveApptGlobal(){
   const patId=document.getElementById('gag-pat-id').value;
   if(!patId){toast('Selecione um paciente','error');return;}
-  await sb.from('planos_appointments').insert({patient_id:parseInt(patId),date_str:document.getElementById('gag-date').value,time_str:document.getElementById('gag-time').value,procedimento:document.getElementById('gag-proc').value,tipo:document.getElementById('gag-tipo').value,observacao:document.getElementById('gag-obs').value.trim(),profissional_nome:document.getElementById('gag-prof')?.value||null,status:'Agendado',registrado_por:currentUser.name});
+  const modalidade=document.getElementById('gag-modality').value;
+  await sb.from('planos_appointments').insert({patient_id:parseInt(patId),date_str:document.getElementById('gag-date').value,time_str:document.getElementById('gag-time').value,procedimento:document.getElementById('gag-proc').value,tipo:document.getElementById('gag-tipo').value,observacao:document.getElementById('gag-obs').value.trim(),profissional_nome:document.getElementById('gag-prof')?.value||null,modalidade:modalidade,status:'Agendado',registrado_por:currentUser.name});
+  const pat=(allPatients||[]).find(function(p){return p.id===parseInt(patId);});
+  if(pat&&pat.modality!==modalidade)await sb.from('planos_patients').update({modality:modalidade}).eq('id',parseInt(patId));
   closeModal('modal-generic');toast('Agendamento salvo','success');renderAgenda();
 }
 
