@@ -3096,6 +3096,42 @@ async function renderLeads(){
   },120000);
 }
 
+const STATUS_LEAD_LABELS={novo:'Novo Lead',contato:'Contato Feito',negociacao:'Em Negocia\u00e7\u00e3o',agendado:'Agendado',atendido:'Atendido',perdido:'Perdido'};
+const STATUS_LEAD_CORES={novo:'#3b82f6',contato:'#f59e0b',negociacao:'#8b5cf6',agendado:'#10b981',atendido:'#154C56',perdido:'#ef4444'};
+function abrirFollowupsAtrasados(){
+  const leads=_leadsData||[];
+  const hoje=new Date().toISOString().split('T')[0];
+  const atrasados=leads.filter(function(l){return l.proximo_contato&&l.proximo_contato<hoje&&l.status!=='agendado'&&l.status!=='perdido';})
+    .sort(function(a,b){return a.proximo_contato<b.proximo_contato?-1:1;});
+  let html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:4px">\u26a0\ufe0f Follow-ups atrasados</div>';
+  html+='<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Esses leads passaram da data de pr\u00f3ximo contato e ainda n\u00e3o foram agendados nem marcados como perdidos.</div>';
+  if(!atrasados.length){
+    html+='<div style="font-size:12px;color:var(--text-muted)">Nenhum follow-up atrasado no momento. \ud83c\udf89</div>';
+  } else {
+    atrasados.forEach(function(l){
+      const dias=Math.floor((new Date(hoje)-new Date(l.proximo_contato))/86400000);
+      const cor=STATUS_LEAD_CORES[l.status]||'var(--text-muted)';
+      const label=STATUS_LEAD_LABELS[l.status]||l.status;
+      const waNum=(l.telefone||'').replace(/\D/g,'');
+      html+='<div class="card" style="margin-bottom:10px;border-left:3px solid #ef4444">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">';
+      html+='<div style="flex:1">';
+      html+='<div style="font-weight:700;font-size:14px">'+escHtml(l.nome)+'</div>';
+      html+='<div style="font-size:11px;margin-top:3px"><span style="background:'+cor+'22;color:'+cor+';padding:2px 8px;border-radius:20px;font-weight:700">'+label+'</span></div>';
+      html+='<div style="font-size:12px;color:#ef4444;font-weight:600;margin-top:6px">Follow-up previsto pra '+fmtDate(l.proximo_contato)+' — '+dias+' dia'+(dias>1?'s':'')+' de atraso</div>';
+      if(l.observacao)html+='<div style="font-size:11px;color:var(--text-muted);margin-top:4px">"'+escHtml(l.observacao)+'"</div>';
+      html+='</div></div>';
+      html+='<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">';
+      if(waNum)html+='<a href="https://wa.me/55'+waNum+'" target="_blank" style="flex:1;text-align:center;padding:7px 0;background:#25d366;color:#fff;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none">\ud83d\udcac WhatsApp</a>';
+      html+='<button onclick="closeModal(\'modal-generic\');setTimeout(function(){abrirLead('+l.id+');},200)" style="padding:7px 14px;background:var(--deep-ocean);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)">Abrir lead</button>';
+      html+='</div></div>';
+    });
+  }
+  html+='</div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
 function buildLeadsUI(){
   const leads=_leadsData||[];
   const colunas=[
@@ -3113,7 +3149,7 @@ function buildLeadsUI(){
   h+='<div><div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text)">CRM de Leads</div>';
   h+='<div style="font-size:13px;color:var(--text-muted);margin-top:2px">Gerencie novos contatos e conversões</div></div>';
   h+='<div style="flex:1"></div>';
-  if(atrasados>0)h+='<div style="background:#fef2f2;border:1.5px solid #ef4444;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;color:#ef4444">\u26a0\ufe0f '+atrasados+' follow-up'+(atrasados>1?'s':'')+' atrasado'+(atrasados>1?'s':'')+'</div>';
+  if(atrasados>0)h+='<div onclick="abrirFollowupsAtrasados()" style="cursor:pointer;background:#fef2f2;border:1.5px solid #ef4444;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;color:#ef4444" title="Clique pra ver quais">\u26a0\ufe0f '+atrasados+' follow-up'+(atrasados>1?'s':'')+' atrasado'+(atrasados>1?'s':'')+'</div>';
   h+='<button onclick="abrirNovoLead()" class="btn btn-primary" style="display:flex;align-items:center;gap:6px">+ Novo Lead</button>';
   h+='</div>';
   const total=leads.filter(l=>l.status!=='perdido').length;
