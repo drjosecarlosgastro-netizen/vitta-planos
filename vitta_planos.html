@@ -267,6 +267,7 @@ const SUPABASE_URL='https://tzsamyaobtzswpklxpzx.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6c2FteWFvYnR6c3dwa2x4cHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkxNjEsImV4cCI6MjA5NDg1NTE2MX0.okDoh3yP2HHPQKIUFf64X0UzBp0aWK_5WirprPsL8vM';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let currentUser=null,currentSection='dashboard',currentPatientId=null,currentPatientData=null,allPatients=[];
+let _relTab='financeiro';
 const TIPOS_SESSAO=['Soroterapia EV','Soroterapia IM','Soroterapia EV + IM','Outro'];
 const titleCase=s=>s?s.toLowerCase().replace(/(?:^|\s|'|-)[a-z\u00e1\u00e0\u00e3\u00e2\u00e9\u00ea\u00ed\u00f3\u00f4\u00f5\u00fa\u00e7]/g,c=>c.toUpperCase()):'';
 const normStr=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
