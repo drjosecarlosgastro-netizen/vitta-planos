@@ -3063,6 +3063,48 @@ async function renderFormBibliotecaCards(){
 let _leadsData=null;
 let _leadsAtividades=[];
 let _leadsInterval=null;
+let _leadsPeriodo={tipo:'semana',inicio:null,fim:null};
+let _leadsPeriodoChartObj=null;
+function leadsPeriodoRange(){
+  var hoje=new Date();hoje.setHours(23,59,59,999);
+  var ini;
+  if(_leadsPeriodo.tipo==='custom'&&_leadsPeriodo.inicio&&_leadsPeriodo.fim){
+    var iniC=new Date(_leadsPeriodo.inicio+'T00:00:00');
+    var fimC=new Date(_leadsPeriodo.fim+'T23:59:59');
+    return [iniC,fimC];
+  } else if(_leadsPeriodo.tipo==='quinzena'){
+    ini=new Date(hoje);ini.setDate(ini.getDate()-14);
+  } else if(_leadsPeriodo.tipo==='mes'){
+    ini=new Date(hoje);ini.setDate(ini.getDate()-29);
+  } else {
+    ini=new Date(hoje);ini.setDate(ini.getDate()-6);
+  }
+  ini.setHours(0,0,0,0);
+  return [ini,hoje];
+}
+function leadsSetPeriodo(tipo){
+  _leadsPeriodo={tipo:tipo,inicio:null,fim:null};
+  buildLeadsUI();
+}
+function leadsTogglePersonalizado(){
+  var el=document.getElementById('leads-periodo-custom-wrap');
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'flex':'none';
+}
+function leadsAplicarPeriodoCustom(){
+  var ini=document.getElementById('leads-per-ini').value;
+  var fim=document.getElementById('leads-per-fim').value;
+  if(!ini||!fim){toast('Selecione as duas datas','error');return;}
+  if(ini>fim){toast('Data inicial deve ser antes da final','error');return;}
+  _leadsPeriodo={tipo:'custom',inicio:ini,fim:fim};
+  buildLeadsUI();
+}
+function leadsRenderPeriodoChart(labels,data){
+  var canvas=document.getElementById('leads-periodo-chart');
+  if(!canvas)return;
+  if(_leadsPeriodoChartObj){try{_leadsPeriodoChartObj.destroy();}catch(e){}}
+  _leadsPeriodoChartObj=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:'Leads',data:data,backgroundColor:'#154C56',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.06)'}}}}});
+}
 
 async function renderLeads(){
   document.querySelectorAll('[id^="ntab-"]').forEach(t=>t.classList.remove('active'));
@@ -3205,6 +3247,67 @@ function buildLeadsUI(){
   }
   h+='</div>';
   h+='</div>';
+  // Análise de leads por período
+  var _pr=leadsPeriodoRange();
+  var _periodoLeads=leads.filter(function(l){if(!l.created_at)return false;var d=new Date(l.created_at);return d>=_pr[0]&&d<=_pr[1];});
+  var _diasArr=[];var _cursor=new Date(_pr[0]);_cursor.setHours(0,0,0,0);
+  var _fimSoData=new Date(_pr[1]);_fimSoData.setHours(0,0,0,0);
+  while(_cursor<=_fimSoData){_diasArr.push(new Date(_cursor));_cursor.setDate(_cursor.getDate()+1);}
+  var _diaLabels=_diasArr.map(function(d){return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});});
+  var _diaData=_diasArr.map(function(d){
+    var y=d.getFullYear(),m=('0'+(d.getMonth()+1)).slice(-2),dd=('0'+d.getDate()).slice(-2);
+    var dStr=y+'-'+m+'-'+dd;
+    return _periodoLeads.filter(function(l){return (l.created_at||'').split('T')[0]===dStr;}).length;
+  });
+  var _origemMapCRM={};
+  _periodoLeads.forEach(function(l){var o=l.origem||'Não informado';_origemMapCRM[o]=(_origemMapCRM[o]||0)+1;});
+  var _origemColorsCRM={Instagram:'#e1306c','Email/Google':'#4285f4',WhatsApp:'#25d366',Indicação:'#10b981',Outro:'#8b5cf6','Não informado':'var(--ash)'};
+  var _opts=[{id:'semana',label:'Semanal'},{id:'quinzena',label:'Quinzenal'},{id:'mes',label:'Mensal'}];
+  h+='<div class="card" style="margin-bottom:24px;padding:18px 20px">';
+  h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">';
+  h+='<span style="font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text)">Leads por Período</span>';
+  h+='<div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">';
+  _opts.forEach(function(o){
+    var ativo=_leadsPeriodo.tipo===o.id;
+    h+='<button onclick="leadsSetPeriodo(\''+o.id+'\')" style="padding:6px 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);border:1.5px solid '+(ativo?'var(--tidal)':'var(--border)')+';background:'+(ativo?'var(--tidal)':'var(--white)')+';color:'+(ativo?'#fff':'var(--text)')+'">'+o.label+'</button>';
+  });
+  var ativoCustom=_leadsPeriodo.tipo==='custom';
+  h+='<button onclick="leadsTogglePersonalizado()" style="padding:6px 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);border:1.5px solid '+(ativoCustom?'var(--tidal)':'var(--border)')+';background:'+(ativoCustom?'var(--tidal)':'var(--white)')+';color:'+(ativoCustom?'#fff':'var(--text)')+'">Personalizado</button>';
+  h+='</div></div>';
+  h+='<div id="leads-periodo-custom-wrap" style="display:'+(ativoCustom?'flex':'none')+';gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;padding:10px;background:var(--bg-page);border-radius:10px">';
+  h+='<div><label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">De</label><input id="leads-per-ini" type="date" value="'+(_leadsPeriodo.inicio||'')+'" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font)"></div>';
+  h+='<div><label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Até</label><input id="leads-per-fim" type="date" value="'+(_leadsPeriodo.fim||'')+'" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font)"></div>';
+  h+='<button onclick="leadsAplicarPeriodoCustom()" class="btn btn-primary" style="padding:7px 16px;font-size:12px">Aplicar</button>';
+  h+='</div>';
+  h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">Período: '+_pr[0].toLocaleDateString('pt-BR')+' a '+_pr[1].toLocaleDateString('pt-BR')+' · <b style="color:var(--text)">'+_periodoLeads.length+' lead'+(_periodoLeads.length!==1?'s':'')+'</b> entraram nesse intervalo</div>';
+  h+='<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:stretch">';
+  h+='<div style="position:relative;height:180px">';
+  if(!_periodoLeads.length){
+    h+='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:12px">Nenhum lead nesse período</div>';
+  } else {
+    h+='<canvas id="leads-periodo-chart"></canvas>';
+  }
+  h+='</div>';
+  h+='<div>';
+  h+='<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Origem dos Leads</div>';
+  if(!_periodoLeads.length){
+    h+='<div style="font-size:11px;color:var(--text-muted)">Sem dados no período.</div>';
+  } else {
+    h+='<div style="display:flex;flex-direction:column;gap:7px">';
+    Object.keys(_origemMapCRM).sort(function(a,b){return _origemMapCRM[b]-_origemMapCRM[a];}).forEach(function(o){
+      var qtd=_origemMapCRM[o];
+      var pct=_periodoLeads.length>0?Math.round(qtd/_periodoLeads.length*100):0;
+      var cor=_origemColorsCRM[o]||'var(--ash)';
+      h+='<div style="display:flex;align-items:center;gap:8px">';
+      h+='<span style="font-size:11px;font-weight:600;min-width:90px;color:var(--text)">'+escHtml(o)+'</span>';
+      h+='<div style="flex:1;height:4px;background:var(--border);border-radius:2px"><div style="height:4px;background:'+cor+';border-radius:2px;width:'+pct+'%"></div></div>';
+      h+='<span style="font-size:11px;font-weight:600;color:var(--midnight);min-width:16px;text-align:right">'+qtd+'</span>';
+      h+='<span style="font-size:10px;color:var(--text-muted);min-width:28px;text-align:right">'+pct+'%</span>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  h+='</div></div></div>';
   h+='<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">';
   colunas.forEach(function(col){
     var colLeads=leads.filter(function(l){return (l.status||'novo')===col.id;});
@@ -3256,6 +3359,7 @@ function buildLeadsUI(){
   });
   h+='</div></div>';
   document.getElementById('main-content').innerHTML=h;
+  if(_periodoLeads.length)leadsRenderPeriodoChart(_diaLabels,_diaData);
 }
 
 async function abrirNovoLead(){
