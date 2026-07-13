@@ -6055,6 +6055,15 @@ async function renderRelacionamento(tab){
     html+=relJourneyContent(step,patients,resList,apptsMes,mesStr,now);
     html+='</div>';
   } else {
+    // Pos-consulta: sub-tabs (Follow-up Pontual x Check-in Semanal)
+    window._relPosSubTab=window._relPosSubTab||'pontual';
+    html+='<div style="display:flex;gap:8px;margin-bottom:18px">';
+    html+='<button onclick="relSetPosSubTab(\'pontual\')" style="padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);border:1.5px solid '+(window._relPosSubTab==='pontual'?'var(--tidal)':'var(--border)')+';background:'+(window._relPosSubTab==='pontual'?'var(--tidal)':'var(--white)')+';color:'+(window._relPosSubTab==='pontual'?'#fff':'var(--text)')+'">Follow-up Pontual</button>';
+    html+='<button onclick="relSetPosSubTab(\'semanal\')" style="padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);border:1.5px solid '+(window._relPosSubTab==='semanal'?'var(--tidal)':'var(--border)')+';background:'+(window._relPosSubTab==='semanal'?'var(--tidal)':'var(--white)')+';color:'+(window._relPosSubTab==='semanal'?'#fff':'var(--text)')+'">📅 Check-in Semanal (Segundas)</button>';
+    html+='</div>';
+    if(window._relPosSubTab==='semanal'){
+      html+='<div id="rel-checkin-semanal-wrap"><div class="loading"><div class="spinner"></div>Carregando...</div></div>';
+    } else {
     // Pos-consulta: patients who attended
     const posAtivos=(jornada||[]).filter(j=>j.etapa==='_posconsulta_ativo'&&!j.concluida).map(j=>j.patient_id);
     const posPats=(patients||[]).filter(p=>posAtivos.includes(p.id)).sort((a,b)=>a.name.localeCompare(b.name));
@@ -6073,8 +6082,10 @@ async function renderRelacionamento(tab){
       });
     }
     html+='<div id="rel-pat-list"></div>';
+    }
   }
   c.innerHTML=html;
+  if(window._relPosSubTab==='semanal'&&_relRelTab==='pos'){setTimeout(relRenderCheckinSemanal,30);}
   if(_relJourneyStep==='formulario'||window._relJourneyStep==='formulario'){setTimeout(renderFormBibliotecaCards,50);}
   // Inject bulk action bar if not exists
   if(!document.getElementById('rel-bulk-bar')){
@@ -6086,6 +6097,81 @@ async function renderRelacionamento(tab){
     +'<button onclick="relBulkClear()" style="background:none;color:#aaa;border:1px solid #555;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-family:var(--font)">Cancelar</button>';
     document.body.appendChild(bar);
   }
+}
+
+function relSetPosSubTab(tab){
+  window._relPosSubTab=tab;
+  renderRelacionamento('pos');
+}
+
+function relCheckinSemanaKey(){
+  var d=new Date();
+  var day=d.getDay();
+  var diff=day>=5?day-5:day+2;
+  var friday=new Date(d);
+  friday.setDate(d.getDate()-diff);
+  var y=friday.getFullYear(),m=('0'+(friday.getMonth()+1)).slice(-2),dd=('0'+friday.getDate()).slice(-2);
+  return y+'-'+m+'-'+dd;
+}
+
+async function relRenderCheckinSemanal(){
+  const wrap=document.getElementById('rel-checkin-semanal-wrap');
+  if(!wrap)return;
+  const weekKey='checkin_'+relCheckinSemanaKey();
+  const patients=window._relAllPatients||[];
+  let apptsAll=[];
+  try{
+    const{data}=await sb.from('planos_appointments').select('patient_id,profissional_nome,date_str').order('date_str',{ascending:false});
+    apptsAll=data||[];
+  }catch(e){apptsAll=[];}
+  const jornada=window._relJornada||[];
+  const feitosSet={};
+  jornada.forEach(function(j){if(j.etapa===weekKey&&j.concluida)feitosSet[j.patient_id]=true;});
+  const meusPacientes=patients.filter(function(p){
+    if(p.plan_type==='Consulta Avulsa')return false;
+    if(!p.active)return false;
+    const lastAppt=apptsAll.find(function(a){return a.patient_id===p.id;});
+    const profNome=(lastAppt&&lastAppt.profissional_nome)||'';
+    const isBruna=profNome.toLowerCase().includes('bruna');
+    return !isBruna;
+  }).sort(function(a,b){return a.name.localeCompare(b.name);});
+  const feitos=meusPacientes.filter(function(p){return feitosSet[p.id];}).length;
+  const pendentes=meusPacientes.length-feitos;
+  const[iniFriday]=[relCheckinSemanaKey()];
+  var h='<div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">Ciclo iniciado em '+isoToDisplay(iniFriday)+' (reseta toda sexta-feira) · Enviar mensagem toda segunda para saber como foi o fim de semana e como está o tratamento</div>';
+  h+='<div style="display:flex;gap:8px;margin-bottom:14px">';
+  h+='<span style="background:var(--success);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px">'+feitos+' feitos</span>';
+  h+='<span style="background:var(--danger);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px">'+pendentes+' pendentes</span>';
+  h+='</div>';
+  if(!meusPacientes.length){
+    h+='<div class="empty"><div class="empty-icon">&#128203;</div>Nenhum paciente ativo em Plano de Acompanhamento com você no momento.</div>';
+  } else {
+    meusPacientes.forEach(function(p){
+      const feito=!!feitosSet[p.id];
+      const tel=(p.telefone||'').replace(/\D/g,'');
+      const primNome=p.name.split(' ')[0];
+      const roteiro='Oi, '+primNome+'! Tudo bem? \uD83D\uDE0A\n\nPassando pra saber como foi o seu final de semana e como você está se sentindo com o tratamento até agora.\n\nAlgum sintoma, dúvida ou dificuldade que eu deva saber?\n\nQualquer coisa me chama por aqui!';
+      const waUrl='https://wa.me/55'+tel+'?text='+encodeURIComponent(roteiro);
+      h+='<div class="card" style="margin-bottom:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;border:1.5px solid '+(feito?'var(--success)':'var(--border)')+';background:'+(feito?'#f0faf9':'var(--white)')+'">';
+      h+='<input type="checkbox" '+(feito?'checked':'')+' onchange="relCheckinToggle('+p.id+',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--tidal);flex-shrink:0">';
+      h+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px;background:'+(feito?'var(--success)':'var(--tidal)')+'">'+p.name.charAt(0)+'</div>';
+      h+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
+      h+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+'</div></div>';
+      if(!feito)h+='<a href="'+waUrl+'" target="_blank" onclick="relCheckinToggle('+p.id+',true)" class="btn btn-primary btn-sm" style="text-decoration:none">Enviar WhatsApp</a>';
+      else h+='<span style="font-size:11px;color:var(--success);font-weight:600">&#9989; Feito</span>';
+      h+='</div>';
+    });
+  }
+  wrap.innerHTML=h;
+}
+
+async function relCheckinToggle(patId,concluida){
+  const weekKey='checkin_'+relCheckinSemanaKey();
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:weekKey,concluida:concluida,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  const jIdx=(window._relJornada||[]).findIndex(function(j){return j.patient_id===patId&&j.etapa===weekKey;});
+  if(jIdx>-1)window._relJornada[jIdx].concluida=concluida;
+  else{window._relJornada=window._relJornada||[];window._relJornada.push({patient_id:patId,etapa:weekKey,concluida:concluida});}
+  relRenderCheckinSemanal();
 }
 
 function relPatRow(p,resList){
@@ -7315,6 +7401,14 @@ async function exportInjetaveisCSV(){
 }
 const manifest={name:'Cl\u00ednica Vitta | Alphaville',short_name:'Vitta Planos',start_url:'/',display:'standalone',background_color:'#1D2846',theme_color:'#1D2846',icons:[{src:'data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 100 100%22%3E%3Crect width%3D%22100%22 height%3D%22100%22 rx%3D%2220%22 fill%3D%22%231D2846%22%2F%3E%3Ctext x%3D%2250%22 y%3D%2272%22 text-anchor%3D%22middle%22 font-size%3D%2260%22%3E%F0%9F%8F%A5%3C%2Ftext%3E%3C%2Fsvg%3E',sizes:'192x192',type:'image/svg+xml'}]};
 document.getElementById('pwa-manifest').href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
+function autoLoginDoctor(){
+  currentUser={type:'doctor',name:'Dr. José Carlos'};
+  document.getElementById('topbar-user').textContent='· '+currentUser.name;
+  showScreen('app');mainNav('dashboard');
+  atualizarBadgeIndicacoes();
+}
+autoLoginDoctor();
+
 </script>
 </body>
 </html>
