@@ -5982,7 +5982,7 @@ async function renderRelacionamento(tab){
   const mesInicio=now.getFullYear()+'-'+mesStr+'-01';
   const[perguntas,{data:patients},{data:respostas},{data:apptsMes},{data:jornada},{data:finMes},{data:comparecimentos},{data:soroHist},{data:implHist}]=await Promise.all([
     getPerguntas(),
-    sb.from('planos_patients').select('id,name,email,telefone,cpf,active').order('name'),
+    sb.from('planos_patients').select('id,name,email,telefone,cpf,active,plan_type').order('name'),
     sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false}),
     sb.from('planos_appointments').select('patient_id,date_str,profissional_nome').order('date_str',{ascending:false}),
     sb.from('planos_jornada').select('*'),
@@ -6121,16 +6121,22 @@ async function relRenderCheckinSemanal(){
   const patients=window._relAllPatients||[];
   let apptsAll=[];
   try{
-    const{data}=await sb.from('planos_appointments').select('patient_id,profissional_nome,date_str').order('date_str',{ascending:false});
+    const{data}=await sb.from('planos_appointments').select('patient_id,profissional_nome,date_str');
     apptsAll=data||[];
   }catch(e){apptsAll=[];}
+  const apptsPorPaciente={};
+  apptsAll.forEach(function(a){
+    if(!apptsPorPaciente[a.patient_id])apptsPorPaciente[a.patient_id]=[];
+    apptsPorPaciente[a.patient_id].push(a);
+  });
   const jornada=window._relJornada||[];
   const feitosSet={};
   jornada.forEach(function(j){if(j.etapa===weekKey&&j.concluida)feitosSet[j.patient_id]=true;});
   const meusPacientes=patients.filter(function(p){
     if(p.plan_type==='Consulta Avulsa')return false;
     if(!p.active)return false;
-    const lastAppt=apptsAll.find(function(a){return a.patient_id===p.id;});
+    const apptsPat=(apptsPorPaciente[p.id]||[]).slice().sort(function(x,y){return parseDateInt(y.date_str)-parseDateInt(x.date_str);});
+    const lastAppt=apptsPat[0];
     const profNome=(lastAppt&&lastAppt.profissional_nome)||'';
     const isBruna=profNome.toLowerCase().includes('bruna');
     return !isBruna;
