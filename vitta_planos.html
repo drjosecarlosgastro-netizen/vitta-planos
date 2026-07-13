@@ -6131,10 +6131,18 @@ async function relRenderCheckinSemanal(){
   });
   const jornada=window._relJornada||[];
   const feitosSet={};
-  jornada.forEach(function(j){if(j.etapa===weekKey&&j.concluida)feitosSet[j.patient_id]=true;});
+  const brunaOverride={};
+  const joseOverride={};
+  jornada.forEach(function(j){
+    if(j.etapa===weekKey&&j.concluida)feitosSet[j.patient_id]=true;
+    if(j.etapa==='_medico_bruna'&&j.concluida)brunaOverride[j.patient_id]=true;
+    if(j.etapa==='_medico_jose'&&j.concluida)joseOverride[j.patient_id]=true;
+  });
   const meusPacientes=patients.filter(function(p){
     if(p.plan_type==='Consulta Avulsa')return false;
     if(!p.active)return false;
+    if(brunaOverride[p.id])return false;
+    if(joseOverride[p.id])return true;
     const apptsPat=(apptsPorPaciente[p.id]||[]).slice().sort(function(x,y){return parseDateInt(y.date_str)-parseDateInt(x.date_str);});
     const lastAppt=apptsPat[0];
     const profNome=(lastAppt&&lastAppt.profissional_nome)||'';
@@ -6163,12 +6171,22 @@ async function relRenderCheckinSemanal(){
       h+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px;background:'+(feito?'var(--success)':'var(--tidal)')+'">'+p.name.charAt(0)+'</div>';
       h+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
       h+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+'</div></div>';
+      h+='<button onclick="relMarcarOutroMedico('+p.id+',\''+escHtml(p.name)+'\')" title="Remover da sua lista de acompanhamento" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;text-decoration:underline;flex-shrink:0">Não é meu paciente</button>';
       if(!feito)h+='<a href="'+waUrl+'" target="_blank" onclick="relCheckinToggle('+p.id+',true)" class="btn btn-primary btn-sm" style="text-decoration:none">Enviar WhatsApp</a>';
       else h+='<span style="font-size:11px;color:var(--success);font-weight:600">&#9989; Feito</span>';
       h+='</div>';
     });
   }
   wrap.innerHTML=h;
+}
+
+async function relMarcarOutroMedico(patId,nome){
+  if(!confirm(nome+' será removido(a) da sua lista de Check-in Semanal (fica marcado como paciente de outro médico). Confirmar?'))return;
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:'_medico_bruna',concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  const jIdx=(window._relJornada||[]).findIndex(function(j){return j.patient_id===patId&&j.etapa==='_medico_bruna';});
+  if(jIdx>-1)window._relJornada[jIdx].concluida=true;
+  else{window._relJornada=window._relJornada||[];window._relJornada.push({patient_id:patId,etapa:'_medico_bruna',concluida:true});}
+  relRenderCheckinSemanal();
 }
 
 async function relCheckinToggle(patId,concluida){
