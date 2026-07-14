@@ -6119,46 +6119,27 @@ async function relRenderCheckinSemanal(){
   if(!wrap)return;
   const weekKey='checkin_'+relCheckinSemanaKey();
   const patients=window._relAllPatients||[];
-  let apptsAll=[];
-  try{
-    const{data}=await sb.from('planos_appointments').select('patient_id,profissional_nome,date_str');
-    apptsAll=data||[];
-  }catch(e){apptsAll=[];}
-  const apptsPorPaciente={};
-  apptsAll.forEach(function(a){
-    if(!apptsPorPaciente[a.patient_id])apptsPorPaciente[a.patient_id]=[];
-    apptsPorPaciente[a.patient_id].push(a);
-  });
   const jornada=window._relJornada||[];
   const feitosSet={};
-  const brunaOverride={};
   const joseOverride={};
   jornada.forEach(function(j){
     if(j.etapa===weekKey&&j.concluida)feitosSet[j.patient_id]=true;
-    if(j.etapa==='_medico_bruna'&&j.concluida)brunaOverride[j.patient_id]=true;
     if(j.etapa==='_medico_jose'&&j.concluida)joseOverride[j.patient_id]=true;
   });
   const meusPacientes=patients.filter(function(p){
-    if(p.plan_type==='Consulta Avulsa')return false;
-    if(!p.active)return false;
-    if(brunaOverride[p.id])return false;
-    if(joseOverride[p.id])return true;
-    const apptsPat=(apptsPorPaciente[p.id]||[]).slice().sort(function(x,y){return parseDateInt(y.date_str)-parseDateInt(x.date_str);});
-    const lastAppt=apptsPat[0];
-    const profNome=(lastAppt&&lastAppt.profissional_nome)||'';
-    const isBruna=profNome.toLowerCase().includes('bruna');
-    return !isBruna;
+    return joseOverride[p.id]&&p.active;
   }).sort(function(a,b){return a.name.localeCompare(b.name);});
   const feitos=meusPacientes.filter(function(p){return feitosSet[p.id];}).length;
   const pendentes=meusPacientes.length-feitos;
   const[iniFriday]=[relCheckinSemanaKey()];
   var h='<div style="font-size:11px;color:var(--text-muted);margin-bottom:12px">Ciclo iniciado em '+isoToDisplay(iniFriday)+' (reseta toda sexta-feira) · Enviar mensagem toda segunda para saber como foi o fim de semana e como está o tratamento</div>';
-  h+='<div style="display:flex;gap:8px;margin-bottom:14px">';
+  h+='<div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">';
   h+='<span style="background:var(--success);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px">'+feitos+' feitos</span>';
   h+='<span style="background:var(--danger);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px">'+pendentes+' pendentes</span>';
+  h+='<button onclick="abrirIncluirCheckin()" style="margin-left:auto;font-size:11px;font-weight:600;color:var(--tidal);background:none;border:1.5px solid var(--tidal);border-radius:8px;padding:5px 12px;cursor:pointer;font-family:var(--font)">+ Incluir paciente no Check-in Semanal</button>';
   h+='</div>';
   if(!meusPacientes.length){
-    h+='<div class="empty"><div class="empty-icon">&#128203;</div>Nenhum paciente ativo em Plano de Acompanhamento com você no momento.</div>';
+    h+='<div class="empty"><div class="empty-icon">&#128203;</div>Nenhum paciente na sua lista de Check-in Semanal ainda.<br><span style="font-size:12px;color:var(--text-muted)">Clique em &quot;+ Incluir paciente&quot; acima para adicionar quem está em Plano de Acompanhamento com você.</span></div>';
   } else {
     meusPacientes.forEach(function(p){
       const feito=!!feitosSet[p.id];
@@ -6171,7 +6152,7 @@ async function relRenderCheckinSemanal(){
       h+='<div class="patient-avatar" style="width:34px;height:34px;font-size:14px;background:'+(feito?'var(--success)':'var(--tidal)')+'">'+p.name.charAt(0)+'</div>';
       h+='<div style="flex:1"><div style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</div>';
       h+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+'</div></div>';
-      h+='<button onclick="relMarcarOutroMedico('+p.id+',\''+escHtml(p.name)+'\')" title="Remover da sua lista de acompanhamento" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;text-decoration:underline;flex-shrink:0">Não é meu paciente</button>';
+      h+='<button onclick="relRemoverCheckin('+p.id+',\''+escHtml(p.name)+'\')" title="Remover da lista de Check-in Semanal" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;text-decoration:underline;flex-shrink:0">Remover</button>';
       if(!feito)h+='<a href="'+waUrl+'" target="_blank" onclick="relCheckinToggle('+p.id+',true)" class="btn btn-primary btn-sm" style="text-decoration:none">Enviar WhatsApp</a>';
       else h+='<span style="font-size:11px;color:var(--success);font-weight:600">&#9989; Feito</span>';
       h+='</div>';
@@ -6180,12 +6161,52 @@ async function relRenderCheckinSemanal(){
   wrap.innerHTML=h;
 }
 
-async function relMarcarOutroMedico(patId,nome){
-  if(!confirm(nome+' será removido(a) da sua lista de Check-in Semanal (fica marcado como paciente de outro médico). Confirmar?'))return;
-  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:'_medico_bruna',concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
-  const jIdx=(window._relJornada||[]).findIndex(function(j){return j.patient_id===patId&&j.etapa==='_medico_bruna';});
+function abrirIncluirCheckin(){
+  var jornada=window._relJornada||[];
+  var jaIncluidos={};
+  jornada.forEach(function(j){if(j.etapa==='_medico_jose'&&j.concluida)jaIncluidos[j.patient_id]=true;});
+  var allPats=(window._relAllPatients||[]).filter(function(p){return p.active&&!jaIncluidos[p.id];}).sort(function(a,b){return a.name.localeCompare(b.name);});
+  var html='<div style="padding:4px">';
+  html+='<div style="font-size:16px;font-weight:700;margin-bottom:6px">Incluir paciente no Check-in Semanal</div>';
+  html+='<div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Selecione os pacientes que estão em Plano de Acompanhamento com você. Eles entrarão na rotina de check-in de toda segunda-feira.</div>';
+  html+='<input id="inccheck-busca" type="text" placeholder="Buscar paciente por nome..." oninput="filtrarIncluirCheckin()" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box;margin-bottom:12px">';
+  html+='<div id="inccheck-lista" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">';
+  if(!allPats.length){
+    html+='<div style="font-size:12px;color:var(--text-muted);padding:8px">Todos os pacientes ativos já estão na lista.</div>';
+  }
+  allPats.forEach(function(p){
+    html+='<div class="inccheck-item" data-name="'+escHtml(p.name).toLowerCase()+'" onclick="confirmarIncluirCheckin('+p.id+')" style="padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">'+escHtml(p.name)+(p.plan_type?' <span style="font-weight:400;color:var(--text-muted);font-size:11px">('+escHtml(p.plan_type)+')</span>':'')+'</div>';
+  });
+  html+='</div>';
+  html+='<div style="display:flex;justify-content:flex-end;margin-top:16px">';
+  html+='<button onclick="closeModal(\'modal-generic\')" style="padding:9px 18px;border:1.5px solid var(--border);border-radius:8px;background:none;font-size:13px;font-family:var(--font);cursor:pointer">Fechar</button>';
+  html+='</div></div>';
+  document.getElementById('modal-generic-content').innerHTML=html;
+  openModal('modal-generic');
+}
+
+function filtrarIncluirCheckin(){
+  var q=document.getElementById('inccheck-busca').value.toLowerCase();
+  document.querySelectorAll('.inccheck-item').forEach(function(el){
+    el.style.display=el.dataset.name.indexOf(q)!==-1?'block':'none';
+  });
+}
+
+async function confirmarIncluirCheckin(patId){
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:'_medico_jose',concluida:true,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  const jIdx=(window._relJornada||[]).findIndex(function(j){return j.patient_id===patId&&j.etapa==='_medico_jose';});
   if(jIdx>-1)window._relJornada[jIdx].concluida=true;
-  else{window._relJornada=window._relJornada||[];window._relJornada.push({patient_id:patId,etapa:'_medico_bruna',concluida:true});}
+  else{window._relJornada=window._relJornada||[];window._relJornada.push({patient_id:patId,etapa:'_medico_jose',concluida:true});}
+  toast('Paciente incluído no Check-in Semanal!','success');
+  closeModal('modal-generic');
+  relRenderCheckinSemanal();
+}
+
+async function relRemoverCheckin(patId,nome){
+  if(!confirm('Remover '+nome+' da lista de Check-in Semanal?'))return;
+  await sb.from('planos_jornada').upsert({patient_id:patId,etapa:'_medico_jose',concluida:false,updated_at:new Date().toISOString()},{onConflict:'patient_id,etapa'});
+  const jIdx=(window._relJornada||[]).findIndex(function(j){return j.patient_id===patId&&j.etapa==='_medico_jose';});
+  if(jIdx>-1)window._relJornada[jIdx].concluida=false;
   relRenderCheckinSemanal();
 }
 
@@ -6197,6 +6218,7 @@ async function relCheckinToggle(patId,concluida){
   else{window._relJornada=window._relJornada||[];window._relJornada.push({patient_id:patId,etapa:weekKey,concluida:concluida});}
   relRenderCheckinSemanal();
 }
+
 
 function relPatRow(p,resList){
   const lastResp=(resList||[]).find(r=>r.patient_id===p.id);
