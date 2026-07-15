@@ -3261,7 +3261,7 @@ function buildLeadsUI(){
   });
   var _origemMapCRM={};
   _periodoLeads.forEach(function(l){var o=l.origem||'Não informado';_origemMapCRM[o]=(_origemMapCRM[o]||0)+1;});
-  var _origemColorsCRM={Instagram:'#e1306c','Email/Google':'#4285f4',WhatsApp:'#25d366',Indicação:'#10b981',Outro:'#8b5cf6','Não informado':'var(--ash)'};
+  var _origemColorsCRM={Instagram:'#e1306c','Email/Google':'#4285f4',WhatsApp:'#25d366',Indicação:'#10b981',Outro:'#8b5cf6','Não informado':'var(--ash)','Site Principal':'#0ea5e9','IG Dr. José Carlos':'#e1306c','IG Dra. Bruna Braga':'#c026d3'};
   var _opts=[{id:'semana',label:'Semanal'},{id:'quinzena',label:'Quinzenal'},{id:'mes',label:'Mensal'}];
   h+='<div class="card" style="margin-bottom:24px;padding:18px 20px">';
   h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">';
@@ -3329,6 +3329,7 @@ function buildLeadsUI(){
         h+='<div style="font-size:11px;color:var(--text-muted);margin-top:1px">'+escHtml(lead.origem||'')+(lead.medico_interesse?' \u00b7 '+escHtml(lead.medico_interesse):'')+'</div></div>';
         if(atrasado)h+='<span style="font-size:16px" title="Follow-up atrasado">&#128276;</span>';
         h+='</div>';
+        if(!lead.medico_interesse&&col.id!=='perdido')h+='<div style="font-size:10px;font-weight:700;color:#b45309;background:#fff8ed;border:1px solid #f59e0b;border-radius:20px;padding:2px 8px;display:inline-block;margin-bottom:6px">\u26a0\ufe0f Definir m\u00e9dico</div>';
         if(lead.telefone)h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">'+escHtml(lead.telefone)+'</div>';
         if(lead.proximo_contato)h+='<div style="font-size:11px;color:'+(atrasado?'#ef4444':'var(--text-muted)')+';margin-bottom:6px">'+(atrasado?'Atrasado: ':'')+lead.proximo_contato+'</div>';
         if(lead.canal_marketing)h+='<div style="font-size:10px;font-weight:700;color:#8b5cf6;background:#f5f3ff;border-radius:20px;padding:2px 8px;display:inline-block;margin-bottom:6px">📣 '+escHtml(lead.canal_marketing)+'</div>';
