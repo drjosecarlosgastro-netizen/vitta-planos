@@ -3175,6 +3175,10 @@ function abrirFollowupsAtrasados(){
   document.getElementById('modal-generic-content').innerHTML=html;
   openModal('modal-generic');
 }
+function filtrarLeadsOrigem(valor){
+  window._leadsOrigemFiltro=valor||'';
+  buildLeadsUI();
+}
 function buildLeadsUI(){
   const leads=_leadsData||[];
   const colunas=[
@@ -3247,6 +3251,15 @@ function buildLeadsUI(){
   }
   h+='</div>';
   h+='</div>';
+  // Contadores por origem de captação (Site / Instagram de cada médico)
+  var _qtdSitePrincipal=leads.filter(function(l){return l.origem==='Site Principal';}).length;
+  var _qtdIgJC=leads.filter(function(l){return l.origem==='IG Dr. José Carlos';}).length;
+  var _qtdIgBruna=leads.filter(function(l){return l.origem==='IG Dra. Bruna Braga';}).length;
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px">';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #0ea5e9;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#0ea5e9">'+_qtdSitePrincipal+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Vindos do Site Principal</div></div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #2563eb;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#2563eb">'+_qtdIgJC+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Vindos do IG Dr. José Carlos</div></div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #db2777;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#db2777">'+_qtdIgBruna+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Vindos do IG Dra. Bruna Braga</div></div>';
+  h+='</div>';
   // Análise de leads por período
   var _pr=leadsPeriodoRange();
   var _periodoLeads=leads.filter(function(l){if(!l.created_at)return false;var d=new Date(l.created_at);return d>=_pr[0]&&d<=_pr[1];});
@@ -3308,9 +3321,20 @@ function buildLeadsUI(){
     h+='</div>';
   }
   h+='</div></div></div>';
+  // Filtro por origem
+  var _origensDisponiveis=Array.from(new Set(leads.map(function(l){return l.origem;}).filter(Boolean))).sort();
+  var _filtroAtual=window._leadsOrigemFiltro||'';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
+  h+='<label style="font-size:12px;font-weight:600;color:var(--text-muted)">Filtrar por origem:</label>';
+  h+='<select onchange="filtrarLeadsOrigem(this.value)" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font)">';
+  h+='<option value=""'+(_filtroAtual===''?' selected':'')+'>Todas as origens</option>';
+  _origensDisponiveis.forEach(function(o){h+='<option value="'+escHtml(o)+'"'+(_filtroAtual===o?' selected':'')+'>'+escHtml(o)+'</option>';});
+  h+='</select>';
+  if(_filtroAtual)h+='<span style="font-size:11px;color:var(--text-muted)">'+leads.filter(function(l){return l.origem===_filtroAtual;}).length+' lead(s) nessa origem</span>';
+  h+='</div>';
   h+='<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">';
   colunas.forEach(function(col){
-    var colLeads=leads.filter(function(l){return (l.status||'novo')===col.id;});
+    var colLeads=leads.filter(function(l){return (l.status||'novo')===col.id&&(!_filtroAtual||l.origem===_filtroAtual);});
     h+='<div style="min-width:260px;width:260px;flex-shrink:0">';
     h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 14px;background:'+col.bg+';border-radius:10px;border-left:3px solid '+col.color+'">';
     h+='<span style="font-size:12px;font-weight:700;color:'+col.color+'">'+col.label+'</span>';
