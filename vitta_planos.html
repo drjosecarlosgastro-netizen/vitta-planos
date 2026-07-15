@@ -3252,13 +3252,15 @@ function buildLeadsUI(){
   h+='</div>';
   h+='</div>';
   // Contadores por origem de captação (Site / Instagram de cada médico)
-  var _qtdSitePrincipal=leads.filter(function(l){return l.origem==='Site Principal';}).length;
+  var _qtdSitePrincipal=leads.filter(function(l){return l.origem==='Google Ads - Site Principal';}).length;
   var _qtdIgJC=leads.filter(function(l){return l.origem==='IG Dr. José Carlos';}).length;
   var _qtdIgBruna=leads.filter(function(l){return l.origem==='IG Dra. Bruna Braga';}).length;
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px">';
-  h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #0ea5e9;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#0ea5e9">'+_qtdSitePrincipal+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Vindos do Site Principal</div></div>';
+  var _qtdGoogleAds=leads.filter(function(l){return (l.origem||'').toUpperCase().indexOf('GOOGLE')!==-1;}).length;
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:24px">';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #0ea5e9;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#0ea5e9">'+_qtdSitePrincipal+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Google Ads · Site Principal</div></div>';
   h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #2563eb;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#2563eb">'+_qtdIgJC+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Vindos do IG Dr. José Carlos</div></div>';
   h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #db2777;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#db2777">'+_qtdIgBruna+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Vindos do IG Dra. Bruna Braga</div></div>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #b45309;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#b45309">'+_qtdGoogleAds+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Vindos do Google Ads</div></div>';
   h+='</div>';
   // Análise de leads por período
   var _pr=leadsPeriodoRange();
@@ -3274,7 +3276,7 @@ function buildLeadsUI(){
   });
   var _origemMapCRM={};
   _periodoLeads.forEach(function(l){var o=l.origem||'Não informado';_origemMapCRM[o]=(_origemMapCRM[o]||0)+1;});
-  var _origemColorsCRM={Instagram:'#e1306c','Email/Google':'#4285f4',WhatsApp:'#25d366',Indicação:'#10b981',Outro:'#8b5cf6','Não informado':'var(--ash)','Site Principal':'#0ea5e9','IG Dr. José Carlos':'#e1306c','IG Dra. Bruna Braga':'#c026d3'};
+  var _origemColorsCRM={Instagram:'#e1306c','Email/Google':'#4285f4',WhatsApp:'#25d366',Indicação:'#10b981',Outro:'#8b5cf6','Não informado':'var(--ash)','Site Principal':'#0ea5e9','IG Dr. José Carlos':'#e1306c','IG Dra. Bruna Braga':'#c026d3','Google Ads':'#b45309'};
   var _opts=[{id:'semana',label:'Semanal'},{id:'quinzena',label:'Quinzenal'},{id:'mes',label:'Mensal'}];
   h+='<div class="card" style="margin-bottom:24px;padding:18px 20px">';
   h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">';
@@ -3350,8 +3352,8 @@ function buildLeadsUI(){
         h+='<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">';
         h+='<div style="width:32px;height:32px;border-radius:50%;background:'+col.color+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">'+(lead.nome||'?').charAt(0).toUpperCase()+'</div>';
         h+='<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(lead.nome||'Sem nome')+'</div>';
-        var _origemBadgeCores={'IG Dr. José Carlos':{bg:'#eff6ff',cor:'#2563eb'},'IG Dra. Bruna Braga':{bg:'#fdf2f8',cor:'#db2777'},'Site Principal':{bg:'#f0f9ff',cor:'#0ea5e9'}};
-        var _obc=_origemBadgeCores[lead.origem];
+        var _origemBadgeCores={'IG Dr. José Carlos':{bg:'#eff6ff',cor:'#2563eb'},'IG Dra. Bruna Braga':{bg:'#fdf2f8',cor:'#db2777'}};
+        var _obc=_origemBadgeCores[lead.origem]||((lead.origem||'').toUpperCase().indexOf('GOOGLE')!==-1?{bg:'#fef9e7',cor:'#b45309'}:null);
         if(_obc){
           h+='<div style="margin-top:2px"><span style="font-size:10px;font-weight:700;color:'+_obc.cor+';background:'+_obc.bg+';border-radius:20px;padding:1px 7px;display:inline-block">'+escHtml(lead.origem)+'</span>'+(lead.medico_interesse?' <span style="font-size:11px;color:var(--text-muted)">'+escHtml(lead.medico_interesse)+'</span>':'')+'</div>';
         } else {
