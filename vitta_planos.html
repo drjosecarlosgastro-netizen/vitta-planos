@@ -3462,6 +3462,12 @@ async function abrirLead(id){
   html+='</select></div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Próximo contato</label><input id="edlead-pc" type="date" value="'+(lead.proximo_contato||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='</div>';
+  html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Médico de interesse</label><select id="edlead-medico" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font)">';
+  html+='<option value=""'+(!lead.medico_interesse?' selected':'')+'>— Selecionar —</option>';
+  html+='<option value="Dr. José Carlos"'+(lead.medico_interesse==='Dr. José Carlos'?' selected':'')+'>Dr. José Carlos</option>';
+  html+='<option value="Dra. Bruna"'+(lead.medico_interesse==='Dra. Bruna'?' selected':'')+'>Dra. Bruna</option>';
+  html+='<option value="Indiferente"'+(lead.medico_interesse==='Indiferente'?' selected':'')+'>Indiferente</option>';
+  html+='</select></div>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Telefone</label><input id="edlead-tel" type="text" value="'+escHtml(lead.telefone||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
   html+='<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Email</label><input id="edlead-email" type="text" value="'+escHtml(lead.email||'')+'" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box"></div>';
@@ -3604,7 +3610,7 @@ async function salvarLead(id){
   var _indElEd=document.getElementById('edlead-indicador');
   var _indNomeEd=_indElEd?_indElEd.value.trim():'';
   var _indPatEd=_indNomeEd?buscarPacientePorNome(_indNomeEd):null;
-  var data={status:novoStatus,telefone:document.getElementById('edlead-tel').value.trim(),email:document.getElementById('edlead-email').value.trim(),canal_marketing:_canaisEd||null,indicado_por_patient_id:_indPatEd?_indPatEd.id:null,indicado_por_nome_livre:_indPatEd?null:(_indNomeEd||null),proximo_contato:document.getElementById('edlead-pc').value||null,observacao:document.getElementById('edlead-obs').value.trim()||null,updated_at:new Date().toISOString()};
+  var data={status:novoStatus,telefone:document.getElementById('edlead-tel').value.trim(),email:document.getElementById('edlead-email').value.trim(),medico_interesse:document.getElementById('edlead-medico').value||null,canal_marketing:_canaisEd||null,indicado_por_patient_id:_indPatEd?_indPatEd.id:null,indicado_por_nome_livre:_indPatEd?null:(_indNomeEd||null),proximo_contato:document.getElementById('edlead-pc').value||null,observacao:document.getElementById('edlead-obs').value.trim()||null,updated_at:new Date().toISOString()};
   try{
     await sb.from('planos_leads').update(data).eq('id',id);
     // Registra automaticamente quando status muda
