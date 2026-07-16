@@ -3255,7 +3255,7 @@ function buildLeadsUI(){
   var _qtdSitePrincipal=leads.filter(function(l){return l.origem==='Google Ads - Site Principal';}).length;
   var _qtdIgJC=leads.filter(function(l){return l.origem==='IG Dr. José Carlos';}).length;
   var _qtdIgBruna=leads.filter(function(l){return l.origem==='IG Dra. Bruna Braga';}).length;
-  var _qtdGoogleAds=leads.filter(function(l){return (l.origem||'').toUpperCase().indexOf('GOOGLE')!==-1;}).length;
+  var _qtdGoogleAds=leads.filter(function(l){return (l.origem||'').indexOf('Google Ads')===0;}).length;
   h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:24px">';
   h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #0ea5e9;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#0ea5e9">'+_qtdSitePrincipal+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Google Ads · Site Principal</div></div>';
   h+='<div style="background:var(--white);border:1px solid var(--border);border-left:4px solid #2563eb;border-radius:12px;padding:14px 18px"><div style="font-size:24px;font-weight:700;color:#2563eb">'+_qtdIgJC+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Vindos do IG Dr. José Carlos</div></div>';
@@ -3324,7 +3324,8 @@ function buildLeadsUI(){
   }
   h+='</div></div></div>';
   // Filtro por origem
-  var _origensDisponiveis=Array.from(new Set(leads.map(function(l){return l.origem;}).filter(Boolean))).sort();
+  var _origensPrincipaisFixas=['IG Dr. José Carlos','IG Dra. Bruna Braga','Google Ads - Site Principal'];
+  var _origensDisponiveis=Array.from(new Set(leads.map(function(l){return l.origem;}).filter(Boolean).concat(_origensPrincipaisFixas))).sort();
   var _filtroAtual=window._leadsOrigemFiltro||'';
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
   h+='<label style="font-size:12px;font-weight:600;color:var(--text-muted)">Filtrar por origem:</label>';
@@ -3353,7 +3354,7 @@ function buildLeadsUI(){
         h+='<div style="width:32px;height:32px;border-radius:50%;background:'+col.color+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">'+(lead.nome||'?').charAt(0).toUpperCase()+'</div>';
         h+='<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(lead.nome||'Sem nome')+'</div>';
         var _origemBadgeCores={'IG Dr. José Carlos':{bg:'#eff6ff',cor:'#2563eb'},'IG Dra. Bruna Braga':{bg:'#fdf2f8',cor:'#db2777'}};
-        var _obc=_origemBadgeCores[lead.origem]||((lead.origem||'').toUpperCase().indexOf('GOOGLE')!==-1?{bg:'#fef9e7',cor:'#b45309'}:null);
+        var _obc=_origemBadgeCores[lead.origem]||((lead.origem||'').indexOf('Google Ads')===0?{bg:'#fef9e7',cor:'#b45309'}:null);
         if(_obc){
           h+='<div style="margin-top:2px"><span style="font-size:10px;font-weight:700;color:'+_obc.cor+';background:'+_obc.bg+';border-radius:20px;padding:1px 7px;display:inline-block">'+escHtml(lead.origem)+'</span>'+(lead.medico_interesse?' <span style="font-size:11px;color:var(--text-muted)">'+escHtml(lead.medico_interesse)+'</span>':'')+'</div>';
         } else {
