@@ -5564,10 +5564,13 @@ async function renderAvulsas(){
   allPatients=patients||[];
   const avulsas=allPatients.filter(p=>p.plan_type==='Consulta Avulsa');
   let avSort='alpha';
+  let avDoc='all';
   const c=document.getElementById('main-content');
   function lastConsultDate(patientId,appts){const pa=(appts||[]).filter(a=>a.patient_id===patientId&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));return pa.length?fmtDate(pa[0].date_str):null;}
+  function lastApptObj(patientId){const pa=(appts||[]).filter(a=>a.patient_id===patientId&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));return pa.length?pa[0]:null;}
+  function docCategory(patientId){const a=lastApptObj(patientId);if(!a||!a.profissional_nome)return null;const pn=a.profissional_nome.toLowerCase();if(pn.indexOf('bruna')!==-1)return'bruna';if(pn.indexOf('jos')!==-1)return'jose';return null;}
   function buildRetorno30(){
-    const rows=avulsas.filter(p=>p.active).map(p=>{
+    const rows=avulsas.filter(p=>p.active&&(avDoc==='all'||docCategory(p.id)===avDoc)).map(p=>{
       const pa=(appts||[]).filter(a=>a.patient_id===p.id&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
       if(!pa.length)return null;
       const lastAppt=pa[0];const lastStr=fmtDate(lastAppt.date_str);
@@ -5612,14 +5615,19 @@ async function renderAvulsas(){
     return h;
   }
   function buildAvulsas(){
-    let filtered=avulsas;
+    let filtered=avDoc==='all'?avulsas:avulsas.filter(p=>docCategory(p.id)===avDoc);
     if(avSort==='alpha')filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));
     else if(avSort==='ultima_asc'){filtered=filtered.slice().sort((a,b)=>{const ua=lastConsultDate(a.id,appts);const ub=lastConsultDate(b.id,appts);return parseDateInt(ua)-parseDateInt(ub);});}
     else if(avSort==='ultima_desc'){filtered=filtered.slice().sort((a,b)=>{const ua=lastConsultDate(a.id,appts)||'00/00/0000';const ub=lastConsultDate(b.id,appts)||'00/00/0000';return parseDateInt(ub)-parseDateInt(ua);});}
     else if(avSort==='gasto_desc'){filtered=filtered.slice().sort((a,b)=>{const fa=(fin||[]).filter(f=>f.patient_id===a.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);const fb=(fin||[]).filter(f=>f.patient_id===b.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);return fb-fa;});}
-    const ativos=avulsas.filter(p=>p.active).length;const inativos=avulsas.filter(p=>!p.active).length;
+    const ativos=filtered.filter(p=>p.active).length;const inativos=filtered.filter(p=>!p.active).length;
     let html='<div class="section-header"><div class="section-title">Consultas Avulsas</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+      +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._avdoc=this.value;rebuildAvulsas()">'
+      +'<option value="all" '+(avDoc==='all'?'selected':'')+'>Todos os m\u00e9dicos</option>'
+      +'<option value="jose" '+(avDoc==='jose'?'selected':'')+'>Dr. Jos\u00e9 Carlos</option>'
+      +'<option value="bruna" '+(avDoc==='bruna'?'selected':'')+'>Dra. Bruna</option>'
+      +'</select>'
       +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._avsort=this.value;rebuildAvulsas()">'
       +'<option value="alpha" '+(avSort==='alpha'?'selected':'')+'>A\u2013Z</option>'
       +'<option value="ultima_desc" '+(avSort==='ultima_desc'?'selected':'')+'>Consulta mais recente</option>'
@@ -5628,7 +5636,7 @@ async function renderAvulsas(){
       +'</select>'
       +'</div></div>';
     html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">'
-      +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+avulsas.length+'</div><div class="dash-card-label">Total Avulsos</div><div class="dash-card-sub">'+ativos+' ativos \u00b7 '+inativos+' inativos</div></div>'
+      +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+filtered.length+'</div><div class="dash-card-label">Total Avulsos</div><div class="dash-card-sub">'+ativos+' ativos \u00b7 '+inativos+' inativos</div></div>'
       +'<div class="dash-card" onclick="mainNav(\'patients\')" title="Ver todos os pacientes"><div class="dash-card-num" style="font-size:22px">\ud83d\udc4b</div><div class="dash-card-label">Converter para Plano</div><div class="dash-card-sub">Editar na aba Pacientes</div></div>'
       +'</div>';
     html+='<div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#0369a1">'
@@ -5673,7 +5681,8 @@ async function renderAvulsas(){
     return html;
   }
   window._avsort='alpha';
-  window.rebuildAvulsas=function(){avSort=window._avsort;c.innerHTML=buildAvulsas();};
+  window._avdoc='all';
+  window.rebuildAvulsas=function(){avSort=window._avsort;avDoc=window._avdoc;c.innerHTML=buildAvulsas();};
   c.innerHTML=buildAvulsas();
 }
 function toggleProgImpl(header){const d=header.nextElementSibling;d.classList.toggle('open');header.querySelector('span:last-child').textContent=d.classList.contains('open')?'\u25b4':'\u25be';}
