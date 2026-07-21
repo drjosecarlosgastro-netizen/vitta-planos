@@ -5566,6 +5566,44 @@ async function renderAvulsas(){
   let avSort='alpha';
   const c=document.getElementById('main-content');
   function lastConsultDate(patientId,appts){const pa=(appts||[]).filter(a=>a.patient_id===patientId&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));return pa.length?fmtDate(pa[0].date_str):null;}
+  function buildRetorno30(){
+    const rows=avulsas.filter(p=>p.active).map(p=>{
+      const lastStr=lastConsultDate(p.id,appts);
+      if(!lastStr)return null;
+      const diasDesde=daysAgo(lastStr);
+      if(diasDesde===null)return null;
+      const diasRestantes=30-diasDesde;
+      return{p:p,lastStr:lastStr,diasRestantes:diasRestantes};
+    }).filter(Boolean).sort((a,b)=>a.diasRestantes-b.diasRestantes);
+    const atrasados=rows.filter(r=>r.diasRestantes<0).length;
+    const estaSemana=rows.filter(r=>r.diasRestantes>=0&&r.diasRestantes<=7).length;
+    const noPrazo=rows.filter(r=>r.diasRestantes>7).length;
+    let h='<div class="card" style="margin:0 0 16px 0;padding:14px 16px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">'
+      +'<div class="card-title" style="margin:0">Retorno em at\u00e9 30 dias</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;font-weight:700">'
+      +'<span style="color:#b91c1c;background:#fee2e2;padding:2px 8px;border-radius:99px">'+atrasados+' atrasado(s)</span>'
+      +'<span style="color:#92400e;background:#fef3c7;padding:2px 8px;border-radius:99px">'+estaSemana+' esta semana</span>'
+      +'<span style="color:#15803d;background:#dcfce7;padding:2px 8px;border-radius:99px">'+noPrazo+' no prazo</span>'
+      +'</div></div>';
+    if(!rows.length){h+='<div style="font-size:13px;color:var(--text-muted);font-style:italic">Nenhum paciente ativo com consulta registrada.</div></div>';return h;}
+    rows.forEach(r=>{
+      const p=r.p,dr=r.diasRestantes;
+      let cor,bg,label;
+      if(dr<0){cor='#b91c1c';bg='#fee2e2';label=Math.abs(dr)+'d de atraso';}
+      else if(dr<=7){cor='#92400e';bg='#fef3c7';label=dr===0?'Vence hoje':'Faltam '+dr+'d';}
+      else{cor='#15803d';bg='#dcfce7';label='Faltam '+dr+'d';}
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">'
+        +'<div style="display:flex;align-items:center;gap:8px;min-width:0">'
+        +'<div class="patient-avatar" style="width:28px;height:28px;font-size:12px;flex-shrink:0">'+p.name.charAt(0)+'</div>'
+        +'<div style="min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.name+'</div>'
+        +'<div style="font-size:11px;color:var(--text-muted)">\u00daltima consulta: '+r.lastStr+'</div></div></div>'
+        +'<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+bg+';padding:3px 10px;border-radius:99px;white-space:nowrap">'+label+'</span>'
+        +'</div>';
+    });
+    h+='</div>';
+    return h;
+  }
   function buildAvulsas(){
     let filtered=avulsas;
     if(avSort==='alpha')filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));
@@ -5573,7 +5611,6 @@ async function renderAvulsas(){
     else if(avSort==='ultima_desc'){filtered=filtered.slice().sort((a,b)=>{const ua=lastConsultDate(a.id,appts)||'00/00/0000';const ub=lastConsultDate(b.id,appts)||'00/00/0000';return parseDateInt(ub)-parseDateInt(ua);});}
     else if(avSort==='gasto_desc'){filtered=filtered.slice().sort((a,b)=>{const fa=(fin||[]).filter(f=>f.patient_id===a.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);const fb=(fin||[]).filter(f=>f.patient_id===b.id).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);return fb-fa;});}
     const ativos=avulsas.filter(p=>p.active).length;const inativos=avulsas.filter(p=>!p.active).length;
-    const totalGasto=(fin||[]).filter(f=>avulsas.some(p=>p.id===f.patient_id)).reduce((s,f)=>s+(parseFloat(f.valor)||0),0);
     let html='<div class="section-header"><div class="section-title">Consultas Avulsas</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
       +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._avsort=this.value;rebuildAvulsas()">'
@@ -5583,14 +5620,14 @@ async function renderAvulsas(){
       +'<option value="gasto_desc" '+(avSort==='gasto_desc'?'selected':'')+'>Maior gasto total</option>'
       +'</select>'
       +'</div></div>';
-    html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'
+    html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">'
       +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+avulsas.length+'</div><div class="dash-card-label">Total Avulsos</div><div class="dash-card-sub">'+ativos+' ativos \u00b7 '+inativos+' inativos</div></div>'
-      +'<div class="dash-card" style="cursor:default"><div class="dash-card-num" style="font-size:22px;color:var(--success)">R$ '+(totalGasto/1000).toFixed(1)+'k</div><div class="dash-card-label">Total Gerado</div></div>'
       +'<div class="dash-card" onclick="mainNav(\'patients\')" title="Ver todos os pacientes"><div class="dash-card-num" style="font-size:22px">\ud83d\udc4b</div><div class="dash-card-label">Converter para Plano</div><div class="dash-card-sub">Editar na aba Pacientes</div></div>'
       +'</div>';
     html+='<div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#0369a1">'
       +'\u2139\ufe0f Pacientes com <strong>Consulta Avulsa</strong> aparecem aqui. Quando fecharem um <strong>Plano 3 ou 6 meses</strong>, migram automaticamente para a aba <strong>Programa</strong>.'
       +'</div>';
+    html+=buildRetorno30();
     if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc64</div>Nenhum paciente avulso</div>';return html;}
     filtered.forEach(p=>{
       const patAppts=(appts||[]).filter(a=>a.patient_id===p.id&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
