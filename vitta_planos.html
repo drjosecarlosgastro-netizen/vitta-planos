@@ -5568,12 +5568,13 @@ async function renderAvulsas(){
   function lastConsultDate(patientId,appts){const pa=(appts||[]).filter(a=>a.patient_id===patientId&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));return pa.length?fmtDate(pa[0].date_str):null;}
   function buildRetorno30(){
     const rows=avulsas.filter(p=>p.active).map(p=>{
-      const lastStr=lastConsultDate(p.id,appts);
-      if(!lastStr)return null;
+      const pa=(appts||[]).filter(a=>a.patient_id===p.id&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));
+      if(!pa.length)return null;
+      const lastAppt=pa[0];const lastStr=fmtDate(lastAppt.date_str);
       const diasDesde=daysAgo(lastStr);
       if(diasDesde===null)return null;
       const diasRestantes=30-diasDesde;
-      return{p:p,lastStr:lastStr,diasRestantes:diasRestantes};
+      return{p:p,lastStr:lastStr,lastAppt:lastAppt,diasRestantes:diasRestantes};
     }).filter(Boolean).sort((a,b)=>a.diasRestantes-b.diasRestantes);
     const atrasados=rows.filter(r=>r.diasRestantes<0).length;
     const estaSemana=rows.filter(r=>r.diasRestantes>=0&&r.diasRestantes<=7).length;
@@ -5593,11 +5594,17 @@ async function renderAvulsas(){
       if(dr<0){cor='#b91c1c';bg='#fee2e2';label=Math.abs(dr)+'d de atraso';}
       else if(dr<=7){cor='#92400e';bg='#fef3c7';label=dr===0?'Vence hoje':'Faltam '+dr+'d';}
       else{cor='#15803d';bg='#dcfce7';label='Faltam '+dr+'d';}
+      let medBadge30='';
+      if(r.lastAppt&&r.lastAppt.profissional_nome){
+        const _pn=r.lastAppt.profissional_nome.toLowerCase();
+        if(_pn.indexOf('bruna')!==-1)medBadge30='<span style="font-size:10px;font-weight:700;color:#be185d;background:#fce7f3;padding:1px 6px;border-radius:99px;margin-left:6px">Dra. Bruna</span>';
+        else if(_pn.indexOf('jos')!==-1)medBadge30='<span style="font-size:10px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:1px 6px;border-radius:99px;margin-left:6px">Dr. Jos\u00e9 Carlos</span>';
+      }
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">'
         +'<div style="display:flex;align-items:center;gap:8px;min-width:0">'
         +'<div class="patient-avatar" style="width:28px;height:28px;font-size:12px;flex-shrink:0">'+p.name.charAt(0)+'</div>'
         +'<div style="min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.name+'</div>'
-        +'<div style="font-size:11px;color:var(--text-muted)">\u00daltima consulta: '+r.lastStr+'</div></div></div>'
+        +'<div style="font-size:11px;color:var(--text-muted)">\u00daltima consulta: '+r.lastStr+medBadge30+'</div></div></div>'
         +'<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+bg+';padding:3px 10px;border-radius:99px;white-space:nowrap">'+label+'</span>'
         +'</div>';
     });
@@ -5638,12 +5645,18 @@ async function renderAvulsas(){
       if(lastConsult){const d=daysAgo(fmtDate(lastConsult.date_str));if(d!==null&&d>60){const cor=d>120?'var(--danger)':d>60?'var(--warning)':'var(--text-muted)';const bg=d>120?'#fee2e2':d>60?'#fef3c7':'#f3f4f6';semContato='<span style="font-size:11px;font-weight:700;color:'+cor+';background:'+bg+';padding:2px 8px;border-radius:99px">\ud83d\udd54 '+d+'d sem consulta</span>';}}
       else{semContato='<span style="font-size:11px;font-weight:700;color:var(--text-muted);background:#f3f4f6;padding:2px 8px;border-radius:99px">Sem hist\u00f3rico</span>';}
       const statusDot=p.active?'<span style="width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;flex-shrink:0"></span>':'<span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;flex-shrink:0"></span>';
+      let medBadge='';
+      if(lastConsult&&lastConsult.profissional_nome){
+        const _pn=lastConsult.profissional_nome.toLowerCase();
+        if(_pn.indexOf('bruna')!==-1)medBadge='<span style="font-size:11px;font-weight:700;color:#be185d;background:#fce7f3;padding:2px 8px;border-radius:99px">Dra. Bruna</span>';
+        else if(_pn.indexOf('jos')!==-1)medBadge='<span style="font-size:11px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:2px 8px;border-radius:99px">Dr. Jos\u00e9 Carlos</span>';
+      }
       html+='<div class="prog-row"><div class="prog-header" onclick="toggleProgImpl(this)">'
         +'<div class="patient-avatar" style="width:38px;height:38px;font-size:14px">'+p.name.charAt(0)+'</div>'
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px">'+statusDot+' '+p.name+tags.map(t=>'<span class="etiqueta" style="background:'+(t.color||'#6b7280')+'">'+t.name+'</span>').join('')+'</div>'
         +'<div style="font-size:12px;color:var(--text-muted);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
-        +(lastConsult?'<span>\ud83d\udcc5 \u00dalt. consulta: <strong>'+fmtDate(lastConsult.date_str)+'</strong></span>':'<span style="font-style:italic">Sem consulta</span>')
+        +(lastConsult?'<span>\ud83d\udcc5 \u00dalt. consulta: <strong>'+fmtDate(lastConsult.date_str)+'</strong></span>'+medBadge:'<span style="font-style:italic">Sem consulta</span>')
         +'<span style="background:#f3f4f6;padding:2px 8px;border-radius:99px;font-size:11px">'+totalConsultas+' consulta(s)</span>'
         +'<span style="color:var(--success);font-weight:600">R$ '+totalPago.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>'+semContato+'</div></div>'
         +'<span style="color:var(--text-muted)">\u25be</span></div>'
