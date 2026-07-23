@@ -783,6 +783,7 @@ async function savePatInfo(){
 async function savePlanInfo(){
   const inicio=displayToISO(document.getElementById('pl-inicio').value.trim());
   const planType=document.getElementById('pl-plan').value;
+  if(!planType){toast('Selecione o Tipo de Plano antes de salvar','error');return;}
   const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
   const data={
     plan_type:planType,
@@ -4440,6 +4441,7 @@ async function renderHistoricoPlanos(){
       +'<div id="plano-ativo" style="border-top:1px solid var(--border);padding:16px 20px">'
       +'<div class="grid-2">'
       +'<div class="field"><label>Tipo de Plano</label><select id="pl-plan">'
+      +'<option value="" '+(!p.plan_type?'selected':'')+'>\u2014 Selecionar \u2014</option>'
       +'<option value="Plano 3 meses" '+(p.plan_type==='Plano 3 meses'?'selected':'')+'>Plano 3 meses</option>'
       +'<option value="Plano 6 meses" '+(p.plan_type==='Plano 6 meses'?'selected':'')+'>Plano 6 meses</option>'
       +'<option value="Consulta Avulsa" '+(p.plan_type==='Consulta Avulsa'?'selected':'')+'>Consulta Avulsa</option>'
@@ -5008,6 +5010,13 @@ async function saveApptGlobal(){
   closeModal('modal-generic');toast('Agendamento salvo','success');renderAgenda();
 }
 
+async function reverterParaAvulsa(id,name){
+  if(!confirm('Reverter "'+name+'" para Consulta Avulsa?\n\nIsso remove a classifica\u00e7\u00e3o de Plano 3/6 meses deste paciente.'))return;
+  const{error}=await sb.from('planos_patients').update({plan_type:'Consulta Avulsa',duracao_programa:1,updated_by:currentUser.name,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast('Erro: '+error.message,'error');return;}
+  toast('Paciente revertido para Consulta Avulsa','success');
+  renderPrograma();
+}
 async function renderPrograma(){
   const[{data:patients},{data:appts},{data:sessoes},{data:implantes},{data:envios}]=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
@@ -5021,7 +5030,7 @@ async function renderPrograma(){
   const c=document.getElementById('main-content');
   function docCategoryProg(patientId){const pa=(appts||[]).filter(a=>a.patient_id===patientId&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));const a=pa[0];if(!a||!a.profissional_nome)return null;const pn=a.profissional_nome.toLowerCase();if(pn.indexOf('bruna')!==-1)return'bruna';if(pn.indexOf('jos')!==-1)return'jose';return null;}
   function buildProg(){
-    let filtered=allPatients.filter(p=>p.plan_type!=='Consulta Avulsa');
+    let filtered=allPatients.filter(p=>p.plan_type==='Plano 3 meses'||p.plan_type==='Plano 6 meses');
     if(progFilter==='active')filtered=filtered.filter(p=>p.active);
     else if(progFilter==='inactive')filtered=filtered.filter(p=>!p.active);
     if(phaseFilter>0)filtered=filtered.filter(p=>p.inicio_programa&&calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3)===phaseFilter);
@@ -5057,6 +5066,13 @@ async function renderPrograma(){
       +'<option value="inicio" '+(progSort==='inicio'?'selected':'')+'>In\u00edcio mais recente</option>'
       +'</select>'
       +'</div></div>';
+    const suspeitos=allPatients.filter(p=>(p.plan_type==='Plano 3 meses'||p.plan_type==='Plano 6 meses')&&!p.inicio_programa);
+    if(suspeitos.length){
+      html+='<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#991b1b">'
+        +'<div style="font-weight:700;margin-bottom:6px">\u26a0\ufe0f '+suspeitos.length+' paciente(s) marcado(s) como Plano mas sem Data de In\u00edcio \u2014 provavelmente marcado por engano</div>'
+        +suspeitos.map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #fecaca"><span>'+p.name+' \u2014 <em>'+p.plan_type+'</em></span><button class="btn btn-sm" style="background:#fff;border:1.5px solid #991b1b;color:#991b1b" onclick="reverterParaAvulsa('+p.id+',\''+p.name.replace(/'/g,"\\'")+'\')">Reverter para Consulta Avulsa</button></div>').join('')
+        +'</div>';
+    }
     if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc65</div>Sem pacientes</div>';return html;}
     filtered.forEach(p=>{
       const phase=p.inicio_programa?calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3):1;
@@ -5984,7 +6000,7 @@ async function showNewPatientModal(){
     +'<div class="grid-2"><div class="field"><label>Data de Nascimento</label><input id="np-dob" placeholder="DD/MM/AAAA"/></div><div class="field"><label>CPF</label><input id="np-cpf" placeholder="000.000.000-00"/></div></div>'
     +'<div class="field"><label>Telefone</label><input id="np-tel" placeholder="(00) 00000-0000"/></div>'
     +'<div class="field"><label>E-mail</label><input id="np-email" type="email" placeholder="email@exemplo.com"/></div>'
-    +'<div class="grid-2"><div class="field"><label>Tipo de Plano</label><select id="np-plan"><option>Plano 3 meses</option><option>Plano 6 meses</option><option>Consulta Avulsa</option></select></div><div class="field"><label>Modalidade</label><select id="np-modality"><option>Presencial</option><option>Online</option></select></div></div>'
+    +'<div class="grid-2"><div class="field"><label>Tipo de Plano *</label><select id="np-plan"><option value="">\u2014 Selecionar \u2014</option><option>Plano 3 meses</option><option>Plano 6 meses</option><option>Consulta Avulsa</option></select></div><div class="field"><label>Modalidade</label><select id="np-modality"><option>Presencial</option><option>Online</option></select></div></div>'
     +'<div class="field"><label>Data de In\u00edcio</label><input id="np-inicio" value="'+todayStr()+'"/></div>'
     +origemIndicacaoFieldsHtml('np','','',true)
     +'<div class="field"><label>Observa\u00e7\u00e3o</label><textarea id="np-obs" rows="2"></textarea></div>'
@@ -5998,8 +6014,9 @@ async function saveNewPatient(){
   if(!name){toast('Nome obrigat\u00f3rio','error');return;}
   const origem=document.getElementById('np-origem').value;
   if(!origem){toast('Informe como o paciente chegou at\u00e9 a cl\u00ednica','error');document.getElementById('np-origem').focus();return;}
-  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
   const planType=document.getElementById('np-plan').value;
+  if(!planType){toast('Selecione o Tipo de Plano','error');document.getElementById('np-plan').focus();return;}
+  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
   const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
   const indic=resolveIndicador('np');
   const{error,data:newPat}=await sb.from('planos_patients').insert({name,dob:displayToISO(document.getElementById('np-dob').value)||null,cpf:document.getElementById('np-cpf').value.trim(),telefone:document.getElementById('np-tel').value.trim(),email:document.getElementById('np-email').value.trim(),plan_type:planType,duracao_programa:duracao,modality:document.getElementById('np-modality').value,inicio_programa:displayToISO(document.getElementById('np-inicio').value)||null,origem:origem,indicado_por_patient_id:indic.id,indicado_por_nome_livre:indic.nomeLivre,observacao:document.getElementById('np-obs').value.trim(),active:true,etiquetas:[],created_by:currentUser.name,created_at:new Date().toISOString()}).select().single();
