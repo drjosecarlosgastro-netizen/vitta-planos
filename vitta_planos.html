@@ -5017,14 +5017,16 @@ async function renderPrograma(){
     sb.from('planos_soro_envios').select('*')
   ]);
   allPatients=patients||[];
-  let progFilter='active';let phaseFilter=0;let progSort='alpha';let modalityFilter='all';
+  let progFilter='active';let phaseFilter=0;let progSort='alpha';let modalityFilter='all';let docFilter='all';
   const c=document.getElementById('main-content');
+  function docCategoryProg(patientId){const pa=(appts||[]).filter(a=>a.patient_id===patientId&&a.status==='Compareceu'&&!a.origem_tabela).sort((a,b)=>parseDateInt(b.date_str)-parseDateInt(a.date_str));const a=pa[0];if(!a||!a.profissional_nome)return null;const pn=a.profissional_nome.toLowerCase();if(pn.indexOf('bruna')!==-1)return'bruna';if(pn.indexOf('jos')!==-1)return'jose';return null;}
   function buildProg(){
     let filtered=allPatients.filter(p=>p.plan_type!=='Consulta Avulsa');
     if(progFilter==='active')filtered=filtered.filter(p=>p.active);
     else if(progFilter==='inactive')filtered=filtered.filter(p=>!p.active);
     if(phaseFilter>0)filtered=filtered.filter(p=>p.inicio_programa&&calcPhase(fmtDate(p.inicio_programa),p.duracao_programa||3)===phaseFilter);
     if(modalityFilter!=='all')filtered=filtered.filter(p=>p.modality===modalityFilter);
+    if(docFilter!=='all')filtered=filtered.filter(p=>docCategoryProg(p.id)===docFilter);
     if(progSort==='alpha'){filtered=filtered.slice().sort((a,b)=>a.name.localeCompare(b.name));}
     else if(progSort==='fim_asc'){filtered=filtered.slice().sort((a,b)=>{const fa=a.inicio_programa?addMonthsToDisplay(fmtDate(a.inicio_programa),a.duracao_programa||3):'99/99/9999';const fb=b.inicio_programa?addMonthsToDisplay(fmtDate(b.inicio_programa),b.duracao_programa||3):'99/99/9999';return parseDateInt(fa)-parseDateInt(fb);});}
     else if(progSort==='fim_desc'){filtered=filtered.slice().sort((a,b)=>{const fa=a.inicio_programa?addMonthsToDisplay(fmtDate(a.inicio_programa),a.duracao_programa||3):'00/00/0000';const fb=b.inicio_programa?addMonthsToDisplay(fmtDate(b.inicio_programa),b.duracao_programa||3):'00/00/0000';return parseDateInt(fb)-parseDateInt(fa);});}
@@ -5042,6 +5044,12 @@ async function renderPrograma(){
       +'<button class="btn btn-sm '+(modalityFilter==='all'?'btn-primary':'btn-ghost')+'" onclick="window._mod=\'all\';rebuildProg()">🔁 Todos</button>'
       +'<button class="btn btn-sm '+(modalityFilter==='Presencial'?'btn-primary':'btn-ghost')+'" onclick="window._mod=\'Presencial\';rebuildProg()">🏥 Presencial</button>'
       +'<button class="btn btn-sm '+(modalityFilter==='Online'?'btn-primary':'btn-ghost')+'" onclick="window._mod=\'Online\';rebuildProg()">💻 Online</button>'
+      +'<span style="width:1px;height:20px;background:var(--border);display:inline-block;margin:0 2px"></span>'
+      +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._doc=this.value;rebuildProg()">'
+      +'<option value="all" '+(docFilter==='all'?'selected':'')+'>Todos os m\u00e9dicos</option>'
+      +'<option value="jose" '+(docFilter==='jose'?'selected':'')+'>Dr. Jos\u00e9 Carlos</option>'
+      +'<option value="bruna" '+(docFilter==='bruna'?'selected':'')+'>Dra. Bruna</option>'
+      +'</select>'
       +'<select style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;background:var(--white)" onchange="window._sort=this.value;rebuildProg()">'
       +'<option value="alpha" '+(progSort==='alpha'?'selected':'')+'>A\u2013Z</option>'
       +'<option value="fim_asc" '+(progSort==='fim_asc'?'selected':'')+'>Fim mais pr\u00f3ximo \u2191</option>'
@@ -5086,8 +5094,8 @@ async function renderPrograma(){
     });
     return html;
   }
-  window._pf='active';window._ph=0;window._sort='alpha';window._mod='all';
-  window.rebuildProg=function(){progFilter=window._pf;phaseFilter=window._ph;progSort=window._sort;modalityFilter=window._mod||'all';c.innerHTML=buildProg();};
+  window._pf='active';window._ph=0;window._sort='alpha';window._mod='all';window._doc='all';
+  window.rebuildProg=function(){progFilter=window._pf;phaseFilter=window._ph;progSort=window._sort;modalityFilter=window._mod||'all';docFilter=window._doc||'all';c.innerHTML=buildProg();};
   c.innerHTML=buildProg();
 }
 
