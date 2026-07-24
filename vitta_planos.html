@@ -340,7 +340,7 @@ function indicBotaoEnviarNps(p){
 function fmtDate(d){if(!d)return'';if(d.includes('/'))return d;const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d;}
 function todayStr(){const n=new Date();return String(n.getDate()).padStart(2,'0')+'/'+String(n.getMonth()+1).padStart(2,'0')+'/'+n.getFullYear();}
 function todayISO(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');}
-function displayToISO(d){if(!d)return'';const p=d.split('/');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:d;}
+function displayToISO(d){if(!d)return'';const p=d.split('/').map(s=>s.trim());if(p.length!==3)return'';const day=p[0],month=p[1],year=p[2];if(!/^\d{1,2}$/.test(day)||!/^\d{1,2}$/.test(month)||!/^\d{4}$/.test(year))return'';return year+'-'+month.padStart(2,'0')+'-'+day.padStart(2,'0');}
 function isoToDisplay(iso){if(!iso)return'';const p=iso.split('T')[0].split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:iso;}
 function daysAgo(dateStr){if(!dateStr)return null;const p=dateStr.split('/');if(p.length!==3)return null;const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));const now=new Date();now.setHours(0,0,0,0);d.setHours(0,0,0,0);return Math.round((now-d)/86400000);}
 function monthsSince(dateStr){if(!dateStr)return 0;const p=(dateStr.includes('/')?dateStr:isoToDisplay(dateStr)).split('/');if(p.length!==3)return 0;const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));const n=new Date();return Math.max(0,(n.getFullYear()-d.getFullYear())*12+(n.getMonth()-d.getMonth()));}
@@ -758,6 +758,8 @@ async function saveNewTagFromInfo(){
 async function savePatInfo(){
   const indic=resolveIndicador('pi');
   if(indic.id&&indic.id===currentPatientId){toast('Um paciente n\u00e3o pode ser indicador de si mesmo','error');return;}
+  const dobRaw=document.getElementById('pi-dob').value.trim();
+  if(dobRaw&&!displayToISO(dobRaw)){toast('Data de Nascimento inv\u00e1lida. Use o formato DD/MM/AAAA','error');document.getElementById('pi-dob').focus();return;}
   const npsVal=document.getElementById('pi-nps').value;
   const data={
     name:titleCase(document.getElementById('pi-name').value.trim()),
@@ -781,7 +783,9 @@ async function savePatInfo(){
   Object.assign(currentPatientData,data);document.getElementById('pd-name-header').textContent=data.name;toast('Salvo!','success');
 }
 async function savePlanInfo(){
-  const inicio=displayToISO(document.getElementById('pl-inicio').value.trim());
+  const inicioRaw=document.getElementById('pl-inicio').value.trim();
+  if(inicioRaw&&!displayToISO(inicioRaw)){toast('Data de In\u00edcio inv\u00e1lida. Use o formato DD/MM/AAAA','error');document.getElementById('pl-inicio').focus();return;}
+  const inicio=displayToISO(inicioRaw);
   const planType=document.getElementById('pl-plan').value;
   if(!planType){toast('Selecione o Tipo de Plano antes de salvar','error');return;}
   const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
@@ -6016,6 +6020,10 @@ async function saveNewPatient(){
   if(!origem){toast('Informe como o paciente chegou at\u00e9 a cl\u00ednica','error');document.getElementById('np-origem').focus();return;}
   const planType=document.getElementById('np-plan').value;
   if(!planType){toast('Selecione o Tipo de Plano','error');document.getElementById('np-plan').focus();return;}
+  const dobRaw=document.getElementById('np-dob').value.trim();
+  if(dobRaw&&!displayToISO(dobRaw)){toast('Data de Nascimento inv\u00e1lida. Use o formato DD/MM/AAAA','error');document.getElementById('np-dob').focus();return;}
+  const inicioRaw=document.getElementById('np-inicio').value.trim();
+  if(inicioRaw&&!displayToISO(inicioRaw)){toast('Data de In\u00edcio inv\u00e1lida. Use o formato DD/MM/AAAA','error');document.getElementById('np-inicio').focus();return;}
   if(btn){btn.disabled=true;btn.textContent='Salvando...';}
   const duracao=planType==='Plano 6 meses'?6:planType==='Plano 3 meses'?3:1;
   const indic=resolveIndicador('np');
