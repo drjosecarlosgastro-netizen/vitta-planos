@@ -612,6 +612,17 @@ function confirmarDeletePaciente(){
     +'<button class="btn btn-ghost btn-full" onclick="closeModal(\'modal-generic\')" style="margin-top:8px">Cancelar</button>';
   showGenericModal(html, '\u26a0\ufe0f Excluir Paciente');
 }
+function isMissingTableError(err){return err&&(err.code==='42P01'||/relation .* does not exist/i.test(err.message||''));}
+async function safeSelect(table,patientId){
+  const r=await sb.from(table).select('*').eq('patient_id',patientId);
+  if(r.error&&isMissingTableError(r.error))return{data:[]};
+  return r;
+}
+async function safeDelete(table,patientId){
+  const r=await sb.from(table).delete().eq('patient_id',patientId);
+  if(r.error&&isMissingTableError(r.error))return{error:null};
+  return r;
+}
 async function executarDeletePaciente(){
   const p=currentPatientData;
   const confirmName=document.getElementById('delete-confirm-name')?.value.trim();
@@ -621,7 +632,7 @@ async function executarDeletePaciente(){
   const btn=document.querySelector('#modal-generic-content .btn-danger');
   if(btn){btn.disabled=true;btn.textContent='Excluindo...';}
   try{
-    const [{data:appts},{data:fin},{data:soro},{data:envios},{data:impl},{data:contratos},{data:ciclos},{data:edicoes}]=await Promise.all([
+    const [{data:appts},{data:fin},{data:soro},{data:envios},{data:impl},{data:contratos},{data:ciclos},{data:edicoes},{data:anamnese},{data:apptHist},{data:bioimp},{data:formResp},{data:formScores},{data:histPlanos},{data:jornada},{data:pendencias},{data:trhe}]=await Promise.all([
       sb.from('planos_appointments').select('*').eq('patient_id',p.id),
       sb.from('planos_financeiro').select('*').eq('patient_id',p.id),
       sb.from('planos_soro_sessoes').select('*').eq('patient_id',p.id),
@@ -629,12 +640,21 @@ async function executarDeletePaciente(){
       sb.from('planos_implantes').select('*').eq('patient_id',p.id),
       sb.from('planos_contratos').select('*').eq('patient_id',p.id),
       sb.from('planos_historico_ciclos').select('*').eq('patient_id',p.id),
-      sb.from('planos_historico_edicoes').select('*').eq('patient_id',p.id)
+      sb.from('planos_historico_edicoes').select('*').eq('patient_id',p.id),
+      safeSelect('planos_anamnese_respostas',p.id),
+      safeSelect('planos_appt_historico',p.id),
+      safeSelect('planos_bioimpedancia',p.id),
+      safeSelect('planos_form_respostas',p.id),
+      safeSelect('planos_form_scores',p.id),
+      safeSelect('planos_historico_planos',p.id),
+      safeSelect('planos_jornada',p.id),
+      safeSelect('planos_pendencias',p.id),
+      safeSelect('planos_trhe',p.id)
     ]);
-    const backup={paciente_id_original:p.id,dados_paciente:JSON.stringify(p),dados_appointments:JSON.stringify(appts||[]),dados_financeiro:JSON.stringify(fin||[]),dados_soro_sessoes:JSON.stringify(soro||[]),dados_soro_envios:JSON.stringify(envios||[]),dados_implantes:JSON.stringify(impl||[]),dados_contratos:JSON.stringify(contratos||[]),dados_ciclos:JSON.stringify(ciclos||[]),dados_edicoes:JSON.stringify(edicoes||[]),motivo_exclusao:motivo,observacao:obs||null,deletado_por:currentUser.name,deletado_em:new Date().toISOString()};
+    const backup={paciente_id_original:p.id,dados_paciente:JSON.stringify(p),dados_appointments:JSON.stringify(appts||[]),dados_financeiro:JSON.stringify(fin||[]),dados_soro_sessoes:JSON.stringify(soro||[]),dados_soro_envios:JSON.stringify(envios||[]),dados_implantes:JSON.stringify(impl||[]),dados_contratos:JSON.stringify(contratos||[]),dados_ciclos:JSON.stringify(ciclos||[]),dados_edicoes:JSON.stringify(edicoes||[]),dados_extra:JSON.stringify({anamnese:anamnese||[],appt_historico:apptHist||[],bioimpedancia:bioimp||[],form_respostas:formResp||[],form_scores:formScores||[],historico_planos:histPlanos||[],jornada:jornada||[],pendencias:pendencias||[],trhe:trhe||[]}),motivo_exclusao:motivo,observacao:obs||null,deletado_por:currentUser.name,deletado_em:new Date().toISOString()};
     const {error:backupErr}=await sb.from('planos_pacientes_deletados').insert(backup);
     if(backupErr){toast('Erro ao fazer backup: '+backupErr.message,'error');if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}return;}
-    await Promise.all([
+    const resultadosDelete=await Promise.all([
       sb.from('planos_appointments').delete().eq('patient_id',p.id),
       sb.from('planos_financeiro').delete().eq('patient_id',p.id),
       sb.from('planos_soro_sessoes').delete().eq('patient_id',p.id),
@@ -643,8 +663,20 @@ async function executarDeletePaciente(){
       sb.from('planos_contratos').delete().eq('patient_id',p.id),
       sb.from('planos_historico_ciclos').delete().eq('patient_id',p.id),
       sb.from('planos_historico_edicoes').delete().eq('patient_id',p.id),
+      safeDelete('planos_anamnese_respostas',p.id),
+      safeDelete('planos_appt_historico',p.id),
+      safeDelete('planos_bioimpedancia',p.id),
+      safeDelete('planos_form_respostas',p.id),
+      safeDelete('planos_form_scores',p.id),
+      safeDelete('planos_historico_planos',p.id),
+      safeDelete('planos_jornada',p.id),
+      safeDelete('planos_pendencias',p.id),
+      safeDelete('planos_trhe',p.id),
     ]);
-    await sb.from('planos_patients').delete().eq('id',p.id);
+    const falhaLimpeza=resultadosDelete.find(r=>r&&r.error);
+    if(falhaLimpeza){toast('Erro ao limpar dados vinculados: '+falhaLimpeza.error.message,'error');if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}return;}
+    const{error:delPatErr}=await sb.from('planos_patients').delete().eq('id',p.id);
+    if(delPatErr){toast('N\u00e3o foi poss\u00edvel excluir o paciente: '+delPatErr.message,'error');if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}return;}
     closeModal('modal-generic');toast('Paciente exclu\u00eddo e backup salvo!','success');backToMain();mainNav('patients');
   }catch(e){toast('Erro inesperado: '+e.message,'error');if(btn){btn.disabled=false;btn.textContent='\ud83d\uddd1 Confirmar Exclus\u00e3o';}}
 }
@@ -2821,6 +2853,7 @@ async function renderPatAgenda(){
       +'<div class="appt-name">'+fmtDate(a.date_str||'')+' \u00b7 '+(a.procedimento||'')+'</div>'
       +'<div class="appt-sub">'+(a.tipo||'')+(a.observacao?' \u00b7 '+a.observacao:'')+'</div>'
       +(isAuto?'<div class="appt-sub" style="color:var(--success);font-weight:600">\ud83d\udd17 '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>':'')
+      +(a.google_event_id?'<div class="appt-sub" style="color:#0369a1;font-weight:600">\ud83d\udcc5 Importado da Support Health</div>':'')
       +(a.profissional_nome?'<div class="appt-sub" style="color:var(--midnight);font-weight:600">\ud83d\udc64 '+a.profissional_nome+'</div>':'')
       +'<div style="margin-top:2px"><span class="user-badge">'+(a.registrado_por||'')+'</span></div>'
       +'</div>'
@@ -4902,6 +4935,7 @@ async function renderAgenda(){
         html2+='<div style="font-weight:600;font-size:14px">'+(patMap[a.patient_id]||'#'+a.patient_id)+'</div>';
         html2+='<div style="font-size:12px;color:var(--text-muted)">'+(a.procedimento||'')+' \u00b7 '+(a.tipo||'')+(a.observacao?' \u00b7 '+a.observacao:'')+(isOverdue?' <span style="color:var(--danger);font-weight:700">'+daysAgo(a.date_str)+'d atr\u00e1s</span>':'')+'</div>';
         if(isAuto)html2+='<div style="font-size:11px;color:var(--success);font-weight:600">\ud83d\udd17 '+(a.origem_tabela==='soro_sessoes'?'Soroterapia':'Implante')+'</div>';
+        if(a.google_event_id)html2+='<div style="font-size:11px;color:#0369a1;font-weight:600">\ud83d\udcc5 Importado da Support Health</div>';
         if(a.profissional_nome)html2+='<div style="font-size:12px;font-weight:600;color:'+_medColor+'">\ud83d\udc64 '+a.profissional_nome+'</div>';
         html2+='</div>';
         if(patIdMap[a.patient_id])html2+='<button class="btn btn-ghost btn-sm" onclick="openPatient('+a.patient_id+')" style="flex-shrink:0">\ud83d\udcc2</button>';
@@ -5902,6 +5936,39 @@ async function renderConfig(){
   const cfg={};(cfgs||[]).forEach(c=>cfg[c.key]=c.value);
   let tags=[];try{tags=JSON.parse(cfg.etiquetas||'[]')}catch(e){}
   const c=document.getElementById('main-content');
+  const{data:allPatsDup}=await sb.from('planos_patients').select('id,name,telefone,plan_type,active,created_at').order('name');
+  function normalizarNomeDup(n){return(n||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+  function encontrarGruposDuplicados(patients){
+    const grupos=[];const usados=new Set();
+    for(let i=0;i<patients.length;i++){
+      if(usados.has(patients[i].id))continue;
+      const a=normalizarNomeDup(patients[i].name);
+      if(!a)continue;
+      const grupo=[patients[i]];
+      for(let j=i+1;j<patients.length;j++){
+        if(usados.has(patients[j].id))continue;
+        const b=normalizarNomeDup(patients[j].name);
+        if(!b)continue;
+        const match=a===b||(a.length>3&&b.indexOf(a)!==-1)||(b.length>3&&a.indexOf(b)!==-1);
+        if(match){grupo.push(patients[j]);usados.add(patients[j].id);}
+      }
+      if(grupo.length>1){usados.add(patients[i].id);grupos.push(grupo);}
+    }
+    return grupos;
+  }
+  const gruposDup=encontrarGruposDuplicados(allPatsDup||[]);
+  let dupHtml='';
+  if(gruposDup.length){
+    dupHtml='<div class="card"><div class="card-title">\u26a0\ufe0f Poss\u00edveis Pacientes Duplicados ('+gruposDup.length+' grupo(s))</div>'
+      +'<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Nomes iguais ou muito parecidos encontrados no cadastro. Revise cada grupo e, se for realmente a mesma pessoa, mantenha o cadastro mais completo e exclua o outro (aba Pacientes \u2192 Excluir).</div>'
+      +gruposDup.map(grupo=>'<div style="border:1.5px solid #fde68a;background:#fffbeb;border-radius:8px;padding:10px 12px;margin-bottom:10px">'
+        +grupo.map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0">'
+          +'<div><strong>'+p.name+'</strong> <span style="color:var(--text-muted);font-size:12px">'+(p.telefone||'sem telefone')+' \u00b7 '+(p.plan_type||'sem plano')+' \u00b7 '+(p.active?'Ativo':'Inativo')+'</span></div>'
+          +'<button class="btn btn-sm btn-ghost" onclick="openPatient('+p.id+')">Ver prontu\u00e1rio</button>'
+          +'</div>').join('')
+        +'</div>').join('')
+      +'</div>';
+  }
   let tagsHtml=tags.map((t,i)=>'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
     +'<span class="etiqueta" style="background:'+t.color+'">'+t.name+'</span>'
     +'<input type="text" value="'+t.name+'" style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13px" onchange="updateTag('+i+',\'name\',this.value)"/>'
@@ -5909,7 +5976,7 @@ async function renderConfig(){
     +'<button class="btn-icon" onclick="removeTag('+i+')">\ud83d\uddd1</button>'
     +'</div>').join('');
   let tiposHtml=TIPOS_SESSAO.map(t=>'<span style="background:var(--bg);padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--midnight)">'+t+'</span>').join('');
-  c.innerHTML='<div class="card"><div class="card-title">\ud83d\udd10 Senhas</div>'
+  c.innerHTML=dupHtml+'<div class="card"><div class="card-title">\ud83d\udd10 Senhas</div>'
     +'<div class="field"><label>Nova Senha \u2014 Dr. Jos\u00e9 Carlos</label><input type="password" id="cfg-doc-pass"/></div>'
     +'<div class="field"><label>Confirmar</label><input type="password" id="cfg-doc-pass2"/></div>'
     +'<button class="btn btn-primary btn-sm" onclick="savePass(\'doctor\')">Salvar senha do Dr.</button>'
