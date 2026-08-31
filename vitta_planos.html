@@ -3217,6 +3217,12 @@ function filtrarLeadsOrigem(valor){
   window._leadsOrigemFiltro=valor||'';
   buildLeadsUI();
 }
+function buscarLeads(valor){
+  window._leadsSearchQuery=valor||'';
+  buildLeadsUI();
+  const inp=document.getElementById('leads-search-input');
+  if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
+}
 function buildLeadsUI(){
   const leads=_leadsData||[];
   const colunas=[
@@ -3365,17 +3371,35 @@ function buildLeadsUI(){
   var _origensPrincipaisFixas=['IG Dr. José Carlos','IG Dra. Bruna Braga','Google Ads - Site Principal'];
   var _origensDisponiveis=Array.from(new Set(leads.map(function(l){return l.origem;}).filter(Boolean).concat(_origensPrincipaisFixas))).sort();
   var _filtroAtual=window._leadsOrigemFiltro||'';
-  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
+  var _buscaAtual=window._leadsSearchQuery||'';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">';
+  h+='<div style="position:relative;flex:1;min-width:220px;max-width:340px">';
+  h+='<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px">\ud83d\udd0d</span>';
+  h+='<input id="leads-search-input" type="text" placeholder="Buscar por nome, telefone, email ou m\u00e9dico..." value="'+escHtml(_buscaAtual)+'" oninput="buscarLeads(this.value)" style="width:100%;padding:8px 12px 8px 34px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font);box-sizing:border-box"/>';
+  h+='</div>';
   h+='<label style="font-size:12px;font-weight:600;color:var(--text-muted)">Filtrar por origem:</label>';
   h+='<select onchange="filtrarLeadsOrigem(this.value)" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font)">';
   h+='<option value=""'+(_filtroAtual===''?' selected':'')+'>Todas as origens</option>';
   _origensDisponiveis.forEach(function(o){h+='<option value="'+escHtml(o)+'"'+(_filtroAtual===o?' selected':'')+'>'+escHtml(o)+'</option>';});
   h+='</select>';
   if(_filtroAtual)h+='<span style="font-size:11px;color:var(--text-muted)">'+leads.filter(function(l){return l.origem===_filtroAtual;}).length+' lead(s) nessa origem</span>';
+  if(_buscaAtual){
+    var _totalBusca=leads.filter(function(l){var q=_buscaAtual.toLowerCase();var alvo=[l.nome,l.telefone,l.email,l.medico_interesse].filter(Boolean).join(' ').toLowerCase();return alvo.indexOf(q)!==-1&&(!_filtroAtual||l.origem===_filtroAtual);}).length;
+    h+='<span style="font-size:11px;color:var(--text-muted)">'+_totalBusca+' resultado(s)</span>';
+  }
   h+='</div>';
   h+='<div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start">';
   colunas.forEach(function(col){
-    var colLeads=leads.filter(function(l){return (l.status||'novo')===col.id&&(!_filtroAtual||l.origem===_filtroAtual);});
+    var colLeads=leads.filter(function(l){
+      if((l.status||'novo')!==col.id)return false;
+      if(_filtroAtual&&l.origem!==_filtroAtual)return false;
+      if(_buscaAtual){
+        var q=_buscaAtual.toLowerCase();
+        var alvo=[l.nome,l.telefone,l.email,l.medico_interesse].filter(Boolean).join(' ').toLowerCase();
+        if(alvo.indexOf(q)===-1)return false;
+      }
+      return true;
+    });
     h+='<div style="min-width:260px;width:260px;flex-shrink:0">';
     h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:10px 14px;background:'+col.bg+';border-radius:10px;border-left:3px solid '+col.color+'">';
     h+='<span style="font-size:12px;font-weight:700;color:'+col.color+'">'+col.label+'</span>';
@@ -5048,6 +5072,13 @@ async function saveApptGlobal(){
   closeModal('modal-generic');toast('Agendamento salvo','success');renderAgenda();
 }
 
+async function excluirDaListaSuspeitos(id){
+  let p=(allPatients||[]).find(x=>x.id===id);
+  if(!p){const{data}=await sb.from('planos_patients').select('*').eq('id',id).single();p=data;}
+  if(!p){toast('Paciente n\u00e3o encontrado','error');return;}
+  currentPatientData=p;
+  confirmarDeletePaciente();
+}
 async function reverterParaAvulsa(id,name){
   if(!confirm('Reverter "'+name+'" para Consulta Avulsa?\n\nIsso remove a classifica\u00e7\u00e3o de Plano 3/6 meses deste paciente.'))return;
   const{error}=await sb.from('planos_patients').update({plan_type:'Consulta Avulsa',duracao_programa:1,updated_by:currentUser.name,updated_at:new Date().toISOString()}).eq('id',id);
@@ -5108,7 +5139,7 @@ async function renderPrograma(){
     if(suspeitos.length){
       html+='<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#991b1b">'
         +'<div style="font-weight:700;margin-bottom:6px">\u26a0\ufe0f '+suspeitos.length+' paciente(s) marcado(s) como Plano mas sem Data de In\u00edcio \u2014 provavelmente marcado por engano</div>'
-        +suspeitos.map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #fecaca"><span>'+p.name+' \u2014 <em>'+p.plan_type+'</em></span><button class="btn btn-sm" style="background:#fff;border:1.5px solid #991b1b;color:#991b1b" onclick="reverterParaAvulsa('+p.id+',\''+p.name.replace(/'/g,"\\'")+'\')">Reverter para Consulta Avulsa</button></div>').join('')
+        +suspeitos.map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #fecaca"><span>'+p.name+' \u2014 <em>'+p.plan_type+'</em></span><div style="display:flex;gap:6px"><button class="btn btn-sm" style="background:#fff;border:1.5px solid #991b1b;color:#991b1b" onclick="reverterParaAvulsa('+p.id+',\''+p.name.replace(/'/g,"\\'")+'\')">Reverter para Consulta Avulsa</button><button class="btn btn-sm" style="background:#991b1b;border:1.5px solid #991b1b;color:#fff" onclick="excluirDaListaSuspeitos('+p.id+')">\ud83d\uddd1 Excluir Paciente</button></div></div>').join('')
         +'</div>';
     }
     if(!filtered.length){html+='<div class="empty"><div class="empty-icon">\ud83d\udc65</div>Sem pacientes</div>';return html;}
