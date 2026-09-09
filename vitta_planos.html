@@ -219,6 +219,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
     <button class="ntab" id="ntab-agenda" onclick="mainNav('agenda')">Agenda</button>
     <button class="ntab" id="ntab-programa" onclick="mainNav('programa')">Programas</button>
     <button class="ntab" id="ntab-implantes" onclick="mainNav('implantes')">Implantes</button>
+    <button class="ntab" id="ntab-injetaveis" onclick="mainNav('injetaveis')">Injet\u00e1veis</button>
     <button class="ntab" id="ntab-avulsas" onclick="mainNav('avulsas')">Consultas Avulsas</button>
     <button class="ntab" id="ntab-pendencias" onclick="mainNav('pendencias')">Pend&#234;ncias</button>
     <button class="ntab" id="ntab-leads" onclick="mainNav('leads')">CRM Leads</button>
@@ -408,6 +409,7 @@ function mainNav(section){
   else if(section==='agenda')renderAgenda();
   else if(section==='programa')renderPrograma();
   else if(section==='implantes')renderImplantes();
+  else if(section==='injetaveis')renderInjetaveis();
   else if(section==='avulsas')renderAvulsas();
   else if(section==='pendencias')renderPendenciasTab();
   else if(section==='relacionamento')renderRelacionamento();
@@ -5085,6 +5087,79 @@ async function reverterParaAvulsa(id,name){
   if(error){toast('Erro: '+error.message,'error');return;}
   toast('Paciente revertido para Consulta Avulsa','success');
   renderPrograma();
+}
+async function renderInjetaveis(){
+  const c=document.getElementById('main-content');
+  const[{data:patients},{data:sessoes},{data:envios}]=await Promise.all([
+    sb.from('planos_patients').select('id,name,telefone,active,modality').order('name'),
+    sb.from('planos_soro_sessoes').select('*'),
+    sb.from('planos_soro_envios').select('*')
+  ]);
+  const allP=patients||[],allS=sessoes||[],allE=envios||[];
+  window._injPatients=allP;window._injSessoes=allS;window._injEnvios=allE;
+  buildInjetaveisUI();
+}
+function isEV(tipo){return(tipo||'').indexOf('EV')!==-1;}
+function isIM(tipo){return(tipo||'').indexOf('IM')!==-1;}
+function buildInjetaveisUI(){
+  const c=document.getElementById('main-content');
+  const allP=window._injPatients||[],allS=window._injSessoes||[],allE=window._injEnvios||[];
+  const filtro=window._injFiltroTipo||'todos';
+  const busca=(window._injBusca||'').toLowerCase();
+  // Agrupa por paciente
+  const porPaciente={};
+  allS.forEach(s=>{(porPaciente[s.patient_id]=porPaciente[s.patient_id]||{sessEV:0,sessIM:0,ultimaData:null,envioEV:0,envioIM:0}).sessEV+=isEV(s.tipo_sessao)?1:0;});
+  allS.forEach(s=>{const g=porPaciente[s.patient_id]=porPaciente[s.patient_id]||{sessEV:0,sessIM:0,ultimaData:null,envioEV:0,envioIM:0};g.sessIM+=isIM(s.tipo_sessao)?1:0;if(!g.ultimaData||parseDateInt(fmtDate(s.data_sessao))>parseDateInt(fmtDate(g.ultimaData)))g.ultimaData=s.data_sessao;});
+  allE.forEach(e=>{const g=porPaciente[e.patient_id]=porPaciente[e.patient_id]||{sessEV:0,sessIM:0,ultimaData:null,envioEV:0,envioIM:0};g.envioEV+=(e.sessoes_ev||0);g.envioIM+=(e.sessoes_im||0);});
+  let linhas=Object.keys(porPaciente).map(pid=>{
+    const p=allP.find(x=>x.id===parseInt(pid))||{id:parseInt(pid),name:'Paciente #'+pid};
+    const g=porPaciente[pid];
+    return{p:p,g:g};
+  });
+  if(filtro==='ev')linhas=linhas.filter(l=>l.g.sessEV>0||l.g.envioEV>0);
+  else if(filtro==='im')linhas=linhas.filter(l=>l.g.sessIM>0||l.g.envioIM>0);
+  if(busca)linhas=linhas.filter(l=>normStr(l.p.name).includes(normStr(busca))||(l.p.telefone||'').indexOf(busca)!==-1);
+  linhas.sort((a,b)=>a.p.name.localeCompare(b.p.name));
+  const totalSessEV=linhas.reduce((s,l)=>s+l.g.sessEV,0),totalSessIM=linhas.reduce((s,l)=>s+l.g.sessIM,0);
+  const totalEnvioEV=linhas.reduce((s,l)=>s+l.g.envioEV,0),totalEnvioIM=linhas.reduce((s,l)=>s+l.g.envioIM,0);
+  let html='<div class="section-header"><div class="section-title">Inject\u00e1veis (Soroterapia)</div></div>'
+    +'<div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Vis\u00e3o consolidada de todos os pacientes em soroterapia (EV e IM). Os dados vêm direto da aba Soroterapia de cada paciente \u2014 editar aqui ou l\u00e1 atualiza o mesmo cadastro.</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+linhas.length+'</div><div class="dash-card-label">Pacientes em Injet\u00e1veis</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+totalSessEV+'</div><div class="dash-card-label">Sess\u00f5es EV realizadas</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+totalSessIM+'</div><div class="dash-card-label">Sess\u00f5es IM realizadas</div></div>'
+    +'<div class="dash-card" style="cursor:default"><div class="dash-card-num">'+totalEnvioEV+' / '+totalEnvioIM+'</div><div class="dash-card-label">Envios (EV / IM)</div></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">'
+    +'<input type="text" placeholder="Buscar por nome ou telefone..." value="'+escHtml(window._injBusca||'')+'" oninput="window._injBusca=this.value;buildInjetaveisUI()" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font);flex:1;min-width:220px;max-width:320px"/>'
+    +'<button class="btn btn-sm '+(filtro==='todos'?'btn-primary':'btn-ghost')+'" onclick="window._injFiltroTipo=\'todos\';buildInjetaveisUI()">Todos</button>'
+    +'<button class="btn btn-sm '+(filtro==='ev'?'btn-primary':'btn-ghost')+'" onclick="window._injFiltroTipo=\'ev\';buildInjetaveisUI()">Somente EV</button>'
+    +'<button class="btn btn-sm '+(filtro==='im'?'btn-primary':'btn-ghost')+'" onclick="window._injFiltroTipo=\'im\';buildInjetaveisUI()">Somente IM</button>'
+    +'</div>';
+  if(!linhas.length){
+    html+='<div class="empty"><div class="empty-icon">\ud83d\udc89</div>Nenhum paciente em inject\u00e1veis encontrado</div>';
+  } else {
+    linhas.forEach(l=>{
+      const p=l.p,g=l.g;
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px">'
+        +'<div style="display:flex;align-items:center;gap:10px;min-width:0">'
+        +'<div class="patient-avatar" style="width:34px;height:34px;font-size:13px;flex-shrink:0">'+p.name.charAt(0)+'</div>'
+        +'<div style="min-width:0">'
+        +'<div style="font-weight:700;font-size:13px">'+p.name+(p.active===false?' <span style="color:var(--text-muted);font-size:11px;font-weight:600">(inativo)</span>':'')+'</div>'
+        +'<div style="font-size:11px;color:var(--text-muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">'
+        +'<span>\ud83d\udc89 EV: <strong>'+g.sessEV+'</strong> sess\u00f5es \u00b7 '+g.envioEV+' enviadas</span>'
+        +'<span>\ud83d\udc8a IM: <strong>'+g.sessIM+'</strong> sess\u00f5es \u00b7 '+g.envioIM+' enviadas</span>'
+        +(g.ultimaData?'<span>\u00daltima: '+fmtDate(g.ultimaData)+'</span>':'')
+        +'</div></div></div>'
+        +'<button class="btn btn-sm btn-primary" onclick="abrirSoroterapiaDireto('+p.id+')">Ver Soroterapia</button>'
+        +'</div>';
+    });
+  }
+  c.innerHTML=html;
+}
+async function abrirSoroterapiaDireto(id){
+  await openPatient(id);
+  patTab('soroterapia');
 }
 async function renderPrograma(){
   const[{data:patients},{data:appts},{data:sessoes},{data:implantes},{data:envios}]=await Promise.all([
