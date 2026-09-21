@@ -3105,6 +3105,21 @@ let _leadsAtividades=[];
 let _leadsInterval=null;
 let _leadsPeriodo={tipo:'semana',inicio:null,fim:null};
 let _leadsPeriodoChartObj=null;
+let _leadsProf='todos';
+// Profissional do lead: medico_interesse (definido na ficha) tem prioridade; senao deduz pela origem (IG de cada medico)
+function leadProfissional(l){
+  var m=l.medico_interesse||'';
+  if(m==='Dra. Bruna')return 'bruna';
+  if(m==='Dr. José Carlos')return 'jc';
+  var o=l.origem||'';
+  if(o==='IG Dra. Bruna Braga')return 'bruna';
+  if(o==='IG Dr. José Carlos')return 'jc';
+  return 'outro';
+}
+function leadsSetProf(p){
+  _leadsProf=p;
+  buildLeadsUI();
+}
 function leadsPeriodoRange(){
   var hoje=new Date();hoje.setHours(23,59,59,999);
   var ini;
@@ -3139,11 +3154,11 @@ function leadsAplicarPeriodoCustom(){
   _leadsPeriodo={tipo:'custom',inicio:ini,fim:fim};
   buildLeadsUI();
 }
-function leadsRenderPeriodoChart(labels,data){
+function leadsRenderPeriodoChart(labels,data,cor){
   var canvas=document.getElementById('leads-periodo-chart');
   if(!canvas)return;
   if(_leadsPeriodoChartObj){try{_leadsPeriodoChartObj.destroy();}catch(e){}}
-  _leadsPeriodoChartObj=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:'Leads',data:data,backgroundColor:'#154C56',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.06)'}}}}});
+  _leadsPeriodoChartObj=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:'Leads',data:data,backgroundColor:cor||'#154C56',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.06)'}}}}});
 }
 
 async function renderLeads(){
@@ -3310,7 +3325,13 @@ function buildLeadsUI(){
   h+='</div>';
   // Análise de leads por período
   var _pr=leadsPeriodoRange();
-  var _periodoLeads=leads.filter(function(l){if(!l.created_at)return false;var d=new Date(l.created_at);return d>=_pr[0]&&d<=_pr[1];});
+  var _periodoTodos=leads.filter(function(l){if(!l.created_at)return false;var d=new Date(l.created_at);return d>=_pr[0]&&d<=_pr[1];});
+  var _cntProf={bruna:0,jc:0,outro:0};
+  _periodoTodos.forEach(function(l){_cntProf[leadProfissional(l)]++;});
+  var _periodoLeads=_leadsProf==='todos'?_periodoTodos:_periodoTodos.filter(function(l){return leadProfissional(l)===_leadsProf;});
+  var _profCor={todos:'#154C56',bruna:'#db2777',jc:'#2563eb',outro:'#64748b'}[_leadsProf]||'#154C56';
+  var _profNome={todos:'',bruna:'Dra. Bruna',jc:'Dr. José Carlos',outro:'sem médico definido'}[_leadsProf]||'';
+  var _profOpts=[{id:'todos',label:'Todos',n:_periodoTodos.length,cor:'#154C56'},{id:'bruna',label:'Dra. Bruna',n:_cntProf.bruna,cor:'#db2777'},{id:'jc',label:'Dr. José Carlos',n:_cntProf.jc,cor:'#2563eb'},{id:'outro',label:'Sem médico definido',n:_cntProf.outro,cor:'#64748b'}];
   var _diasArr=[];var _cursor=new Date(_pr[0]);_cursor.setHours(0,0,0,0);
   var _fimSoData=new Date(_pr[1]);_fimSoData.setHours(0,0,0,0);
   while(_cursor<=_fimSoData){_diasArr.push(new Date(_cursor));_cursor.setDate(_cursor.getDate()+1);}
@@ -3318,7 +3339,11 @@ function buildLeadsUI(){
   var _diaData=_diasArr.map(function(d){
     var y=d.getFullYear(),m=('0'+(d.getMonth()+1)).slice(-2),dd=('0'+d.getDate()).slice(-2);
     var dStr=y+'-'+m+'-'+dd;
-    return _periodoLeads.filter(function(l){return (l.created_at||'').split('T')[0]===dStr;}).length;
+    return _periodoLeads.filter(function(l){
+      var ld=new Date(l.created_at);
+      var lStr=ld.getFullYear()+'-'+('0'+(ld.getMonth()+1)).slice(-2)+'-'+('0'+ld.getDate()).slice(-2);
+      return lStr===dStr;
+    }).length;
   });
   var _origemMapCRM={};
   _periodoLeads.forEach(function(l){var o=l.origem||'Não informado';_origemMapCRM[o]=(_origemMapCRM[o]||0)+1;});
@@ -3340,7 +3365,14 @@ function buildLeadsUI(){
   h+='<div><label style="font-size:11px;font-weight:600;display:block;margin-bottom:3px">Até</label><input id="leads-per-fim" type="date" value="'+(_leadsPeriodo.fim||'')+'" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font)"></div>';
   h+='<button onclick="leadsAplicarPeriodoCustom()" class="btn btn-primary" style="padding:7px 16px;font-size:12px">Aplicar</button>';
   h+='</div>';
-  h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">Período: '+_pr[0].toLocaleDateString('pt-BR')+' a '+_pr[1].toLocaleDateString('pt-BR')+' · <b style="color:var(--text)">'+_periodoLeads.length+' lead'+(_periodoLeads.length!==1?'s':'')+'</b> entraram nesse intervalo</div>';
+  h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px">';
+  h+='<span style="font-size:11px;font-weight:600;color:var(--text-muted);margin-right:2px">Profissional:</span>';
+  _profOpts.forEach(function(o){
+    var at=_leadsProf===o.id;
+    h+='<button onclick="leadsSetProf(\''+o.id+'\')" style="padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);border:1.5px solid '+(at?o.cor:'var(--border)')+';background:'+(at?o.cor:'var(--white)')+';color:'+(at?'#fff':'var(--text)')+'">'+o.label+' <span style="opacity:.75;font-weight:600">('+o.n+')</span></button>';
+  });
+  h+='</div>';
+  h+='<div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">Período: '+_pr[0].toLocaleDateString('pt-BR')+' a '+_pr[1].toLocaleDateString('pt-BR')+' · <b style="color:var(--text)">'+_periodoLeads.length+' lead'+(_periodoLeads.length!==1?'s':'')+'</b> entraram nesse intervalo'+(_profNome?' · <b style="color:'+_profCor+'">'+_profNome+'</b>':'')+'</div>';
   h+='<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:stretch">';
   h+='<div style="position:relative;height:180px">';
   if(!_periodoLeads.length){
@@ -3458,7 +3490,7 @@ function buildLeadsUI(){
   });
   h+='</div></div>';
   document.getElementById('main-content').innerHTML=h;
-  if(_periodoLeads.length)leadsRenderPeriodoChart(_diaLabels,_diaData);
+  if(_periodoLeads.length)leadsRenderPeriodoChart(_diaLabels,_diaData,_profCor);
 }
 
 async function abrirNovoLead(){
