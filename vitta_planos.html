@@ -6618,6 +6618,15 @@ function relJourneyStep(step){
   renderRelacionamento(_relRelTab);
 }
 
+function relPatientProxAppt(patId){
+  var hojeInt=parseDateInt(new Date().toLocaleDateString('pt-BR'));
+  var lista=(window._relApptsMes||[]).filter(function(a){return a.patient_id===patId&&a.date_str;});
+  if(!lista.length)return null;
+  var futuros=lista.filter(function(a){return parseDateInt(a.date_str)>=hojeInt;}).sort(function(a,b){return parseDateInt(a.date_str)-parseDateInt(b.date_str);});
+  if(futuros.length)return futuros[0];
+  var passados=lista.slice().sort(function(a,b){return parseDateInt(b.date_str)-parseDateInt(a.date_str);});
+  return passados[0];
+}
 function relJourneyPatCard(p,jornada,etapaId){
   const etapa=(jornada||[]).find(j=>j.patient_id===p.id&&j.etapa===etapaId);
   const concluida=etapa&&etapa.concluida;
@@ -6632,6 +6641,10 @@ function relJourneyPatCard(p,jornada,etapaId){
   const waMsg=encodeURIComponent(roteiro);
   const waUrl='https://wa.me/55'+tel+'?text='+waMsg;
   var isPrimeiraVez=relIsPrimeiraVez(p.id);
+  var _prox=relPatientProxAppt(p.id);
+  var _profNomeAppt=(_prox&&_prox.profissional_nome)||'';
+  var _isBrunaAppt=_profNomeAppt.toLowerCase().indexOf('bruna')!==-1;
+  var _isJCAppt=_profNomeAppt.toLowerCase().indexOf('jos\u00e9')!==-1||_profNomeAppt.toLowerCase().indexOf('carlos')!==-1;
   let h='<div class="card rel-pat-card" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" style="margin-bottom:8px;padding:12px 16px;border:1.5px solid '+(concluida?'var(--success)':'var(--border)')+';background:'+(concluida?'#f0faf9':'var(--white)') +'">';
   h+='<div style="display:flex;align-items:center;gap:12px">';
   if(!concluida){h+='<input type="checkbox" class="rel-bulk-cb" data-pat-id="'+p.id+'" data-etapa="'+etapaId+'" onchange="relBulkUpdate()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--tidal);flex-shrink:0">';}
@@ -6639,6 +6652,13 @@ function relJourneyPatCard(p,jornada,etapaId){
   h+='<div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-size:13px">'+escHtml(p.name)+'</span>';
   if(isPrimeiraVez){h+='<span style="font-size:10px;font-weight:700;background:#e6f4f4;color:var(--tidal);border-radius:12px;padding:2px 8px">1\u00aa vez</span>';}
   else{h+='<span style="font-size:10px;font-weight:700;background:#f3f4f6;color:var(--ash);border-radius:12px;padding:2px 8px">Recorrente</span>';}
+  if(_prox&&_profNomeAppt){
+    var _medCor=_isBrunaAppt?'#db2777':(_isJCAppt?'#2563eb':'var(--ash)');
+    var _medBg=_isBrunaAppt?'#fdf2f8':(_isJCAppt?'#eff6ff':'#f3f4f6');
+    h+='<span style="font-size:10px;font-weight:700;background:'+_medBg+';color:'+_medCor+';border-radius:12px;padding:2px 8px" title="Consulta marcada para '+escHtml(_prox.date_str)+'">'+escHtml(_profNomeAppt)+' \u00b7 '+escHtml(_prox.date_str)+'</span>';
+  } else {
+    h+='<span style="font-size:10px;font-weight:600;background:#f3f4f6;color:var(--ash);border-radius:12px;padding:2px 8px">Sem agendamento</span>';
+  }
   h+='</div>';
   h+='<div style="font-size:11px;color:var(--text-muted)">'+(p.telefone||'Sem telefone')+(p.email?' \u00b7 '+p.email:'')+'</div>';
   h+='<div style="font-size:11px;margin-top:2px;color:'+(concluida?'var(--success)':'var(--warning)')+'">'+( concluida?'\u2705 Etapa conclu\u00edda':'\u23f0 Pendente')+(etapa&&etapa.updated_at?' \u00b7 '+fmtDatetime(etapa.updated_at):'')+'</div>';
@@ -6649,10 +6669,8 @@ function relJourneyPatCard(p,jornada,etapaId){
       // Recorrente: skip boas-vindas action button entirely
     } else
     if(etapaId==='boasvindas'){
-      // Detect which doctor based on last appointment profissional
-      const lastAppt=(window._relApptsMes||[]).find(a=>a.patient_id===p.id);
-      const profNome=(lastAppt&&lastAppt.profissional_nome)||'';
-      const isBruna=profNome.toLowerCase().includes('bruna');
+      // Doctor already resolved above from the patient's upcoming/last appointment
+      const isBruna=_isBrunaAppt;
       const guiaUrl=isBruna
         ?'https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_boasvindas_bruna.html'
         :'https://drjosecarlosgastro-netizen.github.io/vitta-planos/vitta_boasvindas.html';
