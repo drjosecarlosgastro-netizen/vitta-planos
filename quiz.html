@@ -113,7 +113,10 @@ input:focus{outline:none;border-color:var(--sage)}
     <div class="card" style="background:var(--sage-soft);border-color:transparent">
       <p style="color:var(--ink)">Volte ao e-book e veja os pilares práticos indicados para o seu perfil. Em breve nossa equipe pode falar com você pelo WhatsApp informado.</p>
     </div>
-    <a class="btn" id="r-ig" style="text-align:center;text-decoration:none;display:none" target="_blank" rel="noopener"></a>
+    <div id="r-ig" style="display:none">
+      <div style="font-size:13px;font-weight:600;margin-top:22px;text-align:center">Acompanhe os dois no Instagram</div>
+      <div id="r-ig-btns"></div>
+    </div>
   </section>
 
   <div class="foot">Conteúdo educativo. Não substitui consulta médica ou nutricional.<br>Dr. José Carlos Pinheiro Júnior · CRM/SP 166182 &nbsp;|&nbsp; Dra. Bruna Braga Dias · CRM 75893</div>
@@ -127,7 +130,7 @@ var TABELA='leads_quiz_qrcode';
 // Perfis de divulgação (parâmetro ?p=)
 var PERFIS={
   jc:   {id:'drjosecarlos', instagram:'drjosecarlosjunior', nome:'Dr. José Carlos'},
-  bruna:{id:'drabruna',     instagram:'',                   nome:'Dra. Bruna Braga'}   // preencher o @ da Bruna
+  bruna:{id:'drabruna',     instagram:'drabrunabraga',      nome:'Dra. Bruna Braga'}
 };
 
 // Quizzes (parâmetro ?q=). Para um novo e-book: copie o bloco, troque a chave e o conteúdo.
@@ -268,7 +271,19 @@ function mostrarResultado(){
   }
   var bars=document.getElementById('r-bars'),n=QUIZ.perguntas.length;bars.innerHTML='';
   LETRAS.forEach(function(l){bars.insertAdjacentHTML('beforeend','<div class="bar"><span>'+l+'</span><div><i style="width:'+(c[l]/n*100)+'%"></i></div><em>'+c[l]+'</em></div>');});
-  if(PERFIL&&PERFIL.instagram){var a=document.getElementById('r-ig');a.href='https://instagram.com/'+PERFIL.instagram;a.textContent='Seguir @'+PERFIL.instagram+' no Instagram';a.style.display='block';}
+  // Botões para seguir os dois perfis (quem divulgou aparece primeiro)
+  var ordem=Object.keys(PERFIS).sort(function(a,b){return (PERFIS[a]===PERFIL?-1:0)-(PERFIS[b]===PERFIL?-1:0);});
+  var box=document.getElementById('r-ig-btns');box.innerHTML='';
+  ordem.forEach(function(k){
+    var pf=PERFIS[k];if(!pf.instagram)return;
+    var a=document.createElement('a');a.className='btn';a.target='_blank';a.rel='noopener';
+    a.style.cssText='text-align:center;text-decoration:none;margin-top:10px';
+    a.href='https://instagram.com/'+pf.instagram;
+    a.textContent='Seguir '+pf.nome;
+    var sm=document.createElement('span');sm.style.cssText='display:block;font-size:12px;font-weight:400;opacity:.75;margin-top:2px';sm.textContent='@'+pf.instagram;a.appendChild(sm);
+    box.appendChild(a);
+  });
+  if(box.children.length)document.getElementById('r-ig').style.display='block';
   show('s-res');
 }
 </script>
