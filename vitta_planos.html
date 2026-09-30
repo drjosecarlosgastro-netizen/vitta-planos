@@ -3160,7 +3160,7 @@ function leadsRenderPeriodoChart(labels,data,cor){
   var canvas=document.getElementById('leads-periodo-chart');
   if(!canvas)return;
   if(_leadsPeriodoChartObj){try{_leadsPeriodoChartObj.destroy();}catch(e){}}
-  _leadsPeriodoChartObj=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:'Leads',data:data,backgroundColor:cor||'#154C56',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.06)'}}}}});
+  _leadsPeriodoChartObj=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:'Leads',data:data,backgroundColor:cor||'#154C56',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true}},y:{beginAtZero:true,grace:'8%',ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.06)'}}}},plugins:[{id:'leadsValorBarra',afterDatasetsDraw:function(chart){var ctx=chart.ctx;var meta=chart.getDatasetMeta(0);if(!meta||meta.hidden)return;var vals=chart.data.datasets[0].data;ctx.save();ctx.font='700 12px '+(getComputedStyle(document.body).fontFamily||'sans-serif');ctx.fillStyle='#154C56';ctx.textAlign='center';ctx.textBaseline='bottom';meta.data.forEach(function(bar,i){var v=vals[i];if(!v)return;ctx.fillText(String(v),bar.x,bar.y-4);});ctx.restore();}}]});
 }
 
 async function renderLeads(){
