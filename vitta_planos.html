@@ -3156,11 +3156,11 @@ function leadsAplicarPeriodoCustom(){
   _leadsPeriodo={tipo:'custom',inicio:ini,fim:fim};
   buildLeadsUI();
 }
-function leadsRenderPeriodoChart(labels,data,cor){
+function leadsRenderPeriodoChart(labels,data,cor,split){
   var canvas=document.getElementById('leads-periodo-chart');
   if(!canvas)return;
   if(_leadsPeriodoChartObj){try{_leadsPeriodoChartObj.destroy();}catch(e){}}
-  _leadsPeriodoChartObj=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:'Leads',data:data,backgroundColor:cor||'#154C56',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true}},y:{beginAtZero:true,grace:'8%',ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.06)'}}}},plugins:[{id:'leadsValorBarra',afterDatasetsDraw:function(chart){var ctx=chart.ctx;var meta=chart.getDatasetMeta(0);if(!meta||meta.hidden)return;var vals=chart.data.datasets[0].data;ctx.save();ctx.font='700 12px '+(getComputedStyle(document.body).fontFamily||'sans-serif');ctx.fillStyle='#154C56';ctx.textAlign='center';ctx.textBaseline='bottom';meta.data.forEach(function(bar,i){var v=vals[i];if(!v)return;ctx.fillText(String(v),bar.x,bar.y-4);});ctx.restore();}}]});
+  _leadsPeriodoChartObj=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:'Leads',data:data,backgroundColor:cor||'#154C56',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:split?40:22}},plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:0,autoSkip:true}},y:{beginAtZero:true,grace:'8%',ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,.06)'}}}},plugins:[{id:'leadsValorBarra',afterDatasetsDraw:function(chart){var ctx=chart.ctx;var meta=chart.getDatasetMeta(0);if(!meta||meta.hidden)return;var vals=chart.data.datasets[0].data;ctx.save();ctx.font='700 12px '+(getComputedStyle(document.body).fontFamily||'sans-serif');ctx.fillStyle='#154C56';ctx.textAlign='center';ctx.textBaseline='bottom';var ff=getComputedStyle(document.body).fontFamily||'sans-serif';meta.data.forEach(function(bar,i){var v=vals[i];if(!v)return;ctx.font='700 12px '+ff;ctx.fillStyle='#154C56';ctx.textAlign='center';ctx.fillText(String(v),bar.x,bar.y-4);if(split&&split[i]){var a=String(split[i].jc),b=String(split[i].bruna),gap=10;ctx.font='700 11px '+ff;var wa=ctx.measureText(a).width,wb=ctx.measureText(b).width,x0=bar.x-(wa+gap+wb)/2,yy=bar.y-20;ctx.textAlign='left';ctx.fillStyle='#2563eb';ctx.fillText(a,x0,yy);ctx.fillStyle='#db2777';ctx.fillText(b,x0+wa+gap,yy);}});ctx.restore();}}]});
 }
 
 async function renderLeads(){
@@ -3347,6 +3347,17 @@ function buildLeadsUI(){
       return lStr===dStr;
     }).length;
   });
+  var _diaSplit=_leadsProf==='todos'?_diasArr.map(function(d){
+    var dStr=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+    var s={jc:0,bruna:0};
+    _periodoLeads.forEach(function(l){
+      var ld=new Date(l.created_at);
+      var lStr=ld.getFullYear()+'-'+('0'+(ld.getMonth()+1)).slice(-2)+'-'+('0'+ld.getDate()).slice(-2);
+      if(lStr!==dStr)return;
+      var pr=leadProfissional(l);if(pr==='jc'||pr==='bruna')s[pr]++;
+    });
+    return s;
+  }):null;
   var _origemMapCRM={};
   _periodoLeads.forEach(function(l){var o=l.origem||'Não informado';_origemMapCRM[o]=(_origemMapCRM[o]||0)+1;});
   var _origemColorsCRM={Instagram:'#e1306c','Email/Google':'#4285f4',WhatsApp:'#25d366',Indicação:'#10b981',Outro:'#8b5cf6','Não informado':'var(--ash)','Site Principal':'#0ea5e9','IG Dr. José Carlos':'#e1306c','IG Dra. Bruna Braga':'#c026d3','Google Ads':'#b45309'};
@@ -3492,7 +3503,7 @@ function buildLeadsUI(){
   });
   h+='</div></div>';
   document.getElementById('main-content').innerHTML=h;
-  if(_periodoLeads.length)leadsRenderPeriodoChart(_diaLabels,_diaData,_profCor);
+  if(_periodoLeads.length)leadsRenderPeriodoChart(_diaLabels,_diaData,_profCor,_diaSplit);
 }
 
 async function abrirNovoLead(){
