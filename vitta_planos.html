@@ -7859,10 +7859,11 @@ document.getElementById('pwa-manifest').href=URL.createObjectURL(new Blob([JSON.
 // =====================================================================
 var LQ_QUIZ_URL='https://drjosecarlosgastro-netizen.github.io/vitta-planos/quiz.html';
 var LQ_QUIZZES={
-  estufamento:{origem:'ebook_estufamento',nome:'Por Que Minha Barriga Estufa?',perfis:{A:'Fermentativo (FODMAP)',B:'Baixa Acidez / Enzim\u00e1tico',C:'Hormonal',D:'Eixo Intestino-C\u00e9rebro',E:'Motilidade Lenta'}}
+  agendar:{origem:'curso_agendamento',nome:'Curso \u2192 WhatsApp da secret\u00e1ria (agendar consulta)',tipo:'whatsapp',url:'https://drjosecarlosgastro-netizen.github.io/vitta-planos/agendar.html',legenda:'Agende sua consulta pelo WhatsApp',canalPadrao:'curso',pubPadrao:'curso-v1',perfis:{}},
+  estufamento:{origem:'ebook_estufamento',nome:'Por Que Minha Barriga Estufa?',legenda:'Fa\u00e7a o quiz e descubra seu perfil',canalPadrao:'qr_ebook',pubPadrao:'ebook-v1',perfis:{A:'Fermentativo (FODMAP)',B:'Baixa Acidez / Enzim\u00e1tico',C:'Hormonal',D:'Eixo Intestino-C\u00e9rebro',E:'Motilidade Lenta'}}
 };
 var LQ_PERFIS={jc:{id:'drjosecarlos',nome:'Dr. José Carlos'},bruna:{id:'drabruna',nome:'Dra. Bruna'}};
-var LQ_CANAIS=[['qr_ebook','QR code no e-book'],['bio','Link da bio'],['story','Story'],['post','Post / legenda'],['whatsapp','WhatsApp'],['direct','Direct']];
+var LQ_CANAIS=[['qr_ebook','QR code no e-book'],['curso','Material do curso'],['bio','Link da bio'],['story','Story'],['post','Post / legenda'],['whatsapp','WhatsApp'],['direct','Direct']];
 var LQ_STATUS={novo:'Novo',contatado:'Contatado',convertido:'Convertido',descartado:'Descartado'};
 var LQ_STATUS_COR={novo:'#3b82f6',contatado:'#f59e0b',convertido:'#10b981',descartado:'#9ca3af'};
 var _lqClient=null,_lqData=[],_lqUser=null,_lqAba='lista';
@@ -8020,7 +8021,7 @@ function lqHtmlLista(){
   }
   h+='</div>';
   var maxR=Math.max(1,resCont.A,resCont.B,resCont.C,resCont.D,resCont.E);
-  var qRef=lqQuizPorOrigem(_lqF.origem)||LQ_QUIZZES.estufamento;
+  var qRef=lqQuizPorOrigem(_lqF.origem);if(!qRef||!qRef.perfis||!qRef.perfis.A)qRef=LQ_QUIZZES.estufamento;
   h+='<div class="card" style="flex:1;min-width:260px;margin:0"><div style="font-weight:700;font-size:14px;margin-bottom:8px">Perfil predominante</div>';
   ['A','B','C','D','E'].forEach(function(L){h+='<div style="display:flex;align-items:center;gap:8px;margin-top:7px;font-size:12px"><b style="width:14px;color:var(--tidal)">'+L+'</b><span style="width:150px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+lqEsc(qRef.perfis[L])+'</span><div style="flex:1;height:8px;background:var(--border-light);border-radius:99px;overflow:hidden"><div style="height:100%;width:'+(resCont[L]/maxR*100)+'%;background:var(--tidal)"></div></div><span style="width:26px;text-align:right;font-weight:600">'+resCont[L]+'</span></div>';});
   h+='</div></div>';
@@ -8033,6 +8034,7 @@ function lqHtmlLista(){
     var q=lqQuizPorOrigem(l.origem);
     var res=(l.resultado_perfil||'-');
     var resNome=q&&l.resultado_perfil?(l.resultado_perfil.split('+').map(function(x){return q.perfis[x]||x;}).join(' + ')):'';
+    if(q&&q.tipo==='whatsapp'){res='Agendamento';resNome='Quer agendar consulta';}
     var wa=l.whatsapp?'https://wa.me/'+encodeURIComponent(l.whatsapp):'';
     var stSel='<select onchange="lqStatus(\''+l.id+'\',this.value)" style="padding:5px 8px;border:1.5px solid '+(LQ_STATUS_COR[l.status]||'var(--border)')+';border-radius:6px;font-size:12px;font-family:var(--font);background:#fff">';
     Object.keys(LQ_STATUS).forEach(function(k){stSel+='<option value="'+k+'"'+(k===l.status?' selected':'')+'>'+LQ_STATUS[k]+'</option>';});
@@ -8079,7 +8081,7 @@ function lqVer(id){
   var resp='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">';
   for(var i=1;i<=10;i++){resp+='<div style="border:1px solid var(--border);border-radius:6px;padding:5px;text-align:center;font-size:12px"><span style="color:var(--text-muted)">P'+i+'</span> <b>'+lqEsc(l['resposta_'+i]||'-')+'</b></div>';}
   resp+='</div>';
-  h+=linha('Respostas',resp);
+  if(!(q&&q.tipo==='whatsapp'))h+=linha('Respostas',resp);
   h+=linha('Consentimento LGPD',l.consentimento_lgpd?'Sim — '+lqDataHora(l.consentimento_em||l.criado_em):'Não');
   h+='<div style="margin-top:12px"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Observação interna</label><textarea id="lq-obs" rows="3" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box">'+lqEsc(l.observacao||'')+'</textarea></div>';
   h+='<div style="display:flex;gap:8px;justify-content:space-between;margin-top:14px">';
@@ -8113,7 +8115,8 @@ async function lqEnviarCrm(id){
   var l=_lqData.find(function(x){return x.id===id;});if(!l)return;
   var q=lqQuizPorOrigem(l.origem);
   var resNome=q&&l.resultado_perfil?l.resultado_perfil.split('+').map(function(x){return q.perfis[x]||x;}).join(' + '):(l.resultado_perfil||'-');
-  var obs='Lead do e-book "'+(q?q.nome:l.origem)+'" (quiz). Resultado: '+(l.resultado_perfil||'-')+' - '+resNome+'. Divulgação: '+lqPerfilNome(l.perfil_divulgacao)+' / '+(l.publicacao||'-')+' / '+lqCanalNome(l.canal)+'.';
+  var obs=(q&&q.tipo==='whatsapp')?('Lead do QR code do curso (quer agendar consulta). Divulga\u00e7\u00e3o: '):('Lead do e-book "'+(q?q.nome:l.origem)+'" (quiz). Resultado: '+(l.resultado_perfil||'-')+' - '+resNome+'. Divulga\u00e7\u00e3o: ');
+  obs+=''+lqPerfilNome(l.perfil_divulgacao)+' / '+(l.publicacao||'-')+' / '+lqCanalNome(l.canal)+'.';
   var medico=l.perfil_divulgacao==='drabruna'?'Dra. Bruna':'Dr. José Carlos';
   var data={nome:l.nome||l.email,telefone:l.whatsapp,email:l.email,origem:'Instagram',canal_marketing:'Instagram',medico_interesse:medico,observacao:obs,status:'novo',created_at:new Date().toISOString()};
   try{
@@ -8145,10 +8148,12 @@ function lqHtmlQr(){
   var h='<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">';
   h+='<div class="card" style="flex:1;min-width:300px;max-width:440px;margin:0">';
   h+='<div style="font-weight:700;font-size:14px">Novo link / QR code rastreável</div>';
-  h+='<div style="font-size:12px;color:var(--text-muted);margin-top:4px">Todos levam ao mesmo formulário. O que muda são as etiquetas de origem gravadas junto com o lead.</div>';
-  h+='<label style="'+lab+'">E-book / quiz</label><select id="lq-qr-q" onchange="lqAtualizarQr()" style="'+inp+'">';
+  h+='<div style="font-size:12px;color:var(--text-muted);margin-top:4px">Todos os leads caem nesta mesma lista. O link guarda as etiquetas de origem (perfil, canal e publicação) junto com cada lead.</div>';
+  h+='<label style="'+lab+'">Destino (e-book / quiz ou agendamento)</label><select id="lq-qr-q" onchange="lqTrocarDestino()" style="'+inp+'">';
   Object.keys(LQ_QUIZZES).forEach(function(k){h+='<option value="'+k+'"'+(k===_lqQr.q?' selected':'')+'>'+lqEsc(LQ_QUIZZES[k].nome)+'</option>';});
   h+='</select>';
+  var _dq=LQ_QUIZZES[_lqQr.q]||{};
+  h+='<div id="lq-qr-dica" style="font-size:11px;color:var(--text-muted);margin-top:6px">'+(_dq.tipo==='whatsapp'?'A pessoa preenche nome e WhatsApp (o lead cai aqui) e em seguida abre a conversa com a secret\u00e1ria, com a mensagem de agendamento pronta.':'A pessoa responde o quiz do e-book e v\u00ea o resultado na hora.')+'</div>';
   h+='<label style="'+lab+'">Perfil que vai divulgar</label><select id="lq-qr-p" onchange="lqAtualizarQr()" style="'+inp+'">';
   Object.keys(LQ_PERFIS).forEach(function(k){h+='<option value="'+k+'"'+(k===_lqQr.p?' selected':'')+'>'+lqEsc(LQ_PERFIS[k].nome)+'</option>';});
   h+='</select>';
@@ -8171,11 +8176,21 @@ function lqHtmlQr(){
   h+='</div></div>';
   return h;
 }
+// Ao trocar o destino, sugere canal e publicacao padrao daquele destino
+function lqTrocarDestino(){
+  var d=LQ_QUIZZES[document.getElementById('lq-qr-q').value]||{};
+  if(d.canalPadrao)document.getElementById('lq-qr-c').value=d.canalPadrao;
+  if(d.pubPadrao)document.getElementById('lq-qr-pub').value=d.pubPadrao;
+  var dica=document.getElementById('lq-qr-dica');
+  if(dica)dica.textContent=d.tipo==='whatsapp'?'A pessoa preenche nome e WhatsApp (o lead cai aqui) e em seguida abre a conversa com a secret\u00e1ria, com a mensagem de agendamento pronta.':'A pessoa responde o quiz do e-book e v\u00ea o resultado na hora.';
+  lqAtualizarQr();
+}
 function lqMontarUrl(){
   var q=document.getElementById('lq-qr-q').value,p=document.getElementById('lq-qr-p').value,c=document.getElementById('lq-qr-c').value;
   var pub=lqSlug(document.getElementById('lq-qr-pub').value,60);
   _lqQr={q:q,p:p,pub:pub,c:c};
-  var url=LQ_QUIZ_URL+'?q='+encodeURIComponent(q)+'&p='+encodeURIComponent(p);
+  var dest=LQ_QUIZZES[q]||{};
+  var url=dest.url?(dest.url+'?p='+encodeURIComponent(p)):(LQ_QUIZ_URL+'?q='+encodeURIComponent(q)+'&p='+encodeURIComponent(p));
   if(pub)url+='&pub='+encodeURIComponent(pub);
   url+='&c='+encodeURIComponent(c);
   return url;
@@ -8215,7 +8230,7 @@ function lqBaixarPng(moldura){
   for(var r=0;r<n;r++){for(var c=0;c<n;c++){if(qr.isDark(r,c))x.fillRect(ox+c*cell,oy+r*cell,cell,cell);}}
   if(moldura){
     x.textAlign='center';x.fillStyle='#35322E';x.font='600 54px "DM Sans", sans-serif';
-    x.fillText('Faça o quiz e descubra seu perfil',W/2,oy+real+95);
+    x.fillText((LQ_QUIZZES[_lqQr.q]&&LQ_QUIZZES[_lqQr.q].legenda)||'Fa\u00e7a o quiz e descubra seu perfil',W/2,oy+real+95);
     x.fillStyle='#6E8B63';x.font='500 34px "DM Sans", sans-serif';
     x.fillText('Aponte a câmera do celular',W/2,oy+real+150);
   }
