@@ -268,6 +268,20 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 const SUPABASE_URL='https://tzsamyaobtzswpklxpzx.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6c2FteWFvYnR6c3dwa2x4cHp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzkxNjEsImV4cCI6MjA5NDg1NTE2MX0.okDoh3yP2HHPQKIUFf64X0UzBp0aWK_5WirprPsL8vM';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+// Busca TODAS as linhas paginando de 1000 em 1000 (o Supabase corta em 1000 por consulta).
+// buildQuery: funcao que devolve uma query nova a cada chamada. Retorna {data,error}.
+async function sbFetchAll(buildQuery){
+  var PAGE=1000,from=0,all=[];
+  while(true){
+    var r=await buildQuery().range(from,from+PAGE-1);
+    if(r.error)return{data:all,error:r.error};
+    var rows=r.data||[];
+    all=all.concat(rows);
+    if(rows.length<PAGE)break;
+    from+=PAGE;
+  }
+  return{data:all,error:null};
+}
 let currentUser=null,currentSection='dashboard',currentPatientId=null,currentPatientData=null,allPatients=[];
 let _relTab='financeiro';
 const TIPOS_SESSAO=['Soroterapia EV','Soroterapia IM','Soroterapia EV + IM','Outro'];
@@ -3170,8 +3184,8 @@ async function renderLeads(){
   c.innerHTML='<div style="padding:32px 24px;font-size:13px;color:var(--text-muted)">Carregando leads...</div>';
   try{
     const[{data:leads},{data:ativs}]=await Promise.all([
-      sb.from('planos_leads').select('*').order('created_at',{ascending:false}),
-      sb.from('planos_leads_atividades').select('lead_id,tipo,descricao,created_at').order('created_at',{ascending:false})
+      sbFetchAll(function(){return sb.from('planos_leads').select('*').order('created_at',{ascending:false}).order('id',{ascending:false});}),
+      sbFetchAll(function(){return sb.from('planos_leads_atividades').select('lead_id,tipo,descricao,created_at').order('created_at',{ascending:false}).order('id',{ascending:false});})
     ]);
     _leadsData=leads||[];
     _leadsAtividades=ativs||[];
@@ -3182,7 +3196,8 @@ async function renderLeads(){
   _leadsInterval=setInterval(async function(){
     if(document.getElementById('ntab-leads')&&document.getElementById('ntab-leads').classList.contains('active')){
       try{
-        const{data:leads}=await sb.from('planos_leads').select('*').order('created_at',{ascending:false});
+        const{data:leads,error:errL}=await sbFetchAll(function(){return sb.from('planos_leads').select('*').order('created_at',{ascending:false}).order('id',{ascending:false});});
+        if(errL)return;
         var novos=(leads||[]).filter(function(l){return !(_leadsData||[]).find(function(e){return e.id===l.id;});});
         _leadsData=leads||[];
         if(novos.length){
@@ -3966,7 +3981,7 @@ async function renderIndicacoes(tab){
       sb.from('planos_patients').select('*').order('name'),
       sb.from('planos_appointments').select('patient_id,status').eq('status','Compareceu'),
       sb.from('planos_financeiro').select('patient_id,valor'),
-      sb.from('planos_leads').select('canal_marketing,status'),
+      sbFetchAll(function(){return sb.from('planos_leads').select('canal_marketing,status').order('id');}),
       sb.from('planos_config').select('key,value').in('key',['indic_script_agradecimento','indic_script_pesquisa'])
     ]);
     allPatients=patients||[];
