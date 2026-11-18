@@ -439,7 +439,7 @@ function mainNav(section){
 async function renderDashboard(){
   const[{data:patients},{data:appts},{data:sessoes},{data:envios},{data:pends},{data:pendItens}]=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
-    sb.from('planos_appointments').select('*'),
+    sbFetchAll(()=>sb.from('planos_appointments').select('*').order('id')),
     sb.from('planos_soro_sessoes').select('*'),
     sb.from('planos_soro_envios').select('*'),
     sb.from('planos_pendencias').select('*'),
@@ -3987,7 +3987,7 @@ async function renderIndicacoes(tab){
   try{
     const[{data:patients},{data:appts},{data:fin},{data:leads},{data:cfgScripts}]=await Promise.all([
       sb.from('planos_patients').select('*').order('name'),
-      sb.from('planos_appointments').select('patient_id,status').eq('status','Compareceu'),
+      sbFetchAll(()=>sb.from('planos_appointments').select('patient_id,status').eq('status','Compareceu').order('id')),
       sb.from('planos_financeiro').select('patient_id,valor'),
       sbFetchAll(function(){return sb.from('planos_leads').select('canal_marketing,status').order('id');}),
       sb.from('planos_config').select('key,value').in('key',['indic_script_agradecimento','indic_script_pesquisa'])
@@ -4912,7 +4912,7 @@ function showOverduePending(){
 
 async function renderAgenda(){
   const[{data:appts},{data:patients}]=await Promise.all([
-    sb.from('planos_appointments').select('*').order('created_at'),
+    sbFetchAll(()=>sb.from('planos_appointments').select('*').order('created_at').order('id')),
     sb.from('planos_patients').select('id,name')
   ]);
   const patMap={};(patients||[]).forEach(p=>patMap[p.id]=p.name);
@@ -5163,7 +5163,7 @@ async function renderInjetaveis(){
     sb.from('planos_soro_sessoes').select('*'),
     sb.from('planos_soro_envios').select('*')
   ]);
-  const{data:appts}=await sb.from('planos_appointments').select('patient_id,date_str,status,origem_tabela,profissional_nome');
+  const{data:appts}=await sbFetchAll(()=>sb.from('planos_appointments').select('patient_id,date_str,status,origem_tabela,profissional_nome').order('id'));
   const allP=patients||[],allS=sessoes||[],allE=envios||[];
   window._injPatients=allP;window._injSessoes=allS;window._injEnvios=allE;window._injAppts=appts||[];
   window._injStatus=window._injStatus||'ativos';window._injFase=window._injFase||0;window._injModal=window._injModal||'todos';window._injMedico=window._injMedico||'all';
@@ -5267,7 +5267,7 @@ async function abrirSoroterapiaDireto(id){
 async function renderPrograma(){
   const[{data:patients},{data:appts},{data:sessoes},{data:implantes},{data:envios}]=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
-    sb.from('planos_appointments').select('*'),
+    sbFetchAll(()=>sb.from('planos_appointments').select('*').order('id')),
     sb.from('planos_soro_sessoes').select('*'),
     sb.from('planos_implantes').select('*'),
     sb.from('planos_soro_envios').select('*')
@@ -5497,7 +5497,7 @@ async function renderPendenciasTab(){
   const weekAgo=new Date(today);weekAgo.setDate(weekAgo.getDate()-7);
   const todayInt=parseInt(today.toISOString().slice(0,10).replace(/-/g,''));
   const weekInt=parseInt(weekAgo.toISOString().slice(0,10).replace(/-/g,''));
-  const res3=await sb.from('planos_appointments').select('patient_id,date_str,status');
+  const res3=await sbFetchAll(()=>sb.from('planos_appointments').select('patient_id,date_str,status').order('id'));
   const appts=res3.data||[];
   const weekAppts=appts.filter(a=>{
     if(!a.date_str)return false;
@@ -5829,7 +5829,7 @@ async function pendConfirmAdd(patientId){
 async function renderAvulsas(){
   const[{data:patients},{data:appts},{data:fin}]=await Promise.all([
     sb.from('planos_patients').select('*').order('name'),
-    sb.from('planos_appointments').select('*').order('created_at'),
+    sbFetchAll(()=>sb.from('planos_appointments').select('*').order('created_at').order('id')),
     sb.from('planos_financeiro').select('*').order('created_at')
   ]);
   allPatients=patients||[];
@@ -6393,10 +6393,10 @@ async function renderRelacionamento(tab){
     getPerguntas(),
     sb.from('planos_patients').select('id,name,email,telefone,cpf,active,plan_type').order('name'),
     sb.from('planos_form_respostas').select('patient_id,created_at,status').order('created_at',{ascending:false}),
-    sb.from('planos_appointments').select('patient_id,date_str,profissional_nome').order('date_str',{ascending:false}),
+    sbFetchAll(()=>sb.from('planos_appointments').select('patient_id,date_str,profissional_nome').order('date_str',{ascending:false}).order('id')),
     sb.from('planos_jornada').select('*'),
     sb.from('planos_financeiro').select('patient_id,valor,forma,data_pagamento,observacao,created_at').gte('data_pagamento',mesInicio),
-    sb.from('planos_appointments').select('patient_id,date_str').eq('status','Compareceu'),
+    sbFetchAll(()=>sb.from('planos_appointments').select('patient_id,date_str').eq('status','Compareceu').order('id')),
     sb.from('planos_soro_sessoes').select('patient_id,data_sessao'),
     sb.from('planos_implantes').select('patient_id,data_implante')
   ]);
