@@ -1709,7 +1709,7 @@ async function renderTRHE() {
   const lista = exames || [];
   const c = document.getElementById('clinica-sub-content');
 
-  let html = '<div class="section-header"><div class="section-title">\ud83e\udeb2 Teste Respirat\u00f3rio do H\u00e2 (TRHE)</div>'
+  let html = '<div class="section-header"><div class="section-title">\ud83e\udeb2 Teste Respirat\u00f3rio \u2014 H\u2082 e CH\u2084 (SIBO / IMO)</div>'
     + '<button class="btn btn-primary btn-sm" onclick="showFormTRHE(null)">+ Novo Exame</button></div>';
 
   if (!lista.length) {
@@ -1739,6 +1739,8 @@ async function renderTRHE() {
       + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
       + '<span style="font-size:11px;font-weight:700;color:' + siboCor + ';background:' + siboBg + ';padding:3px 10px;border-radius:99px">' + siboLabel + '</span>'
+      + (function(){ var m = calcularIMO(ex.valores_h2 && ex.valores_h2.ch4); if (!m.temCH4) return '';
+          return '<span style="font-size:11px;font-weight:700;color:' + (m.imo ? '#9a3412' : '#166534') + ';background:' + (m.imo ? '#ffedd5' : '#dcfce7') + ';padding:3px 10px;border-radius:99px">' + (m.imo ? '\u2713 IMO Positivo' : 'IMO Negativo') + '</span>'; })()
       + '<span style="font-size:11px;font-weight:700;color:' + sgfCls + ';background:' + sgfBg + ';padding:3px 10px;border-radius:99px">SGF: ' + (ex.sgf || 0) + '</span>'
       + '<span style="font-size:11px;color:var(--accent)">Ver laudo \u2192</span>'
       + '</div></div></div>';
@@ -1789,36 +1791,60 @@ async function renderTRHE() {
   }
 }
 
+var TRHE_REFS_HTML = '<div class="REFSEC" style="margin-bottom:9px"><div class="REFTTL">7. Refer\u00eancias</div>'+'<div style="font-size:9.5px;line-height:1.5;color:#333">'+'<div style="margin-bottom:4px">\u2022 Banaszak M, G\u00f3rna I, Wo\u017aniak D, Przys\u0142awski J, Drzyma\u0142a-Czy\u017c S. Association between Gut Dysbiosis and the Occurrence of SIBO, LIBO, SIFO and IMO. <em>Microorganisms</em>. 2023 Feb 24;11(3):573. doi: 10.3390/microorganisms11030573.</div>'+'<div>\u2022 Carvalho PJPC, Carvalho NS, Andrade VLA. <em>M\u00e9todos Diagn\u00f3sticos em Doen\u00e7as Funcionais e Motilidade Digestiva do N\u00facleo de Fisiologia Gastrintestinal</em>. 1\u00aa ed. Editora Rubio; 2025.</div>'+'</div></div>';
+var TRHE_TEMPOS = [0, 15, 30, 45, 60, 75, 90, 120, 150, 180];
+var TRHE_OBS = {0:'Ref: < 20 ppm',15:'Dentro do esperado',30:'Dentro do esperado',45:'Ascensão progressiva',60:'Ascensão progressiva',75:'Intestino delgado',90:'Pico — intestino delgado',120:'Início fase colônica',150:'Ascensão colônica',180:'Pico máximo — fase colônica'};
+var IMO_LIMITE = 10;
+
+function trheLabelTempo(t) { return t === 0 ? 'Basal' : t + ' min'; }
+
+// Converte {t0:..,t15:..} em lista de pontos medidos [{t,v}] (ignora campos vazios)
+function trhePontos(obj) {
+  var o = obj || {};
+  var pts = [];
+  TRHE_TEMPOS.forEach(function(t) {
+    var v = o['t' + t];
+    if (v === null || v === undefined || v === '' || isNaN(v)) return;
+    pts.push({ t: t, v: Number(v) });
+  });
+  return pts;
+}
+
 function showFormTRHE(exameId) {
   const isEdit = !!exameId;
-  const tituloModal = isEdit ? 'Editar TRHE' : 'Novo TRHE \u2014 Registrar Exame';
+  const tituloModal = isEdit ? 'Editar Teste Respiratório' : 'Novo Teste Respiratório — Registrar Exame';
+  var gridH2 = '', gridCH4 = '';
+  TRHE_TEMPOS.forEach(function(t) {
+    gridH2 += '<div class="field"><label>' + trheLabelTempo(t) + '</label><input type="number" id="trhe-t' + t + '" min="0" placeholder="—"/></div>';
+    gridCH4 += '<div class="field"><label>' + trheLabelTempo(t) + '</label><input type="number" id="trhe-ch4-t' + t + '" min="0" placeholder="—"/></div>';
+  });
   let formHtml =
     '<div class="card" style="margin-bottom:12px">'
     + '<div class="card-title">Dados do Exame</div>'
     + '<div class="grid-2">'
     + '<div class="field"><label>Data do Exame *</label><input id="trhe-data" value="' + todayStr() + '"/></div>'
     + '<div class="field"><label>Preparo Adequado</label>'
-    + '<select id="trhe-preparo"><option value="sim">Sim</option><option value="nao">N\u00e3o</option></select>'
-    + '</div></div></div>'
+    + '<select id="trhe-preparo"><option value="sim">Sim</option><option value="nao">Não</option></select>'
+    + '</div></div>'
+    + '<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-top:6px;cursor:pointer">'
+    + '<input type="checkbox" id="trhe-com-ch4" onchange="document.getElementById(\'trhe-card-ch4\').style.display=this.checked?\'block\':\'none\'" style="width:16px;height:16px"/>'
+    + 'Exame com metano (CH₄) — pesquisa de SIBO e IMO</label>'
+    + '</div>'
 
     + '<div class="card" style="margin-bottom:12px">'
-    + '<div class="card-title">Valores de H\u2082 (ppm)</div>'
-    + '<div class="grid-3">'
-    + '<div class="field"><label>Basal</label><input type="number" id="trhe-t0" min="0" value="0"/></div>'
-    + '<div class="field"><label>15 min</label><input type="number" id="trhe-t15" min="0" value="0"/></div>'
-    + '<div class="field"><label>30 min</label><input type="number" id="trhe-t30" min="0" value="0"/></div>'
-    + '<div class="field"><label>45 min</label><input type="number" id="trhe-t45" min="0" value="0"/></div>'
-    + '<div class="field"><label>60 min</label><input type="number" id="trhe-t60" min="0" value="0"/></div>'
-    + '<div class="field"><label>90 min</label><input type="number" id="trhe-t90" min="0" value="0"/></div>'
-    + '<div class="field"><label>120 min</label><input type="number" id="trhe-t120" min="0" value="0"/></div>'
-    + '<div class="field"><label>150 min</label><input type="number" id="trhe-t150" min="0" value="0"/></div>'
-    + '<div class="field"><label>180 min</label><input type="number" id="trhe-t180" min="0" value="0"/></div>'
-    + '</div></div>'
+    + '<div class="card-title">Valores de H₂ — Hidrogênio (ppm)</div>'
+    + '<div style="font-size:11px;color:var(--text-muted);margin:-4px 0 8px">Preencha só os tempos medidos pelo aparelho. Tempos em branco não entram no laudo.</div>'
+    + '<div class="grid-3">' + gridH2 + '</div></div>'
+
+    + '<div class="card" id="trhe-card-ch4" style="margin-bottom:12px;display:none;border:1.5px solid #fdba74">'
+    + '<div class="card-title" style="color:#c2410c">Valores de CH₄ — Metano (ppm)</div>'
+    + '<div style="font-size:11px;color:var(--text-muted);margin:-4px 0 8px">IMO positivo quando CH₄ ≥ 10 ppm em qualquer momento do exame.</div>'
+    + '<div class="grid-3">' + gridCH4 + '</div></div>'
 
     + '<div class="card" style="margin-bottom:12px">'
     + '<div class="card-title">Sintomas Durante o Exame</div>'
     + '<div class="field"><label>Sintomas</label>'
-    + '<input id="trhe-sintomas" placeholder="Ex: Borrulhamento, distens\u00e3o, flatulência, dor abdominal..."/>'
+    + '<input id="trhe-sintomas" placeholder="Ex: Borrulhamento, distensão, flatulência, dor abdominal..."/>'
     + '</div>'
     + '<div class="field"><label>Intensidade</label>'
     + '<select id="trhe-intensidade">'
@@ -1831,7 +1857,7 @@ function showFormTRHE(exameId) {
     + '<div id="trhe-preview" style="margin-bottom:12px"></div>'
 
     + '<div style="display:flex;gap:8px">'
-    + '<button class="btn btn-ghost btn-sm" onclick="previewTRHE()">&#128202; Pr\u00e9-visualizar C\u00e1lculos</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="previewTRHE()">&#128202; Pré-visualizar Cálculos</button>'
     + '<button class="btn btn-primary btn-sm" onclick="salvarTRHE(' + (exameId || 'null') + ')">&#128190; Salvar Exame</button>'
     + '</div>';
 
@@ -1845,110 +1871,164 @@ async function carregarDadosTRHE(id) {
   const vals = ex.valores_h2 || {};
   document.getElementById('trhe-data').value = isoToDisplay(ex.data_exame || '');
   document.getElementById('trhe-preparo').value = ex.preparo_adequado === false ? 'nao' : 'sim';
-  document.getElementById('trhe-t0').value = vals.t0 || 0;
-  document.getElementById('trhe-t15').value = vals.t15 || 0;
-  document.getElementById('trhe-t30').value = vals.t30 || 0;
-  document.getElementById('trhe-t45').value = vals.t45 || 0;
-  document.getElementById('trhe-t60').value = vals.t60 || 0;
-  document.getElementById('trhe-t90').value = vals.t90 || 0;
-  document.getElementById('trhe-t120').value = vals.t120 || 0;
-  document.getElementById('trhe-t150').value = vals.t150 || 0;
-  document.getElementById('trhe-t180').value = vals.t180 || 0;
+  TRHE_TEMPOS.forEach(function(t) {
+    var v = vals['t' + t];
+    document.getElementById('trhe-t' + t).value = (v === null || v === undefined) ? '' : v;
+  });
+  if (vals.ch4) {
+    document.getElementById('trhe-com-ch4').checked = true;
+    document.getElementById('trhe-card-ch4').style.display = 'block';
+    TRHE_TEMPOS.forEach(function(t) {
+      var v = vals.ch4['t' + t];
+      document.getElementById('trhe-ch4-t' + t).value = (v === null || v === undefined) ? '' : v;
+    });
+  }
   document.getElementById('trhe-sintomas').value = ex.sintomas || '';
   document.getElementById('trhe-intensidade').value = ex.isf === 3 ? 'intenso' : ex.isf === 2 ? 'moderado' : ex.isf === 1 ? 'leve' : 'sem';
 }
 
 function getTRHEInputValues() {
-  const t0 = parseInt(document.getElementById('trhe-t0').value) || 0;
-  const t15 = parseInt(document.getElementById('trhe-t15').value) || 0;
-  const t30 = parseInt(document.getElementById('trhe-t30').value) || 0;
-  const t45 = parseInt(document.getElementById('trhe-t45').value) || 0;
-  const t60 = parseInt(document.getElementById('trhe-t60').value) || 0;
-  const t90 = parseInt(document.getElementById('trhe-t90').value) || 0;
-  const t120 = parseInt(document.getElementById('trhe-t120').value) || 0;
-  const t150 = parseInt(document.getElementById('trhe-t150').value) || 0;
-  const t180 = parseInt(document.getElementById('trhe-t180').value) || 0;
-  return { t0, t15, t30, t45, t60, t90, t120, t150, t180 };
+  var vals = {};
+  TRHE_TEMPOS.forEach(function(t) {
+    var raw = document.getElementById('trhe-t' + t).value.trim();
+    vals['t' + t] = raw === '' ? null : (parseInt(raw) || 0);
+  });
+  if (document.getElementById('trhe-com-ch4').checked) {
+    var ch4 = {};
+    TRHE_TEMPOS.forEach(function(t) {
+      var raw = document.getElementById('trhe-ch4-t' + t).value.trim();
+      ch4['t' + t] = raw === '' ? null : (parseInt(raw) || 0);
+    });
+    vals.ch4 = ch4;
+  }
+  return vals;
+}
+
+function calcularIMO(ch4Obj) {
+  var pts = trhePontos(ch4Obj);
+  if (!pts.length) return { temCH4: false, imo: false, ch4Pts: [], ch4Basal: 0, ch4Pico: 0, ch4TempoPico: 0, ch4BasalElevado: false };
+  var basalPt = pts.find(function(p) { return p.t === 0; });
+  var ch4Basal = basalPt ? basalPt.v : 0;
+  var picoPt = pts.reduce(function(a, b) { return b.v > a.v ? b : a; }, pts[0]);
+  return {
+    temCH4: true,
+    imo: picoPt.v >= IMO_LIMITE,
+    ch4Pts: pts,
+    ch4Basal: ch4Basal,
+    ch4Pico: picoPt.v,
+    ch4TempoPico: picoPt.t,
+    ch4BasalElevado: ch4Basal >= IMO_LIMITE
+  };
 }
 
 function calcularTRHE(vals, sintomas, intensidade, preparoAdequado) {
-  const { t0, t15, t30, t45, t60, t90, t120, t150, t180 } = vals;
-  const pontos90 = [t15, t30, t45, t60, t90];
-  const pico90 = Math.max(...pontos90);
-  const tempoPico90 = [15, 30, 45, 60, 90][pontos90.indexOf(pico90)];
-  const deltaH2 = pico90 - t0;
-  const sibo = deltaH2 >= 20;
-  const todosValores = [t0, t15, t30, t45, t60, t90, t120, t150, t180];
-  const picoAbsoluto = Math.max(...todosValores);
-  const temposPicoAbs = [0, 15, 30, 45, 60, 90, 120, 150, 180];
-  const tempoPicoAbsoluto = temposPicoAbs[todosValores.indexOf(picoAbsoluto)];
-  const ifi = picoAbsoluto - t0;
-  const basalElevado = t0 > 20;
-  const fermentacaoColonica = t120 > t90 || t150 > t90 || t180 > t90;
-  const baixaProducao = todosValores.every(v => v < 10);
+  var pts = trhePontos(vals);
+  if (!pts.length) pts = [{ t: 0, v: 0 }];
+  var basalPt = pts.find(function(p) { return p.t === 0; });
+  var t0 = basalPt ? basalPt.v : 0;
+  var ate90 = pts.filter(function(p) { return p.t > 0 && p.t <= 90; });
+  var pico90Pt = ate90.length ? ate90.reduce(function(a, b) { return b.v > a.v ? b : a; }, ate90[0]) : { t: 0, v: t0 };
+  var pico90 = pico90Pt.v, tempoPico90 = pico90Pt.t;
+  var deltaH2 = pico90 - t0;
+  var sibo = deltaH2 >= 20;
+  var picoAbsPt = pts.reduce(function(a, b) { return b.v > a.v ? b : a; }, pts[0]);
+  var picoAbsoluto = picoAbsPt.v, tempoPicoAbsoluto = picoAbsPt.t;
+  var ifi = picoAbsoluto - t0;
+  var basalElevado = t0 > 20;
+  var ultimo90 = ate90.length ? ate90[ate90.length - 1].v : t0;
+  var fermentacaoColonica = pts.some(function(p) { return p.t > 90 && p.v > ultimo90; });
+  var baixaProducao = pts.every(function(p) { return p.v < 10; });
 
-  // AUC trapezoidal
-  const tempos = [0, 15, 30, 45, 60, 90, 120, 150, 180];
-  let auc = 0;
-  for (let i = 1; i < tempos.length; i++) {
-    auc += (tempos[i] - tempos[i-1]) * (todosValores[i-1] + todosValores[i]) / 2;
-  }
+  // AUC trapezoidal (somente pontos medidos)
+  var auc = 0;
+  for (var i = 1; i < pts.length; i++) auc += (pts[i].t - pts[i-1].t) * (pts[i-1].v + pts[i].v) / 2;
   auc = Math.round(auc);
 
   // SGF
-  let sgf = 0;
+  var sgf = 0;
   sgf += ifi < 20 ? 10 : ifi <= 40 ? 20 : ifi <= 60 ? 30 : 40;
   sgf += picoAbsoluto < 20 ? 5 : picoAbsoluto <= 40 ? 10 : picoAbsoluto <= 60 ? 15 : 20;
   sgf += t0 < 10 ? 0 : t0 <= 20 ? 5 : 15;
   sgf += fermentacaoColonica ? 15 : 0;
-  const isfMap = { 'sem': 0, 'leve': 3, 'moderado': 6, 'intenso': 10 };
+  var isfMap = { 'sem': 0, 'leve': 3, 'moderado': 6, 'intenso': 10 };
   sgf += isfMap[intensidade] || 0;
 
-  const isf = intensidade === 'intenso' ? 3 : intensidade === 'moderado' ? 2 : intensidade === 'leve' ? 1 : 0;
+  var isf = intensidade === 'intenso' ? 3 : intensidade === 'moderado' ? 2 : intensidade === 'leve' ? 1 : 0;
 
-  const perfilIFI = ifi < 20 ? 'Baixa fermenta\u00e7\u00e3o' : ifi <= 40 ? 'Fermenta\u00e7\u00e3o habitual' : ifi <= 60 ? 'Fermenta\u00e7\u00e3o aumentada' : 'Hiperfermenta\u00e7\u00e3o intestinal';
-  const classSGF = sgf <= 20 ? 'Fermenta\u00e7\u00e3o reduzida' : sgf <= 40 ? 'Fermenta\u00e7\u00e3o habitual' : sgf <= 60 ? 'Fermenta\u00e7\u00e3o aumentada' : sgf <= 80 ? 'Hiperfermenta\u00e7\u00e3o intestinal' : 'Hiperfermenta\u00e7\u00e3o intestinal intensa';
+  var perfilIFI = ifi < 20 ? 'Baixa fermentação' : ifi <= 40 ? 'Fermentação habitual' : ifi <= 60 ? 'Fermentação aumentada' : 'Hiperfermentação intestinal';
+  var classSGF = sgf <= 20 ? 'Fermentação reduzida' : sgf <= 40 ? 'Fermentação habitual' : sgf <= 60 ? 'Fermentação aumentada' : sgf <= 80 ? 'Hiperfermentação intestinal' : 'Hiperfermentação intestinal intensa';
+
+  var m = calcularIMO(vals && vals.ch4);
 
   return {
-    t0, t15, t30, t45, t60, t90, t120, t150, t180,
-    pico90, tempoPico90, deltaH2, sibo,
-    picoAbsoluto, tempoPicoAbsoluto, ifi, basalElevado,
-    fermentacaoColonica, baixaProducao, auc, sgf, isf,
-    perfilIFI, classSGF, sintomas, intensidade, preparoAdequado
+    pts: pts, t0: t0, duracao: pts[pts.length - 1].t,
+    pico90: pico90, tempoPico90: tempoPico90, deltaH2: deltaH2, sibo: sibo,
+    picoAbsoluto: picoAbsoluto, tempoPicoAbsoluto: tempoPicoAbsoluto, ifi: ifi, basalElevado: basalElevado,
+    fermentacaoColonica: fermentacaoColonica, baixaProducao: baixaProducao, auc: auc, sgf: sgf, isf: isf,
+    perfilIFI: perfilIFI, classSGF: classSGF, sintomas: sintomas, intensidade: intensidade, preparoAdequado: preparoAdequado,
+    temCH4: m.temCH4, imo: m.imo, ch4Pts: m.ch4Pts, ch4Basal: m.ch4Basal, ch4Pico: m.ch4Pico,
+    ch4TempoPico: m.ch4TempoPico, ch4BasalElevado: m.ch4BasalElevado
   };
 }
 
 function gerarLaudoTextos(r) {
-  const nomeP = currentPatientData ? currentPatientData.name : 'Paciente';
+  var txtCH4 = '';
+  if (r.temCH4) {
+    txtCH4 = ' Metano (CH₄): basal de ' + r.ch4Basal + ' ppm; pico de ' + r.ch4Pico + ' ppm ('
+      + (r.ch4TempoPico === 0 ? 'no basal' : 'aos ' + r.ch4TempoPico + ' min') + '). '
+      + (r.imo ? 'Observam-se valores de metano ≥ 10 ppm durante o exame.' : 'Não foram observados valores de metano ≥ 10 ppm em nenhum momento do exame.');
+  }
 
-  const analiseCurva = 'Valor basal de hidrog\u00eanio: ' + r.t0 + ' ppm. '
+  const analiseCurva = 'Valor basal de hidrogênio: ' + r.t0 + ' ppm. '
     + (r.basalElevado ? 'Observa-se valor basal elevado, sugerindo atividade fermentativa aumentada mesmo em jejum. ' : '')
-    + 'Pico at\u00e9 90 minutos: ' + r.pico90 + ' ppm (aos ' + r.tempoPico90 + ' min). '
-    + 'Delta H\u2082: ' + r.deltaH2 + ' ppm. '
-    + 'Pico m\u00e1ximo absoluto: ' + r.picoAbsoluto + ' ppm (aos ' + r.tempoPicoAbsoluto + ' min). '
-    + (r.fermentacaoColonica ? 'Observa-se eleva\u00e7\u00e3o significativa ap\u00f3s 90 minutos, compat\u00edvel com fermenta\u00e7\u00e3o col\u00f4nica.' : 'N\u00e3o h\u00e1 eleva\u00e7\u00e3o significativa ap\u00f3s 90 minutos.')
-    + (r.baixaProducao ? ' Padr\u00e3o de baixa produ\u00e7\u00e3o de hidrog\u00eanio durante todo o exame.' : '');
+    + 'Pico até 90 minutos: ' + r.pico90 + ' ppm (aos ' + r.tempoPico90 + ' min). '
+    + 'Delta H₂: ' + r.deltaH2 + ' ppm. '
+    + 'Pico máximo absoluto: ' + r.picoAbsoluto + ' ppm (aos ' + r.tempoPicoAbsoluto + ' min). '
+    + (r.fermentacaoColonica ? 'Observa-se elevação significativa após 90 minutos, compatível com fermentação colônica.' : 'Não há elevação significativa após 90 minutos.')
+    + (r.baixaProducao ? ' Padrão de baixa produção de hidrogênio durante todo o exame.' : '')
+    + txtCH4;
 
-  const perfilFermentativo = 'IFI = ' + r.ifi + ' \u2014 ' + r.perfilIFI + '.';
+  const perfilFermentativo = 'IFI = ' + r.ifi + ' — ' + r.perfilIFI + '.'
+    + (r.temCH4 ? ' Pico de metano: ' + r.ch4Pico + ' ppm.' : '');
 
-  const impressaoCl = r.sibo
-    ? 'Achado compat\u00edvel com supercrescimento bacteriano do intestino delgado (SIBO) com base no crit\u00e9rio de delta H\u2082 \u2265 20 ppm at\u00e9 90 minutos. '
+  var impressaoCl = r.sibo
+    ? 'Achado compatível com supercrescimento bacteriano do intestino delgado (SIBO) com base no critério de delta H₂ ≥ 20 ppm até 90 minutos. '
       + 'Perfil fermentativo: ' + r.perfilIFI + '. SGF: ' + r.sgf + ' (' + r.classSGF + ').'
-    : 'N\u00e3o foram observados crit\u00e9rios para supercrescimento bacteriano do intestino delgado (delta H\u2082 < 20 ppm at\u00e9 90 minutos). '
+    : 'Não foram observados critérios para supercrescimento bacteriano do intestino delgado (delta H₂ < 20 ppm até 90 minutos). '
       + 'Perfil fermentativo: ' + r.perfilIFI + '. SGF: ' + r.sgf + ' (' + r.classSGF + ').';
+  if (r.temCH4) {
+    impressaoCl += r.imo
+      ? ' Achado compatível com supercrescimento metanogênico intestinal (IMO), com metano ≥ 10 ppm (pico de ' + r.ch4Pico + ' ppm).'
+      : ' Não foram observados critérios para supercrescimento metanogênico intestinal (IMO): metano < 10 ppm durante todo o exame.';
+  }
+
+  var textoBaixa = '';
+  if (r.baixaProducao) {
+    textoBaixa = (r.temCH4 && r.imo)
+      ? 'A baixa produção de hidrogênio associada à elevação de metano sugere consumo do hidrogênio pelas arqueias metanogênicas. '
+      : r.temCH4
+        ? 'Padrão de baixa produção de hidrogênio sem elevação de metano: considerar preparo inadequado ou microbiota pouco produtora de gases. '
+        : 'Padrão de baixa produção de hidrogênio: pode indicar microbiota com predominância metanogênica ou preparo inadequado. ';
+  }
 
   const interpretacao = (r.basalElevado ? 'Basal elevado (' + r.t0 + ' ppm > 20 ppm): sugere atividade fermentativa em jejum. ' : '')
-    + (r.fermentacaoColonica ? 'Observa-se fermenta\u00e7\u00e3o col\u00f4nica ap\u00f3s progress\u00e3o do substrato para o intestino grosso. ' : '')
-    + (r.baixaProducao ? 'Padr\u00e3o de baixa produ\u00e7\u00e3o de hidrog\u00eanio: pode indicar microbiota com predomin\u00e2ncia metanogênica ou preparo inadequado. ' : '')
-    + (r.isf > 0 ? 'A reprodu\u00e7\u00e3o de sintomas durante o exame sugere relev\u00e2ncia cl\u00ednica da fermenta\u00e7\u00e3o intestinal para o quadro apresentado.' : 'A interpreta\u00e7\u00e3o dos achados deve ser realizada em conjunto com a avalia\u00e7\u00e3o cl\u00ednica.');
+    + (r.fermentacaoColonica ? 'Observa-se fermentação colônica após progressão do substrato para o intestino grosso. ' : '')
+    + textoBaixa
+    + (r.temCH4 && r.imo ? 'A produção aumentada de metano está associada à lentificação do trânsito intestinal e à constipação. ' : '')
+    + (r.temCH4 && r.ch4BasalElevado ? 'Metano basal ≥ 10 ppm já é suficiente para o diagnóstico de IMO. ' : '')
+    + (r.isf > 0 ? 'A reprodução de sintomas durante o exame sugere relevância clínica da fermentação intestinal para o quadro apresentado.' : 'A interpretação dos achados deve ser realizada em conjunto com a avaliação clínica.');
 
   const conclusao = (r.sibo
-    ? 'SIBO: Positivo (Delta H\u2082 = ' + r.deltaH2 + ' ppm, crit\u00e9rio \u2265 20 ppm at\u00e9 90 min). '
-    : 'SIBO: Negativo (Delta H\u2082 = ' + r.deltaH2 + ' ppm, abaixo de 20 ppm). ')
+    ? 'SIBO: Positivo (Delta H₂ = ' + r.deltaH2 + ' ppm, critério ≥ 20 ppm até 90 min). '
+    : 'SIBO: Negativo (Delta H₂ = ' + r.deltaH2 + ' ppm, abaixo de 20 ppm). ')
+    + (r.temCH4
+      ? (r.imo ? 'IMO: Positivo (pico de CH₄ = ' + r.ch4Pico + ' ppm, critério ≥ 10 ppm em qualquer momento). '
+               : 'IMO: Negativo (pico de CH₄ = ' + r.ch4Pico + ' ppm, abaixo de 10 ppm). ')
+      : '')
     + 'Perfil fermentativo: ' + r.perfilIFI + '. '
-    + 'SGF: ' + r.sgf + ' \u2014 ' + r.classSGF + '.'
+    + 'SGF: ' + r.sgf + ' — ' + r.classSGF + '.'
     + (r.basalElevado ? ' Basal elevado.' : '')
-    + (r.fermentacaoColonica ? ' Fermenta\u00e7\u00e3o col\u00f4nica presente.' : '');
+    + (r.fermentacaoColonica ? ' Fermentação colônica presente.' : '');
 
   return { analiseCurva, perfilFermentativo, impressaoCl, interpretacao, conclusao };
 }
@@ -1967,21 +2047,27 @@ function previewTRHE() {
 
   prev.innerHTML =
     '<div class="card" style="border:2px solid var(--accent)">'
-    + '<div class="card-title" style="color:var(--accent)">\ud83d\udcca Pr\u00e9-visualiza\u00e7\u00e3o dos C\u00e1lculos</div>'
-    + (!preparo ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;color:#92400e">\u26a0\ufe0f Preparo inadequado \u2014 interpreta\u00e7\u00e3o limitada.</div>' : '')
+    + '<div class="card-title" style="color:var(--accent)">📊 Pré-visualização dos Cálculos</div>'
+    + (!preparo ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;color:#92400e">⚠️ Preparo inadequado — interpretação limitada.</div>' : '')
     + '<div class="trhe-stat-grid">'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.deltaH2 + '</div><div class="trhe-stat-label">Delta H\u2082 (ppm)</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.deltaH2 + '</div><div class="trhe-stat-label">Delta H₂ (ppm)</div></div>'
     + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.ifi + '</div><div class="trhe-stat-label">IFI</div></div>'
     + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.sgf + '</div><div class="trhe-stat-label">SGF</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.picoAbsoluto + '</div><div class="trhe-stat-label">Pico M\u00e1x</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.picoAbsoluto + '</div><div class="trhe-stat-label">Pico Máx H₂</div></div>'
     + '<div class="trhe-stat"><div class="trhe-stat-num">' + r.auc + '</div><div class="trhe-stat-label">AUC</div></div>'
-    + '<div class="trhe-stat"><div class="trhe-stat-num" style="font-size:14px">' + (r.sibo ? '\u2713 Pos' : 'Neg') + '</div><div class="trhe-stat-label">SIBO</div></div>'
+    + '<div class="trhe-stat"><div class="trhe-stat-num" style="font-size:14px">' + (r.sibo ? '✓ Pos' : 'Neg') + '</div><div class="trhe-stat-label">SIBO</div></div>'
+    + (r.temCH4
+      ? '<div class="trhe-stat" style="background:#fff7ed"><div class="trhe-stat-num" style="color:#c2410c">' + r.ch4Basal + '</div><div class="trhe-stat-label">CH₄ basal</div></div>'
+        + '<div class="trhe-stat" style="background:#fff7ed"><div class="trhe-stat-num" style="color:#c2410c">' + r.ch4Pico + '</div><div class="trhe-stat-label">Pico CH₄</div></div>'
+        + '<div class="trhe-stat" style="background:#fff7ed"><div class="trhe-stat-num" style="font-size:14px;color:#c2410c">' + (r.imo ? '✓ Pos' : 'Neg') + '</div><div class="trhe-stat-label">IMO</div></div>'
+      : '')
     + '</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">'
-    + '<span style="font-size:12px;font-weight:700;color:' + (r.sibo?'#991b1b':'#166534') + ';background:' + (r.sibo?'#fee2e2':'#dcfce7') + ';padding:3px 10px;border-radius:99px">' + (r.sibo?'\u2713 SIBO Positivo':'SIBO Negativo') + '</span>'
-    + '<span style="font-size:12px;font-weight:700;color:' + sgfCor + ';background:' + sgfBg + ';padding:3px 10px;border-radius:99px">SGF: ' + r.sgf + ' \u2014 ' + r.classSGF + '</span>'
+    + '<span style="font-size:12px;font-weight:700;color:' + (r.sibo?'#991b1b':'#166534') + ';background:' + (r.sibo?'#fee2e2':'#dcfce7') + ';padding:3px 10px;border-radius:99px">' + (r.sibo?'✓ SIBO Positivo':'SIBO Negativo') + '</span>'
+    + (r.temCH4 ? '<span style="font-size:12px;font-weight:700;color:' + (r.imo?'#9a3412':'#166534') + ';background:' + (r.imo?'#ffedd5':'#dcfce7') + ';padding:3px 10px;border-radius:99px">' + (r.imo?'✓ IMO Positivo':'IMO Negativo') + '</span>' : '')
+    + '<span style="font-size:12px;font-weight:700;color:' + sgfCor + ';background:' + sgfBg + ';padding:3px 10px;border-radius:99px">SGF: ' + r.sgf + ' — ' + r.classSGF + '</span>'
     + '</div>'
-    + '<div style="font-size:12px;color:var(--text-muted);margin-top:8px">' + r.perfilIFI + (r.basalElevado ? ' \u00b7 \u26a0\ufe0f Basal elevado' : '') + (r.fermentacaoColonica ? ' \u00b7 Fermenta\u00e7\u00e3o col\u00f4nica' : '') + (r.baixaProducao ? ' \u00b7 Baixa produ\u00e7\u00e3o H\u2082' : '') + '</div>'
+    + '<div style="font-size:12px;color:var(--text-muted);margin-top:8px">' + r.perfilIFI + (r.basalElevado ? ' · ⚠️ Basal elevado' : '') + (r.fermentacaoColonica ? ' · Fermentação colônica' : '') + (r.baixaProducao ? ' · Baixa produção H₂' : '') + '</div>'
     + '</div>';
 }
 
@@ -2049,15 +2135,14 @@ async function showLaudoTRHE(id) {
   if (!ex) { toast('Exame n\u00e3o encontrado', 'error'); return; }
 
   const vals = ex.valores_h2 || {};
-  const tKeys = ['t0','t15','t30','t45','t60','t90','t120','t150','t180'];
-  const vArr = tKeys.map(k => vals[k] || 0);
   const intensMap = { 3: 'intenso', 2: 'moderado', 1: 'leve', 0: 'sem' };
-  const r = calcularTRHE(
-    { t0:vArr[0],t15:vArr[1],t30:vArr[2],t45:vArr[3],t60:vArr[4],t90:vArr[5],t120:vArr[6],t150:vArr[7],t180:vArr[8] },
-    ex.sintomas || '',
-    intensMap[ex.isf] || 'sem',
-    ex.preparo_adequado !== false
-  );
+  const r = calcularTRHE(vals, ex.sintomas || '', intensMap[ex.isf] || 'sem', ex.preparo_adequado !== false);
+  const temCH4 = r.temCH4;
+  const tempos = r.pts.map(p => p.t);
+  const vArr = r.pts.map(p => p.v);
+  const ch4Map = {}; (r.ch4Pts || []).forEach(p => { ch4Map[p.t] = p.v; });
+  const ch4Arr = tempos.map(t => (ch4Map[t] === undefined ? null : ch4Map[t]));
+  const chartLabels = tempos.map(t => t === 0 ? 'Basal' : String(t));
 
   const picoAbs = Math.max(...vArr);
   const patName = currentPatientData ? currentPatientData.name : 'Paciente';
@@ -2066,20 +2151,26 @@ async function showLaudoTRHE(id) {
   const siboPos = r.sibo;
   const sgfCor = r.sgf >= 61 ? '#dc2626' : r.sgf >= 41 ? '#d97706' : r.sgf >= 21 ? '#2563eb' : '#6b7280';
   const sgfBg  = r.sgf >= 61 ? '#fee2e2' : r.sgf >= 41 ? '#fef3c7' : r.sgf >= 21 ? '#dbeafe' : '#f3f4f6';
+  const tituloExame = temCH4 ? 'Teste Respiratório H₂ e CH₄ — SIBO e IMO' : 'Teste Respiratório do Hidrogênio Expirado (TRHE)';
+  const protocoloTxt = 'Substrato: Lactulose 20g<br>Protocolo de ' + r.duracao + ' minutos';
 
   // Tabela de valores
-  const obsArr = ['Ref: < 20 ppm','Dentro do esperado','Dentro do esperado','Ascens\u00e3o progressiva','Ascens\u00e3o progressiva','Pico \u2014 intestino delgado','In\u00edcio fase col\u00f4nica','Ascens\u00e3o col\u00f4nica','Pico m\u00e1ximo \u2014 fase col\u00f4nica'];
-  const tempoLabels = ['Basal','15 min','30 min','45 min','60 min','90 min','120 min','150 min','180 min'];
+  const tdS = 'padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px';
+  const valHead = '<tr><th>Tempo</th><th>H₂ (ppm)</th><th>Δ basal</th>' + (temCH4 ? '<th>CH₄ (ppm)</th>' : '') + '<th>Observação</th></tr>';
   let valRows = '';
-  vArr.forEach((v, i) => {
-    const delta = v - vArr[0];
+  r.pts.forEach((p, i) => {
+    const v = p.v;
+    const delta = v - r.t0;
     const isPico = v === picoAbs && v > 0;
-    const acima = v >= 20 && i > 0;
+    const acima = v >= 20 && p.t > 0;
+    const c4 = ch4Arr[i];
+    const c4Alto = c4 !== null && c4 >= IMO_LIMITE;
     valRows += '<tr style="' + (isPico ? 'background:#fef3c7;font-weight:700' : '') + '">'
-      + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;font-weight:' + (isPico ? '700' : '400') + '">' + tempoLabels[i] + '</td>'
-      + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;color:' + (isPico ? '#d97706' : acima ? '#d97706' : '#1a1a1a') + ';font-weight:' + (isPico ? '700' : '400') + '">' + v + ' ppm' + (isPico ? ' \u2605' : '') + '</td>'
-      + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px">' + (i === 0 ? '\u2014' : (delta >= 0 ? '+' : '') + delta + ' ppm') + '</td>'
-      + '<td style="padding:3px 7px;border-bottom:0.5px solid #e5e7eb;font-size:10px;color:#666">' + obsArr[i] + '</td>'
+      + '<td style="' + tdS + ';font-weight:' + (isPico ? '700' : '400') + '">' + trheLabelTempo(p.t) + '</td>'
+      + '<td style="' + tdS + ';color:' + (isPico || acima ? '#d97706' : '#1a1a1a') + ';font-weight:' + (isPico ? '700' : '400') + '">' + v + (isPico ? ' ★' : '') + '</td>'
+      + '<td style="' + tdS + '">' + (p.t === 0 ? '—' : (delta >= 0 ? '+' : '') + delta) + '</td>'
+      + (temCH4 ? '<td style="' + tdS + ';color:' + (c4Alto ? '#c2410c' : '#1a1a1a') + ';font-weight:' + (c4Alto ? '700' : '400') + '">' + (c4 === null ? '—' : c4) + '</td>' : '')
+      + '<td style="' + tdS + ';color:#666">' + (TRHE_OBS[p.t] || '') + '</td>'
       + '</tr>';
   });
 
@@ -2090,28 +2181,59 @@ async function showLaudoTRHE(id) {
   const badgeSgf = '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:' + sgfBg + ';color:' + sgfCor + '">SGF: ' + r.sgf + ' \u2014 ' + r.classSGF + '</span>';
   const badgeIfi = '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e">IFI: ' + r.ifi + ' \u2014 ' + r.perfilIFI + '</span>';
   const badgeFC = r.fermentacaoColonica ? '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#ede9fe;color:#5b21b6">Fermenta\u00e7\u00e3o col\u00f4nica presente</span>' : '';
-  const badgeBasal = !r.basalElevado ? '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">Basal normal (' + vArr[0] + ' ppm)</span>' : '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e">\u26a0\ufe0f Basal elevado (' + vArr[0] + ' ppm)</span>';
+  const badgeBasal = !r.basalElevado ? '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">Basal H\u2082 normal (' + r.t0 + ' ppm)</span>' : '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e">\u26a0\ufe0f Basal H\u2082 elevado (' + r.t0 + ' ppm)</span>';
+  const badgeImo = !temCH4 ? '' : (r.imo
+    ? '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#ffedd5;color:#9a3412">IMO Positivo (CH\u2084 ' + r.ch4Pico + ' ppm)</span>'
+    : '<span style="padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">IMO Negativo (CH\u2084 ' + r.ch4Pico + ' ppm)</span>');
 
   // Caixa de diagnóstico
   const diagHtml = siboPos
     ? '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:7px;padding:8px 12px;display:flex;align-items:flex-start;gap:10px;margin-bottom:0">'
       + '<div style="font-size:16px;color:#991b1b;line-height:1;margin-top:1px">\u2717</div>'
       + '<div><div style="font-size:12px;font-weight:700;color:#991b1b">SIBO Positivo</div>'
-      + '<div style="font-size:10px;color:#991b1b;margin-top:2px">Delta H\u2082 = ' + r.deltaH2 + ' ppm \u2014 igual ou acima do crit\u00e9rio diagn\u00f3stico de \u2265 20 ppm at\u00e9 90 min (North American Consensus, 2017)</div>'
+      + '<div style="font-size:10px;color:#991b1b;margin-top:2px">Delta H\u2082 = ' + r.deltaH2 + ' ppm \u2014 igual ou acima do crit\u00e9rio diagn\u00f3stico de \u2265 20 ppm at\u00e9 90 min (Banaszak et al., 2023; Carvalho et al., 2025)</div>'
       + '</div></div>'
     : '<div style="background:#dcfce7;border:1px solid #86efac;border-radius:7px;padding:8px 12px;display:flex;align-items:flex-start;gap:10px;margin-bottom:0">'
       + '<div style="font-size:16px;color:#166534;line-height:1;margin-top:1px">\u2713</div>'
       + '<div><div style="font-size:12px;font-weight:700;color:#166534">SIBO Negativo</div>'
-      + '<div style="font-size:10px;color:#166534;margin-top:2px">Delta H\u2082 = ' + r.deltaH2 + ' ppm \u2014 abaixo do crit\u00e9rio diagn\u00f3stico de \u2265 20 ppm at\u00e9 90 min (North American Consensus, 2017)</div>'
+      + '<div style="font-size:10px;color:#166534;margin-top:2px">Delta H\u2082 = ' + r.deltaH2 + ' ppm \u2014 abaixo do crit\u00e9rio diagn\u00f3stico de \u2265 20 ppm at\u00e9 90 min (Banaszak et al., 2023; Carvalho et al., 2025)</div>'
       + '</div></div>';
+
+  let diagImo = '';
+  if (temCH4) {
+    diagImo = r.imo
+      ? '<div style="background:#ffedd5;border:1px solid #fdba74;border-radius:7px;padding:8px 12px;display:flex;align-items:flex-start;gap:10px;margin-top:5px">'
+        + '<div style="font-size:16px;color:#9a3412;line-height:1;margin-top:1px">✗</div>'
+        + '<div><div style="font-size:12px;font-weight:700;color:#9a3412">IMO Positivo</div>'
+        + '<div style="font-size:10px;color:#9a3412;margin-top:2px">Pico de CH₄ = ' + r.ch4Pico + ' ppm — igual ou acima do critério diagnóstico de ≥ 10 ppm em qualquer momento do exame (Banaszak et al., 2023; Carvalho et al., 2025)</div>'
+        + '</div></div>'
+      : '<div style="background:#dcfce7;border:1px solid #86efac;border-radius:7px;padding:8px 12px;display:flex;align-items:flex-start;gap:10px;margin-top:5px">'
+        + '<div style="font-size:16px;color:#166534;line-height:1;margin-top:1px">✓</div>'
+        + '<div><div style="font-size:12px;font-weight:700;color:#166534">IMO Negativo</div>'
+        + '<div style="font-size:10px;color:#166534;margin-top:2px">Pico de CH₄ = ' + r.ch4Pico + ' ppm — abaixo do critério diagnóstico de ≥ 10 ppm em qualquer momento do exame (Banaszak et al., 2023; Carvalho et al., 2025)</div>'
+        + '</div></div>';
+  }
+  const diagHtmlFull = diagHtml + diagImo;
 
   // Resultado na tabela de critérios
   const siboTblRes = siboPos
     ? '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#fee2e2;color:#991b1b">' + r.deltaH2 + ' ppm \u2014 Pos</span>'
     : '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">' + r.deltaH2 + ' ppm \u2014 Neg</span>';
   const basalTblRes = r.basalElevado
-    ? '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e">' + vArr[0] + ' ppm \u2014 Elevado</span>'
-    : '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">' + vArr[0] + ' ppm \u2014 Normal</span>';
+    ? '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e">' + r.t0 + ' ppm \u2014 Elevado</span>'
+    : '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">' + r.t0 + ' ppm \u2014 Normal</span>';
+  const imoTblRow = !temCH4 ? '' : '<tr><td>CH\u2084 em qualquer tempo</td><td>\u2265 10 ppm = IMO</td><td>' + (r.imo
+    ? '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#ffedd5;color:#9a3412">' + r.ch4Pico + ' ppm \u2014 Pos</span>'
+    : '<span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">' + r.ch4Pico + ' ppm \u2014 Neg</span>') + '</td></tr>';
+  const indCH4 = !temCH4 ? '' : '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:5px">'
+    + '<div style="background:#9a3412;border-radius:5px;padding:5px 3px;text-align:center"><div style="font-size:14px;font-weight:700;color:#fff;line-height:1">' + r.ch4Basal + '</div><div style="font-size:7.5px;color:rgba(255,255,255,.8);text-transform:uppercase;margin-top:3px">CH\u2084 basal</div></div>'
+    + '<div style="background:#9a3412;border-radius:5px;padding:5px 3px;text-align:center"><div style="font-size:14px;font-weight:700;color:#fff;line-height:1">' + r.ch4Pico + '</div><div style="font-size:7.5px;color:rgba(255,255,255,.8);text-transform:uppercase;margin-top:3px">Pico CH\u2084</div></div>'
+    + '<div style="background:#9a3412;border-radius:5px;padding:5px 3px;text-align:center"><div style="font-size:14px;font-weight:700;color:#FCD34D;line-height:1">' + (r.imo ? 'POS' : 'NEG') + '</div><div style="font-size:7.5px;color:rgba(255,255,255,.8);text-transform:uppercase;margin-top:3px">IMO</div></div>'
+    + '</div>';
+  const legCH4 = !temCH4 ? '' : '<span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:16px;height:2px;background:#ea580c;vertical-align:middle"></span>CH\u2084 medido</span>'
+    + '<span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:16px;border-top:2px dashed #f59e0b;vertical-align:middle"></span>Limite IMO (10 ppm)</span>';
+  const glossCH4 = !temCH4 ? '' : '<div class="GI"><strong>IMO</strong> \u2014 Supercrescimento Metanog\u00eanico Intestinal (Intestinal Methanogen Overgrowth), causado por arqueias. Crit\u00e9rio: CH\u2084 \u2265 10 ppm em qualquer momento</div>'
+    + '<div class="GI"><strong>CH\u2084</strong> \u2014 Metano (ppm): produzido por arqueias metanog\u00eanicas a partir do hidrog\u00eanio</div>';
 
   // Linha IFI/ISF destacada
   const ifiRow = r.ifi < 20 ? 0 : r.ifi <= 40 ? 1 : r.ifi <= 60 ? 2 : 3;
@@ -2217,29 +2339,31 @@ async function showLaudoTRHE(id) {
 
     // ===== PAGINA 1 =====
     + '<div class="lp-pg">'
-    + '<div class="lp-hdr"><div><div class="lp-clinic">Cl\u00ednica Vitta | Alphaville</div><div class="lp-sub">Teste Respirat\u00f3rio do Hidrog\u00eanio Expirado (TRHE)</div></div><div class="lp-hdr-r">Substrato: Lactulose 20g<br>Protocolo de 180 minutos</div></div>'
+    + '<div class="lp-hdr"><div><div class="lp-clinic">Cl\u00ednica Vitta | Alphaville</div><div class="lp-sub">' + tituloExame + '</div></div><div class="lp-hdr-r">' + protocoloTxt + '</div></div>'
     + '<div class="lp-pat"><div><div class="lp-lbl">Paciente</div><div class="lp-val">' + patName + '</div></div><div style="text-align:right"><div class="lp-lbl">Data do exame</div><div class="lp-val">' + dataFmt + '</div></div></div>'
-    + '<div class="lp-sec"><div class="lp-sec-ttl">1. Curva de hidrog\u00eanio expirado</div>'
+    + '<div class="lp-sec"><div class="lp-sec-ttl">1. ' + (temCH4 ? 'Curvas de hidrog\u00eanio e metano expirados' : 'Curva de hidrog\u00eanio expirado') + '</div>'
     + '<div class="lp-chart"><canvas id="chart-laudo-a4"></canvas></div>'
     + '<div class="lp-chart-leg">'
     + '<span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:16px;height:2px;background:#1D2846;vertical-align:middle"></span>H\u2082 medido</span>'
     + '<span style="display:inline-flex;align-items:center;gap:3px"><span style="display:inline-block;width:16px;border-top:2px dashed #10b981;vertical-align:middle"></span>Limite SIBO (20 ppm)</span>'
     + '<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:7px;height:7px;background:#ef4444;border-radius:50%;display:inline-block"></span>Pico m\u00e1ximo</span>'
+    + legCH4
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;margin-bottom:7px">'
     + '<div>'
-    + '<table class="lp-vtbl-sm"><thead><tr><th>Tempo</th><th>H\u2082 (ppm)</th><th>\u0394 vs basal</th><th>Observa\u00e7\u00e3o</th></tr></thead><tbody>' + valRows + '</tbody></table>'
+    + '<table class="lp-vtbl-sm"><thead>' + valHead + '</thead><tbody>' + valRows + '</tbody></table>'
     + '</div>'
     + '<div>'
     + '<div style="font-size:9px;font-weight:700;color:#1D2846;text-transform:uppercase;letter-spacing:.6px;border-bottom:1.5px solid #1D2846;padding-bottom:3px;margin-bottom:7px">2. Indicadores calculados</div>'
     + '<div class="lp-ind">'
-    + '<div class="lp-ind-box"><div class="lp-ind-n">' + vArr[0] + '</div><div class="lp-ind-l">Basal (ppm)</div></div>'
+    + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.t0 + '</div><div class="lp-ind-l">Basal H\u2082</div></div>'
     + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.deltaH2 + '</div><div class="lp-ind-l">Delta H\u2082</div></div>'
     + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.ifi + '</div><div class="lp-ind-l">IFI</div></div>'
     + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.picoAbsoluto + '</div><div class="lp-ind-l">Pico m\u00e1x</div></div>'
     + '<div class="lp-ind-box"><div class="lp-ind-n">' + r.tempoPico90 + '</div><div class="lp-ind-l">Tempo pico</div></div>'
     + '<div class="lp-ind-box"><div class="lp-ind-n-auc">' + r.sgf + '</div><div class="lp-ind-l">AUC/SGF</div></div>'
     + '</div>'
+    + indCH4
     + '</div>'
     + '</div>'
     + '<div class="lp-strip">'
@@ -2254,13 +2378,13 @@ async function showLaudoTRHE(id) {
     + '<div class="lp-ldblk"><div class="lp-ldlbl">Interpreta\u00e7\u00e3o cl\u00ednica</div><div class="lp-ldtxt">' + (ex.laudo_interpretacao || '') + '</div></div>'
     + '<div class="lp-ldblk"><div class="lp-ldlbl">Conclus\u00e3o</div><div class="lp-ldtxt">' + (ex.laudo_conclusao || '') + '</div></div>'
     + '</div>'
-    + '<div class="lp-sec"><div class="lp-sec-ttl">4. Diagn\u00f3stico</div>' + diagHtml + '</div>'
+    + '<div class="lp-sec"><div class="lp-sec-ttl">4. Diagn\u00f3stico</div>' + diagHtmlFull + '</div>'
     + '</div>'
     // ===== FIM PAGINA 1 =====
 
     // ===== PAGINA 2 =====
     + '<div class="lp-pg">'
-    + '<div class="lp-hdr"><div><div class="lp-clinic">Cl\u00ednica Vitta | Alphaville</div><div class="lp-sub">Laudo TRHE \u2014 continua\u00e7\u00e3o</div></div><div class="lp-hdr-r">' + patName + '<br>' + dataFmt + '</div></div>'
+    + '<div class="lp-hdr"><div><div class="lp-clinic">Cl\u00ednica Vitta | Alphaville</div><div class="lp-sub">Laudo ' + (temCH4 ? 'SIBO e IMO' : 'TRHE') + ' \u2014 continua\u00e7\u00e3o</div></div><div class="lp-hdr-r">' + patName + '<br>' + dataFmt + '</div></div>'
     + '<div class="lp-sec"><div class="lp-sec-ttl">5. Gloss\u00e1rio de siglas</div>'
     + '<div class="lp-gloss">'
     + '<div class="lp-gi"><strong>SIBO</strong> \u2014 Supercrescimento Bacteriano do Intestino Delgado (Small Intestinal Bacterial Overgrowth)</div>'
@@ -2271,12 +2395,14 @@ async function showLaudoTRHE(id) {
     + '<div class="lp-gi"><strong>SGF</strong> \u2014 Score Global de Fermenta\u00e7\u00e3o (0\u2013100): integra IFI, pico, basal, fermenta\u00e7\u00e3o col\u00f4nica e sintomas</div>'
     + '<div class="lp-gi"><strong>ISF</strong> \u2014 \u00cdndice de Sintomas de Fermenta\u00e7\u00e3o: pontua\u00e7\u00e3o por intensidade dos sintomas reproduzidos</div>'
     + '<div class="lp-gi"><strong>H\u2082</strong> \u2014 Hidrog\u00eanio molecular (ppm = partes por milh\u00e3o): produzido por bact\u00e9rias ao fermentar carboidratos</div>'
+    + glossCH4.split('class="GI"').join('class="lp-gi"')
     + '</div></div>'
     + '<div class="lp-sec"><div class="lp-sec-ttl">6. Tabelas de refer\u00eancia</div>'
     + '<div class="lp-two">'
-    + '<div><span class="lp-tbl-cap">Crit\u00e9rios diagn\u00f3sticos SIBO (North American Consensus, 2017)</span><table class="lp-tbl"><thead><tr><th>Crit\u00e9rio</th><th>Refer\u00eancia</th><th>Este exame</th></tr></thead><tbody>'
+    + '<div><span class="lp-tbl-cap">Crit\u00e9rios diagn\u00f3sticos SIBO (Banaszak et al., 2023; Carvalho et al., 2025)</span><table class="lp-tbl"><thead><tr><th>Crit\u00e9rio</th><th>Refer\u00eancia</th><th>Este exame</th></tr></thead><tbody>'
     + '<tr><td>Delta H\u2082 at\u00e9 90 min</td><td>\u2265 20 ppm = SIBO</td><td>' + siboTblRes + '</td></tr>'
     + '<tr><td>Basal elevado</td><td>&gt; 20 ppm</td><td>' + basalTblRes + '</td></tr>'
+    + imoTblRow
     + '<tr><td>Preparo</td><td>Adequado</td><td><span style="padding:2px 6px;border-radius:99px;font-size:9px;font-weight:700;background:#dcfce7;color:#166534">\u2713 ' + (ex.preparo_adequado !== false ? 'Adequado' : 'N\u00e3o adequado') + '</span></td></tr>'
     + '</tbody></table></div>'
     + '<div><span class="lp-tbl-cap">SGF \u2014 Score Global de Fermenta\u00e7\u00e3o (0\u2013100)</span><table class="lp-tbl"><thead><tr><th>Faixa</th><th>Classifica\u00e7\u00e3o</th></tr></thead><tbody>' + sgfTblRows + '</tbody></table></div>'
@@ -2285,7 +2411,8 @@ async function showLaudoTRHE(id) {
     + '<div><span class="lp-tbl-cap">IFI \u2014 \u00cdndice de Fermenta\u00e7\u00e3o Intestinal</span><table class="lp-tbl"><thead><tr><th>Faixa IFI</th><th>Perfil fermentativo</th></tr></thead><tbody>' + ifiTblRows + '</tbody></table></div>'
     + '<div><span class="lp-tbl-cap">ISF \u2014 \u00cdndice de Sintomas de Fermenta\u00e7\u00e3o</span><table class="lp-tbl"><thead><tr><th>Intensidade relatada</th><th>Pontua\u00e7\u00e3o ISF</th></tr></thead><tbody>' + isfTblRows + '</tbody></table></div>'
     + '</div></div>'
-    + '<div class="lp-badges">' + badgeSibo + '&nbsp;' + badgeSgf + '&nbsp;' + badgeIfi + '&nbsp;' + badgeFC + '&nbsp;' + badgeBasal + '</div>'
+    + TRHE_REFS_HTML.split('REFSEC').join('lp-sec').split('REFTTL').join('lp-sec-ttl')
+    + '<div class="lp-badges">' + badgeSibo + '&nbsp;' + badgeImo + '&nbsp;' + badgeSgf + '&nbsp;' + badgeIfi + '&nbsp;' + badgeFC + '&nbsp;' + badgeBasal + '</div>'
     + '<div class="lp-ftr">'
     + '<div class="lp-ftr-info">Cl\u00ednica Vitta | Alphaville &nbsp;\u00b7&nbsp; Emiss\u00e3o: ' + todayStr() + '</div>'
     + '<div><div class="lp-sig"><div class="lp-sig-name">Dr. Jos\u00e9 Carlos Pinheiro J\u00fanior</div><div class="lp-sig-crm">M\u00e9dico &nbsp;|&nbsp; CRMSP: 166.182</div></div></div>'
@@ -2315,7 +2442,7 @@ async function showLaudoTRHE(id) {
     + '</div>'
     + laudoHtml;
 
-  showGenericModal(botoesHtml, '\ud83e\udeb2 Laudo TRHE \u2014 ' + patName);
+  showGenericModal(botoesHtml, '\ud83e\udeb2 Laudo ' + (temCH4 ? 'SIBO e IMO' : 'TRHE') + ' \u2014 ' + patName);
 
   // Guardar todos os dados para gerar o laudo completo na nova janela
   window._trhePrintVArr = vArr;
@@ -2328,7 +2455,18 @@ async function showLaudoTRHE(id) {
     r: r,
     ex: ex,
     intensLabel: intensLabel,
-    diagHtml: diagHtml,
+    diagHtml: diagHtmlFull,
+    tituloExame: tituloExame,
+    protocoloTxt: protocoloTxt,
+    valHead: valHead,
+    indCH4: indCH4,
+    legCH4: legCH4,
+    glossCH4: glossCH4,
+    imoTblRow: imoTblRow,
+    badgeImo: badgeImo,
+    temCH4: temCH4,
+    chartLabels: chartLabels,
+    ch4Arr: ch4Arr,
     siboTblRes: siboTblRes,
     basalTblRes: basalTblRes,
     sgfTblRows: sgfTblRows,
@@ -2350,6 +2488,8 @@ async function showLaudoTRHE(id) {
     if (!win) { toast('Permita pop-ups neste site','error'); return; }
 
     var vJSON = JSON.stringify(vA);
+    var lJSON = JSON.stringify(d.chartLabels || []);
+    var cJSON = JSON.stringify(d.temCH4 ? (d.ch4Arr || []) : null);
 
     var css = [
       '*{box-sizing:border-box;margin:0;padding:0}',
@@ -2401,22 +2541,22 @@ async function showLaudoTRHE(id) {
     ].join('\n');
 
     var pg1 = '<div class="pg">'
-      + '<div class="hdr"><div><div class="clinic">Cl\u00ednica Vitta | Alphaville</div><div class="sub">Teste Respirat\u00f3rio do Hidrog\u00eanio Expirado (TRHE)</div></div><div class="hdr-r">Substrato: Lactulose 20g<br>Protocolo de 180 minutos</div></div>'
+      + '<div class="hdr"><div><div class="clinic">Cl\u00ednica Vitta | Alphaville</div><div class="sub">' + (d.tituloExame||'') + '</div></div><div class="hdr-r">' + (d.protocoloTxt||'') + '</div></div>'
       + '<div class="pat"><div><div class="lbl">Paciente</div><div class="val">' + (d.patName||'') + '</div></div><div style="text-align:right"><div class="lbl">Data do exame</div><div class="val">' + (d.dataFmt||'') + '</div></div></div>'
-      + '<div class="sec"><div class="ttl">1. Curva de hidrog\u00eanio expirado</div>'
+      + '<div class="sec"><div class="ttl">1. ' + (d.temCH4 ? 'Curvas de hidrog\u00eanio e metano expirados' : 'Curva de hidrog\u00eanio expirado') + '</div>'
       + '<div class="chart-wrap"><canvas id="chart-laudo-a4"></canvas></div>'
-      + '<div class="chart-leg"><span style="display:inline-flex;align-items:center;gap:3px"><span style="width:16px;height:2px;background:#1D2846;display:inline-block"></span>H\u2082 medido</span><span style="display:inline-flex;align-items:center;gap:3px"><span style="width:16px;border-top:2px dashed #10b981;display:inline-block"></span>Limite SIBO (20 ppm)</span><span style="display:inline-flex;align-items:center;gap:3px"><span style="width:7px;height:7px;background:#ef4444;border-radius:50%;display:inline-block"></span>Pico m\u00e1ximo</span></div>'
+      + '<div class="chart-leg"><span style="display:inline-flex;align-items:center;gap:3px"><span style="width:16px;height:2px;background:#1D2846;display:inline-block"></span>H\u2082 medido</span><span style="display:inline-flex;align-items:center;gap:3px"><span style="width:16px;border-top:2px dashed #10b981;display:inline-block"></span>Limite SIBO (20 ppm)</span><span style="display:inline-flex;align-items:center;gap:3px"><span style="width:7px;height:7px;background:#ef4444;border-radius:50%;display:inline-block"></span>Pico m\u00e1ximo</span>' + (d.legCH4||'') + '</div>'
       + '<div class="grid2">'
-      + '<table class="vtbl"><thead><tr><th>Tempo</th><th>H\u2082</th><th>\u0394 basal</th><th>Observa\u00e7\u00e3o</th></tr></thead><tbody>' + (d.valRows||'') + '</tbody></table>'
+      + '<table class="vtbl"><thead>' + (d.valHead||'') + '</thead><tbody>' + (d.valRows||'') + '</tbody></table>'
       + '<div><div class="ttl">2. Indicadores calculados</div>'
       + '<div class="ind">'
-      + '<div class="ind-box"><div class="ind-n">' + ((d.vArr||[])[0]||0) + '</div><div class="ind-l">Basal</div></div>'
+      + '<div class="ind-box"><div class="ind-n">' + ((d.r||{}).t0||0) + '</div><div class="ind-l">Basal H\u2082</div></div>'
       + '<div class="ind-box"><div class="ind-n">' + ((d.r||{}).deltaH2||0) + '</div><div class="ind-l">Delta H\u2082</div></div>'
       + '<div class="ind-box"><div class="ind-n">' + ((d.r||{}).ifi||0) + '</div><div class="ind-l">IFI</div></div>'
       + '<div class="ind-box"><div class="ind-n">' + ((d.r||{}).picoAbsoluto||0) + '</div><div class="ind-l">Pico m\u00e1x</div></div>'
       + '<div class="ind-box"><div class="ind-n">' + ((d.r||{}).tempoPico90||0) + '</div><div class="ind-l">Tempo pico</div></div>'
       + '<div class="ind-box"><div class="ind-auc">' + ((d.r||{}).sgf||0) + '</div><div class="ind-l">AUC/SGF</div></div>'
-      + '</div></div></div></div>'
+      + '</div>' + (d.indCH4||'') + '</div></div></div>'
       + '<div class="strip"><div><div class="si-l">Preparo adequado</div><div class="si-v" style="color:' + ((d.ex||{}).preparo_adequado !== false ? '#166534' : '#991b1b') + '">' + ((d.ex||{}).preparo_adequado !== false ? 'Sim' : 'N\u00e3o') + '</div></div><div><div class="si-l">Sintomas</div><div class="si-v">' + ((d.ex||{}).sintomas||'Sem sintomas') + '</div></div><div><div class="si-l">Intensidade</div><div class="si-v">' + (d.intensLabel||'') + '</div></div></div>'
       + '<div class="sec"><div class="ttl">3. Laudo m\u00e9dico</div>'
       + '<div class="ldblk"><div class="ldlbl">An\u00e1lise da curva</div><div class="ldtxt">' + ((d.ex||{}).laudo_analise_curva||'') + '</div></div>'
@@ -2429,7 +2569,7 @@ async function showLaudoTRHE(id) {
       + '</div>';
 
     var pg2 = '<div class="pg">'
-      + '<div class="hdr"><div><div class="clinic">Cl\u00ednica Vitta | Alphaville</div><div class="sub">Laudo TRHE \u2014 continua\u00e7\u00e3o</div></div><div class="hdr-r">' + (d.patName||'') + '<br>' + (d.dataFmt||'') + '</div></div>'
+      + '<div class="hdr"><div><div class="clinic">Cl\u00ednica Vitta | Alphaville</div><div class="sub">Laudo ' + (d.temCH4 ? 'SIBO e IMO' : 'TRHE') + ' \u2014 continua\u00e7\u00e3o</div></div><div class="hdr-r">' + (d.patName||'') + '<br>' + (d.dataFmt||'') + '</div></div>'
       + '<div class="sec"><div class="ttl">5. Gloss\u00e1rio de siglas</div><div class="gloss">'
       + '<div class="gi"><strong>SIBO</strong> \u2014 Supercrescimento Bacteriano do Intestino Delgado (Small Intestinal Bacterial Overgrowth)</div>'
       + '<div class="gi"><strong>Delta H\u2082</strong> \u2014 Diferen\u00e7a entre o pico de H\u2082 at\u00e9 90 min e o valor basal. Crit\u00e9rio diagn\u00f3stico SIBO: \u2265 20 ppm</div>'
@@ -2439,13 +2579,15 @@ async function showLaudoTRHE(id) {
       + '<div class="gi"><strong>SGF</strong> \u2014 Score Global de Fermenta\u00e7\u00e3o (0\u2013100): integra IFI, pico, basal, fermenta\u00e7\u00e3o col\u00f4nica e sintomas</div>'
       + '<div class="gi"><strong>ISF</strong> \u2014 \u00cdndice de Sintomas de Fermenta\u00e7\u00e3o: pontua\u00e7\u00e3o por intensidade dos sintomas reproduzidos</div>'
       + '<div class="gi"><strong>H\u2082</strong> \u2014 Hidrog\u00eanio molecular (ppm = partes por milh\u00e3o): produzido por bact\u00e9rias ao fermentar carboidratos</div>'
+      + (d.glossCH4||'').split('class="GI"').join('class="gi"')
       + '</div></div>'
       + '<div class="sec"><div class="ttl">6. Tabelas de refer\u00eancia</div>'
-      + '<div class="two"><div><span class="tbl-cap">Crit\u00e9rios SIBO (North American Consensus, 2017)</span><table class="tbl"><thead><tr><th>Crit\u00e9rio</th><th>Refer\u00eancia</th><th>Este exame</th></tr></thead><tbody><tr><td>Delta H\u2082 at\u00e9 90 min</td><td>\u2265 20 ppm</td><td>' + (d.siboTblRes||'') + '</td></tr><tr><td>Basal elevado</td><td>&gt;20 ppm</td><td>' + (d.basalTblRes||'') + '</td></tr></tbody></table></div>'
+      + '<div class="two"><div><span class="tbl-cap">Crit\u00e9rios SIBO (Banaszak et al., 2023; Carvalho et al., 2025)</span><table class="tbl"><thead><tr><th>Crit\u00e9rio</th><th>Refer\u00eancia</th><th>Este exame</th></tr></thead><tbody><tr><td>Delta H\u2082 at\u00e9 90 min</td><td>\u2265 20 ppm</td><td>' + (d.siboTblRes||'') + '</td></tr><tr><td>Basal elevado</td><td>&gt;20 ppm</td><td>' + (d.basalTblRes||'') + '</td></tr>' + (d.imoTblRow||'') + '</tbody></table></div>'
       + '<div><span class="tbl-cap">SGF \u2014 Score Global de Fermenta\u00e7\u00e3o (0\u2013100)</span><table class="tbl"><thead><tr><th>Faixa</th><th>Classifica\u00e7\u00e3o</th></tr></thead><tbody>' + (d.sgfTblRows||'') + '</tbody></table></div></div>'
       + '<div class="two"><div><span class="tbl-cap">IFI \u2014 \u00cdndice de Fermenta\u00e7\u00e3o Intestinal</span><table class="tbl"><thead><tr><th>Faixa IFI</th><th>Perfil</th></tr></thead><tbody>' + (d.ifiTblRows||'') + '</tbody></table></div>'
       + '<div><span class="tbl-cap">ISF \u2014 \u00cdndice de Sintomas</span><table class="tbl"><thead><tr><th>Intensidade</th><th>Pontua\u00e7\u00e3o</th></tr></thead><tbody>' + (d.isfTblRows||'') + '</tbody></table></div></div></div>'
-      + '<div class="badges">' + (d.badgeSibo||'') + '&nbsp;' + (d.badgeSgf||'') + '&nbsp;' + (d.badgeIfi||'') + '&nbsp;' + (d.badgeFC||'') + '&nbsp;' + (d.badgeBasal||'') + '</div>'
+      + TRHE_REFS_HTML.split('REFSEC').join('sec').split('REFTTL').join('ttl')
+      + '<div class="badges">' + (d.badgeSibo||'') + '&nbsp;' + (d.badgeImo||'') + '&nbsp;' + (d.badgeSgf||'') + '&nbsp;' + (d.badgeIfi||'') + '&nbsp;' + (d.badgeFC||'') + '&nbsp;' + (d.badgeBasal||'') + '</div>'
       + '<div class="ftr"><div class="ftr-i">Cl\u00ednica Vitta | Alphaville \u00b7 Emiss\u00e3o: ' + new Date().toLocaleDateString('pt-BR') + '</div><div><div class="sig"><div class="sig-n">Dr. Jos\u00e9 Carlos Pinheiro J\u00fanior</div><div class="sig-c">M\u00e9dico | CRMSP: 166.182</div></div></div></div>'
       + '</div>';
 
@@ -2456,21 +2598,23 @@ async function showLaudoTRHE(id) {
       + 'var c=document.getElementById("chart-laudo-a4");if(!c)return;'
       + 'var g=c.getContext("2d").createLinearGradient(0,0,0,132);'
       + 'g.addColorStop(0,"rgba(29,40,70,0.15)");g.addColorStop(1,"rgba(29,40,70,0.01)");'
-      + 'new Chart(c,{type:"line",data:{labels:["Basal","15","30","45","60","90","120","150","180"],'
+      + 'var L='+lJSON+';var C4='+cJSON+';var N=L.length;var lim=function(x){var a=[];for(var i=0;i<N;i++)a.push(x);return a;};'
+      + 'var ds4=C4?[{data:C4,borderColor:"#ea580c",backgroundColor:"transparent",fill:false,tension:0.3,pointRadius:4,pointBackgroundColor:"#ea580c",borderWidth:2,spanGaps:true,order:0},{data:lim(10),borderColor:"#f59e0b",backgroundColor:"transparent",borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false,order:3}]:[];'
+      + 'new Chart(c,{type:"line",data:{labels:L,'
       + 'datasets:[{data:v,borderColor:"#1D2846",backgroundColor:g,fill:true,tension:0.3,'
       + 'pointRadius:v.map(function(x){return x===p?7:4;}),'
       + 'pointBackgroundColor:v.map(function(x){return x===p?"#ef4444":"#1D2846";}),'
       + 'pointBorderColor:v.map(function(x){return x===p?"#ef4444":"#1D2846";}),'
-      + 'borderWidth:2,order:1},{data:[20,20,20,20,20,20,20,20,20],borderColor:"#10b981",'
-      + 'backgroundColor:"transparent",borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,order:2}]},'
+      + 'borderWidth:2,order:1},{data:lim(20),borderColor:"#10b981",'
+      + 'backgroundColor:"transparent",borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,order:2}].concat(ds4)},'
       + 'options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},'
       + 'scales:{x:{title:{display:true,text:"Tempo (min)",font:{size:9}},grid:{display:false},ticks:{font:{size:9}}},'
-      + 'y:{title:{display:true,text:"H2 (ppm)",font:{size:9}},grid:{color:"rgba(0,0,0,.05)"},ticks:{font:{size:9}},min:0}}}});'
+      + 'y:{title:{display:true,text:(C4?"ppm":"H2 (ppm)"),font:{size:9}},grid:{color:"rgba(0,0,0,.05)"},ticks:{font:{size:9}},min:0}}}});'
       + (autoPrint ? 'setTimeout(function(){window.print();},900);' : '')
       + '});';
 
     var fullHtml = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>'
-      + '<title>Laudo TRHE - Clinica Vitta</title>'
+      + '<title>Laudo ' + (d.temCH4 ? 'SIBO e IMO' : 'TRHE') + ' - Clinica Vitta</title>'
       + '<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"><\/script>'
       + '<style>' + css + '<\/style>'
       + '</head><body>'
@@ -2495,23 +2639,28 @@ async function showLaudoTRHE(id) {
     new Chart(canvas, {
       type: 'line',
       data: {
-        labels: ['Basal','15','30','45','60','90','120','150','180'],
-        datasets: [
+        labels: chartLabels,
+        datasets: (temCH4 ? [
+          { label: 'CH\u2084', data: ch4Arr, borderColor: '#ea580c', backgroundColor: 'transparent', fill: false, tension: 0.3,
+            pointRadius: 4, pointBackgroundColor: '#ea580c', borderWidth: 2, spanGaps: true, order: 0 },
+          { label: 'Limite IMO', data: Array(chartLabels.length).fill(IMO_LIMITE), borderColor: '#f59e0b', backgroundColor: 'transparent',
+            borderWidth: 1.5, borderDash: [3, 3], pointRadius: 0, fill: false, order: 3 }
+        ] : []).concat([
           { label: 'H\u2082', data: vArr, borderColor: '#1D2846', backgroundColor: grad, fill: true, tension: 0.3,
             pointRadius: vArr.map(v => v === picoAbs ? 7 : 4),
             pointBackgroundColor: vArr.map(v => v === picoAbs ? '#ef4444' : '#1D2846'),
             pointBorderColor: vArr.map(v => v === picoAbs ? '#ef4444' : '#1D2846'),
             borderWidth: 2, order: 1 },
-          { label: 'Limite', data: Array(9).fill(20), borderColor: '#10b981', backgroundColor: 'transparent',
+          { label: 'Limite', data: Array(chartLabels.length).fill(20), borderColor: '#10b981', backgroundColor: 'transparent',
             borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, fill: false, order: 2 }
-        ]
+        ])
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + ' ppm' } } },
         scales: {
           x: { title: { display: true, text: 'Tempo (min)', font: { size: 9 }, color: '#666' }, grid: { display: false }, ticks: { font: { size: 9 }, color: '#555' } },
-          y: { title: { display: true, text: 'H\u2082 (ppm)', font: { size: 9 }, color: '#666' }, grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { size: 9 }, color: '#555' }, min: 0 }
+          y: { title: { display: true, text: temCH4 ? 'ppm' : 'H\u2082 (ppm)', font: { size: 9 }, color: '#666' }, grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { size: 9 }, color: '#555' }, min: 0 }
         }
       }
     });
